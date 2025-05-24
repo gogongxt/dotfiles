@@ -1,0 +1,312 @@
+# Place a copy of this config to ~/.aerospace.toml
+# After that, you can edit ~/.aerospace.toml to your liking
+
+# You can use it to add commands that run after login to macOS user session.
+# 'start-at-login' needs to be 'true' for 'after-login-command' to work
+# Available commands: https://nikitabobko.github.io/AeroSpace/commands
+after-login-command = []
+
+# You can use it to add commands that run after AeroSpace startup.
+# 'after-startup-command' is run after 'after-login-command'
+# Available commands : https://nikitabobko.github.io/AeroSpace/commands
+after-startup-command = [
+]
+
+# Start AeroSpace at login
+# TODO: 
+start-at-login = false
+
+# Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide#normalization
+# TODO:
+enable-normalization-flatten-containers = false
+enable-normalization-opposite-orientation-for-nested-containers = false
+
+# See: https://nikitabobko.github.io/AeroSpace/guide#layouts
+# The 'accordion-padding' specifies the size of accordion padding
+# You can set 0 to disable the padding feature
+accordion-padding = 50
+
+# Possible values: tiles|accordion
+default-root-container-layout = 'tiles'
+
+# Possible values: horizontal|vertical|auto
+# 'auto' means: wide monitor (anything wider than high) gets horizontal orientation,
+#               tall monitor (anything higher than wide) gets vertical orientation
+default-root-container-orientation = 'auto'
+
+# Mouse follows focus when focused monitor changes
+# Drop it from your config, if you don't like this behavior
+# See https://nikitabobko.github.io/AeroSpace/guide#on-focus-changed-callbacks
+# See https://nikitabobko.github.io/AeroSpace/commands#move-mouse
+# Fallback value (if you omit the key): on-focused-monitor-changed = []
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+# You can effectively turn off macOS "Hide application" (cmd-h) feature by toggling this flag
+# Useful if you don't use this macOS feature, but accidentally hit cmd-h or cmd-alt-h key
+# Also see: https://nikitabobko.github.io/AeroSpace/goodies#disable-hide-app
+automatically-unhide-macos-hidden-apps = false
+
+# Possible values: (qwerty|dvorak|colemak)
+# See https://nikitabobko.github.io/AeroSpace/guide#key-mapping
+[key-mapping]
+    preset = 'qwerty'
+
+# Gaps between windows (inner-*) and between monitor edges (outer-*).
+# Possible values:
+# - Constant:     gaps.outer.top = 8
+# - Per monitor:  gaps.outer.top = [{ monitor.main = 16 }, { monitor."some-pattern" = 32 }, 24]
+#                 In this example, 24 is a default value when there is no match.
+#                 Monitor pattern is the same as for 'workspace-to-monitor-force-assignment'.
+#                 See:
+#                 https://nikitabobko.github.io/AeroSpace/guide#assign-workspaces-to-monitors
+[gaps]
+    inner.horizontal = 10
+    inner.vertical =   10
+    outer.left =       5
+    outer.bottom =     5
+    outer.top =        5
+    outer.right =      5
+
+# 'main' binding mode declaration
+# See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
+# 'main' binding mode must be always presented
+# Fallback value (if you omit the key): mode.main.binding = {}
+[mode.main.binding]
+
+    # All possible keys:
+    # - Letters.        a, b, c, ..., z
+    # - Numbers.        0, 1, 2, ..., 9
+    # - Keypad numbers. keypad0, keypad1, keypad2, ..., keypad9
+    # - F-keys.         f1, f2, ..., f20
+    # - Special keys.   minus, equal, period, comma, slash, backslash, quote, semicolon,
+    #                   backtick, leftSquareBracket, rightSquareBracket, space, enter, esc,
+    #                   backspace, tab, pageUp, pageDown, home, end, forwardDelete,
+    #                   sectionSign (ISO keyboards only, european keyboards only)
+    # - Keypad special. keypadClear, keypadDecimalMark, keypadDivide, keypadEnter, keypadEqual,
+    #                   keypadMinus, keypadMultiply, keypadPlus
+    # - Arrows.         left, down, up, right
+
+    # All possible modifiers: cmd, alt, ctrl, shift
+
+    # All possible commands: https://nikitabobko.github.io/AeroSpace/commands
+
+    # See: https://nikitabobko.github.io/AeroSpace/commands#exec-and-forget
+    # You can uncomment the following lines to open up terminal with alt + enter shortcut
+    # (like in i3)
+    # alt-enter = '''exec-and-forget osascript -e '
+    # tell application "Terminal"
+    #     do script
+    #     activate
+    # end tell'
+    # '''
+
+    # See: https://nikitabobko.github.io/AeroSpace/commands#layout
+    # cmd-backslash = 'layout tiles horizontal vertical'
+    # cmd-shift-backslash = 'layout accordion horizontal vertical'
+    cmd-rightSquareBracket = 'layout tiles horizontal vertical'
+    cmd-shift-rightSquareBracket = 'layout accordion horizontal vertical'
+
+    # See: https://nikitabobko.github.io/AeroSpace/commands#focus
+    # cmd-h = 'focus left'
+    # cmd-j = 'focus down'
+    # cmd-k = 'focus up'
+    # cmd-l = 'focus right'
+    cmd-h = 'focus --boundaries-action wrap-around-the-workspace left'
+    cmd-j = 'focus --boundaries-action wrap-around-the-workspace down'
+    cmd-k = 'focus --boundaries-action wrap-around-the-workspace up'
+    cmd-l = 'focus --boundaries-action wrap-around-the-workspace right'
+
+    # See: https://nikitabobko.github.io/AeroSpace/commands#move
+    cmd-shift-h = 'move left'
+    cmd-shift-j = 'move down'
+    cmd-shift-k = 'move up'
+    cmd-shift-l = 'move right'
+
+
+    # cmd-ctrl-h = ['join-with left']
+    # cmd-ctrl-j = ['join-with down']
+    # cmd-ctrl-k = ['join-with up']
+    # cmd-ctrl-l = ['join-with right']
+    cmd-ctrl-h = ['resize width -50']
+    cmd-ctrl-j = ['resize height -50']
+    cmd-ctrl-k = ['resize height +50']
+    cmd-ctrl-l = ['resize width +50']
+
+
+    # NOTE: what is this?
+    cmd-alt-tab = [
+        'move-node-to-monitor --wrap-around next',
+        'focus-monitor --wrap-around next',
+    ]
+
+    # See: https://nikitabobko.github.io/AeroSpace/commands#resize
+    cmd-comma = 'resize smart -50'
+    cmd-period = 'resize smart +50'
+
+    # See: https://nikitabobko.github.io/AeroSpace/commands#workspace
+    cmd-1 = 'workspace 1'
+    cmd-2 = 'workspace 2'
+    cmd-3 = 'workspace 3'
+    cmd-4 = 'workspace 4'
+    cmd-5 = 'workspace 5'
+    cmd-6 = 'workspace 6'
+    cmd-7 = 'workspace 7'
+    cmd-8 = 'workspace 8'
+    cmd-9 = 'workspace 9'
+    # cmd-a = 'workspace A'
+    # cmd-b = 'workspace B'
+    # cmd-c = 'workspace C'
+    # cmd-d = 'workspace D'
+    # cmd-e = 'workspace E'
+    # cmd-f = 'workspace F'
+    # cmd-g = 'workspace G'
+    # cmd-i = 'workspace I'
+    cmd-m = 'workspace M'
+    # cmd-n = 'workspace N'
+    # cmd-o = 'workspace O'
+    # cmd-p = 'workspace P'
+    # cmd-q = 'workspace Q'
+    # cmd-r = 'workspace R'
+    # cmd-s = 'workspace S'
+    # cmd-t = 'workspace T'
+    # cmd-u = 'workspace U'
+    # cmd-v = 'workspace V'
+    # cmd-w = 'workspace W'
+    # cmd-x = 'workspace X'
+    # cmd-y = 'workspace Y'
+    # cmd-z = 'workspace Z'
+
+    # See: https://nikitabobko.github.io/AeroSpace/commands#move-node-to-workspace
+    cmd-shift-1 = ['move-node-to-workspace 1','workspace 1']
+    cmd-shift-2 = ['move-node-to-workspace 2','workspace 2']
+    cmd-shift-3 = ['move-node-to-workspace 3','workspace 3']
+    cmd-shift-4 = ['move-node-to-workspace 4','workspace 4']
+    cmd-shift-5 = ['move-node-to-workspace 5','workspace 5']
+    cmd-shift-6 = ['move-node-to-workspace 6','workspace 6']
+    cmd-shift-7 = ['move-node-to-workspace 7','workspace 7']
+    cmd-shift-8 = ['move-node-to-workspace 8','workspace 8']
+    cmd-shift-9 = ['move-node-to-workspace 9','workspace 9']
+    # cmd-shift-a = 'move-node-to-workspace A'
+    # cmd-shift-b = 'move-node-to-workspace B'
+    # cmd-shift-c = 'move-node-to-workspace C'
+    # cmd-shift-d = 'move-node-to-workspace D'
+    # cmd-shift-e = 'move-node-to-workspace E'
+    # cmd-shift-f = 'move-node-to-workspace F'
+    # cmd-shift-g = 'move-node-to-workspace G'
+    # cmd-shift-i = 'move-node-to-workspace I'
+    cmd-shift-m = ['move-node-to-workspace M','workspace M']
+    # cmd-shift-n = 'move-node-to-workspace N'
+    # cmd-shift-o = 'move-node-to-workspace O'Chat
+    # cmd-shift-p = 'move-node-to-workspace P'
+    # cmd-shift-q = 'move-node-to-workspace Q'
+    # cmd-shift-r = 'move-node-to-workspace R'
+    # cmd-shift-s = 'move-node-to-workspace S'
+    # cmd-shift-t = 'move-node-to-workspace T'
+    # cmd-shift-u = 'move-node-to-workspace U'
+    # cmd-shift-v = 'move-node-to-workspace V'
+    # cmd-shift-w = 'move-node-to-workspace W'
+    # cmd-shift-x = 'move-node-to-workspace X'
+    # cmd-shift-y = 'move-node-to-workspace Y'
+    # cmd-shift-z = 'move-node-to-workspace Z'
+
+
+    # float
+    cmd-shift-f = 'layout floating tiling'
+    # cmd-enter = 'exec-and-forget open -n kitty'
+
+
+    cmd-backtick = 'exec-and-forget bash $HOME/.config/aerospace/scratchpad.sh title scratchpad "/Applications/kitty.app/Contents/MacOS/kitty -T scratchpad tmux" >> $HOME/.config/aerospace/log.log'
+    cmd-shift-d = 'exec-and-forget bash $HOME/.config/aerospace/scratchpad.sh app_name D-Chat "open -a /Applications/D-Chat.app/Contents/MacOS/D-Chat" >> $HOME/.config/aerospace/log.log'
+    cmd-shift-w = 'exec-and-forget bash $HOME/.config/aerospace/scratchpad.sh app_name WeChat "open -a /Applications/WeChat.app/Contents/MacOS/WeChat" >> $HOME/.config/aerospace/log.log'
+
+    # NOTE: split: https://nikitabobko.github.io/AeroSpace/commands#split
+    cmd-shift-backslash = ['split horizontal']
+    cmd-shift-minus = ['split vertical']
+
+    # See: https://nikitabobko.github.io/AeroSpace/commands#workspace-back-and-forth
+    alt-tab = 'workspace-back-and-forth'
+    # See: https://nikitabobko.github.io/AeroSpace/commands#move-workspace-to-monitor
+    cmd-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+
+    # See: https://nikitabobko.github.io/AeroSpace/commands#mode
+    cmd-b = 'mode service'
+
+# 'service' binding mode declaration.
+# See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
+[mode.service.binding]
+    r = ['reload-config', 'mode main']
+    z = ['fullscreen', 'mode main']
+    shift-r = ['flatten-workspace-tree', 'mode main'] # reset layout
+    f = ['layout floating tiling', 'mode main'] # Toggle between floating and tiling layout
+    backspace = ['close-all-windows-but-current', 'mode main']
+
+    # sticky is not yet supported https://github.com/nikitabobko/AeroSpace/issues/2
+    #s = ['layout sticky tiling', 'mode main']
+
+    h = ['join-with left', 'mode main']
+    j = ['join-with down', 'mode main']
+    k = ['join-with up', 'mode main']
+    l = ['join-with right', 'mode main']
+
+    # down = 'volume down'
+    # up = 'volume up'
+    # shift-down = ['volume set 0', 'mode main']
+
+
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'NetEaseMusic'
+    run = ['move-node-to-workspace M']
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'Font Book'
+    run = ['layout floating']
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'QSpace Pro'
+    run = ['layout floating']
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'Notes'
+    run = ['layout floating']
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'TencentMeeting'
+    run = ['layout floating']
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'App Store'
+    run = ['layout floating']
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'Finder'
+    run = ['layout floating']
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'mail'
+    run = ['layout floating']
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'reminders'
+    run = ['layout floating']
+
+
+[[on-window-detected]]
+    if.window-title-regex-substring = 'scratchpad'
+    run = ['layout floating']
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'D-Chat'
+    run = ['layout floating']
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'WeChat'
+    run = ['layout floating']
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'BetterTouchTool'
+    run = ['layout floating']
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'Clash for Windows'
+    run = ['layout floating']
