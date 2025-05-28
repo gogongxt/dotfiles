@@ -191,7 +191,27 @@ return {
           ["<Leader>tl"] = false,
           ["<Leader>tn"] = false,
           ["<Leader>tp"] = false,
-          ["<Leader>tt"] = false,
+          -- ["<Leader>tt"] = false,
+
+          -- smart translate
+          ["<Leader>tt"] = {
+            "<cmd>Translate<cr>",
+            desc = "translate words show",
+            noremap = true,
+            silent = true,
+          },
+          ["<Leader>ts"] = {
+            "<cmd>Translate --handle=split<cr>",
+            desc = "translate words split",
+            noremap = true,
+            silent = true,
+          },
+          ["<Leader>tr"] = {
+            "<cmd>Translate --handle=replace<cr>",
+            desc = "translate words replace",
+            noremap = true,
+            silent = true,
+          },
 
           -- change to tab
           ["<Leader>t"] = { name = "Tabs" },
@@ -394,6 +414,25 @@ return {
           ["gf"] = {
             "<cmd>lua require('my_funcs').extract_file_info(require('my_funcs').get_text('v'))<cr>",
             desc = "Goto file",
+            noremap = true,
+            silent = true,
+          },
+
+          ["<Leader>tt"] = {
+            "<cmd>'<,'>Translate<cr>",
+            desc = "translate words show",
+            noremap = true,
+            silent = true,
+          },
+          ["<Leader>ts"] = {
+            "<cmd>'<,'>Translate --handle=split<cr>",
+            desc = "translate words split",
+            noremap = true,
+            silent = true,
+          },
+          ["<Leader>tr"] = {
+            "<cmd>'<,'>Translate --handle=replace<cr>",
+            desc = "translate words replace",
             noremap = true,
             silent = true,
           },
