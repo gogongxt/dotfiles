@@ -41,7 +41,7 @@ return {
     -- enable servers that you already have installed without mason
     servers = {
       -- use your own clangd in $PATH
-      "clangd"
+      "clangd",
       -- "pyright"
     },
     -- customize language server configuration options passed to `lspconfig`
@@ -54,6 +54,21 @@ return {
             plugins = {
               -- 不使用pycodestyle
               pycodestyle = { enabled = false },
+            },
+          },
+        },
+      },
+      pyright = {
+        settings = {
+          python = {
+            analysis = {
+              autoSearchPaths = true,
+              -- diagnosticMode = "workspace",
+              typeCheckingMode = "off", -- here's me trying stuff
+              useLibraryCodeForTypes = true,
+              reportMissingModuleSource = "none", -- here's me trying stuff
+              reportMissingImports = "none", -- here's me trying stuff
+              reportUndefinedVariable = "none", -- here's me trying stuff, syntax errors are still reported on diagnostics
             },
           },
         },
