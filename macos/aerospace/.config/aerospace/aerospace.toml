@@ -216,6 +216,7 @@ automatically-unhide-macos-hidden-apps = false
 
 
     cmd-backtick = 'exec-and-forget bash $HOME/.config/aerospace/scratchpad.sh title scratchpad "/Applications/kitty.app/Contents/MacOS/kitty -T scratchpad tmux" >> $HOME/.config/aerospace/log.log'
+    cmd-esc = 'exec-and-forget bash $HOME/.config/aerospace/scratchpad.sh title scratchpad "/Applications/kitty.app/Contents/MacOS/kitty -T scratchpad tmux" >> $HOME/.config/aerospace/log.log'
     cmd-shift-d = 'exec-and-forget bash $HOME/.config/aerospace/scratchpad.sh app_name D-Chat "open -a /Applications/D-Chat.app/Contents/MacOS/D-Chat" >> $HOME/.config/aerospace/log.log'
     cmd-shift-w = 'exec-and-forget bash $HOME/.config/aerospace/scratchpad.sh app_name WeChat "open -a /Applications/WeChat.app/Contents/MacOS/WeChat" >> $HOME/.config/aerospace/log.log'
 
@@ -229,7 +230,7 @@ automatically-unhide-macos-hidden-apps = false
     cmd-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#mode
-    cmd-b = 'mode service'
+    cmd-shift-b = 'mode service'
 
 # 'service' binding mode declaration.
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
@@ -309,4 +310,8 @@ automatically-unhide-macos-hidden-apps = false
 
 [[on-window-detected]]
     if.app-name-regex-substring = 'Clash for Windows'
+    run = ['layout floating']
+
+[[on-window-detected]]
+    if.window-title-regex-substring = 'Cisco Secure Client'
     run = ['layout floating']
