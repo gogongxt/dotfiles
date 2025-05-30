@@ -4,3 +4,86 @@ cmd-i : open -a "System Preferences"
 
 # cmd-tab : open -a 'Mission Control'  
 cmd-tab : bash ~/.scripts/macos/misson_control.sh
+
+# cmd - 1 : yabai -m space --focus 1
+# cmd - 2 : yabai -m space --focus 2
+# cmd - 3 : yabai -m space --focus 3
+# cmd - 4 : yabai -m space --focus 4
+# cmd - 5 : yabai -m space --focus 5
+# cmd - 6 : yabai -m space --focus 6
+# cmd - 7 : yabai -m space --focus 7
+# cmd - 8 : yabai -m space --focus 8
+# cmd - 9 : yabai -m space --focus 9
+# cmd - 0 : yabai -m space --focus 10
+cmd - 1 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 1 
+cmd - 2 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 2 
+cmd - 3 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 3 
+cmd - 4 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 4 
+cmd - 5 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 5 
+cmd - 6 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 6 
+cmd - 7 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 7 
+cmd - 8 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 8 
+cmd - 9 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 9 
+cmd - 0 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 10
+
+
+
+# Move window to workspace
+# cmd + shift - 1 : yabai -m window --space 1; yabai -m space --focus 1
+# cmd + shift - 2 : yabai -m window --space 2; yabai -m space --focus 2
+# cmd + shift - 3 : yabai -m window --space 3; yabai -m space --focus 3
+# cmd + shift - 4 : yabai -m window --space 4; yabai -m space --focus 4
+# cmd + shift - 5 : yabai -m window --space 5; yabai -m space --focus 5
+# cmd + shift - 6 : yabai -m window --space 6; yabai -m space --focus 6
+# cmd + shift - 7 : yabai -m window --space 7; yabai -m space --focus 7
+# cmd + shift - 8 : yabai -m window --space 8; yabai -m space --focus 8
+# cmd + shift - 9 : yabai -m window --space 9; yabai -m space --focus 9
+# cmd + shift - 0 : yabai -m window --space 10; yabai -m space --focus 10
+cmd + shift - 1 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 1 
+cmd + shift - 2 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 2 
+cmd + shift - 3 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 3 
+cmd + shift - 4 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 4 
+cmd + shift - 5 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 5 
+cmd + shift - 6 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 6 
+cmd + shift - 7 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 7 
+cmd + shift - 8 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 8 
+cmd + shift - 9 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 9 
+cmd + shift - 0 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 10
+
+# Focus movement
+cmd - h : yabai -m window --focus west
+cmd - j : yabai -m window --focus south
+cmd - k : yabai -m window --focus north
+cmd - l : yabai -m window --focus east
+
+# Window movement
+cmd + shift - h : yabai -m window --warp west
+cmd + shift - j : yabai -m window --warp south
+cmd + shift - k : yabai -m window --warp north
+cmd + shift - l : yabai -m window --warp east
+
+# Window resizing
+cmd + ctrl - h : yabai -m window --resize left:-100:0
+cmd + ctrl - j : yabai -m window --resize bottom:0:100
+cmd + ctrl - k : yabai -m window --resize top:0:-100
+cmd + ctrl - l : yabai -m window --resize right:100:0
+
+# cmd - backslash : yabai -m space --layout bsp
+# cmd - minus : yabai -m space --layout stack
+cmd - z : yabai -m window --toggle zoom-fullscreen
+cmd + shift - t : yabai -m window --toggle sticky
+# cmd + shift - f : yabai -m window --toggle float
+cmd + shift - f : bash $HOME/.config/yabai/scripts/toggle-window-floating-tiling.sh
+# cmd + tab : yabai -m window --focus recent
+
+
+# scratchpad
+cmd + shift - d : bash $HOME/.config/yabai/scripts/scratchpad.sh app_name D-Chat "open -a /Applications/D-Chat.app/Contents/MacOS/D-Chat" >> $HOME/.config/yabai/log.log
+cmd + shift - w : bash $HOME/.config/yabai/scripts/scratchpad.sh app_name WeChat "open -a /Applications/WeChat.app/Contents/MacOS/WeChat" >> $HOME/.config/yabai/log.log
+# cmd - `
+cmd - 0x32 : bash $HOME/.config/yabai/scripts/scratchpad.sh title scratchpad "kitty -T scratchpad tmux" >> $HOME/.config/yabai/log.log
+cmd - escape : bash $HOME/.config/yabai/scripts/scratchpad.sh title scratchpad "kitty -T scratchpad tmux" >> $HOME/.config/yabai/log.log
+
+
+cmd - m : bash $HOME/.config/yabai/scripts/open_application.sh "NetEaseMusic" /Applications/NeteaseMusic.app/Contents/MacOS/NeteaseMusic 8 >> $HOME/.config/yabai/log.log
+cmd + shift - m : bash $HOME/.config/yabai/scripts/move_and_focus.sh 8 
