@@ -15,11 +15,16 @@ cmd-tab : bash ~/.scripts/macos/misson_control.sh
 # cmd - 8 : yabai -m space --focus 8
 # cmd - 9 : yabai -m space --focus 9
 # cmd - 0 : yabai -m space --focus 10
-cmd - 1 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 1 
-cmd - 2 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 2 
-cmd - 3 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 3 
-cmd - 4 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 4 
-cmd - 5 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 5 
+cmd - 1 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[1] ]] && yabai -m space --focus $SPACES[1]
+cmd - 2 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[2] ]] && yabai -m space --focus $SPACES[2]
+cmd - 3 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[3] ]] && yabai -m space --focus $SPACES[3]
+cmd - 4 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[4] ]] && yabai -m space --focus $SPACES[4]
+cmd - 5 : SPACES=($(yabai -m query --displays --display | jq '.spaces[]')) && [[ -n $SPACES[5] ]] && yabai -m space --focus $SPACES[5]
+# cmd - 1 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 1 
+# cmd - 2 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 2 
+# cmd - 3 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 3 
+# cmd - 4 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 4 
+# cmd - 5 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 5 
 cmd - 6 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 6 
 cmd - 7 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 7 
 cmd - 8 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 8 
@@ -39,11 +44,16 @@ cmd - 0 : bash $HOME/.config/yabai/scripts/safe_focus_space.sh focus 10
 # cmd + shift - 8 : yabai -m window --space 8; yabai -m space --focus 8
 # cmd + shift - 9 : yabai -m window --space 9; yabai -m space --focus 9
 # cmd + shift - 0 : yabai -m window --space 10; yabai -m space --focus 10
-cmd + shift - 1 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 1 
-cmd + shift - 2 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 2 
-cmd + shift - 3 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 3 
-cmd + shift - 4 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 4 
-cmd + shift - 5 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 5 
+cmd + shift - 1 : bash $HOME/.config/yabai/scripts/move_and_focus_displays.sh 1
+cmd + shift - 2 : bash $HOME/.config/yabai/scripts/move_and_focus_displays.sh 2 
+cmd + shift - 3 : bash $HOME/.config/yabai/scripts/move_and_focus_displays.sh 3 
+cmd + shift - 4 : bash $HOME/.config/yabai/scripts/move_and_focus_displays.sh 4 
+cmd + shift - 5 : bash $HOME/.config/yabai/scripts/move_and_focus_displays.sh 5 
+# cmd + shift - 1 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 1 
+# cmd + shift - 2 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 2 
+# cmd + shift - 3 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 3 
+# cmd + shift - 4 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 4 
+# cmd + shift - 5 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 5 
 cmd + shift - 6 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 6 
 cmd + shift - 7 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 7 
 cmd + shift - 8 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 8 
@@ -51,26 +61,55 @@ cmd + shift - 9 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 9
 cmd + shift - 0 : bash $HOME/.config/yabai/scripts/move_and_focus.sh 10
 
 # Focus movement
-cmd - h : yabai -m window --focus west
-cmd - j : yabai -m window --focus south
-cmd - k : yabai -m window --focus north
-cmd - l : yabai -m window --focus east
+# cmd - h : yabai -m window --focus west
+# cmd - j : yabai -m window --focus south
+# cmd - k : yabai -m window --focus north
+# cmd - l : yabai -m window --focus east
+# cmd - h : bash $HOME/.config/yabai/scripts/focus_float.sh west >> $HOME/.config/yabai/log.log
+# cmd - j : bash $HOME/.config/yabai/scripts/focus_float.sh south >> $HOME/.config/yabai/log.log
+# cmd - k : bash $HOME/.config/yabai/scripts/focus_float.sh north >> $HOME/.config/yabai/log.log
+# cmd - l : bash $HOME/.config/yabai/scripts/focus_float.sh east >> $HOME/.config/yabai/log.log
+# cmd - h : yabai -m window --focus west  || python3 $HOME/.config/yabai/scripts/focus_multiple_monitor.py west >> $HOME/.config/yabai/log.log
+# cmd - j : yabai -m window --focus south || python3 $HOME/.config/yabai/scripts/focus_multiple_monitor.py south >> $HOME/.config/yabai/log.log
+# cmd - k : yabai -m window --focus north || python3 $HOME/.config/yabai/scripts/focus_multiple_monitor.py north >> $HOME/.config/yabai/log.log
+# cmd - l : yabai -m window --focus east  || python3 $HOME/.config/yabai/scripts/focus_multiple_monitor.py east >> $HOME/.config/yabai/log.log
+# cmd - h : python3 $HOME/.config/yabai/scripts/focus_multiple_monitor.py west >> $HOME/.config/yabai/log.log
+# cmd - j : python3 $HOME/.config/yabai/scripts/focus_multiple_monitor.py south >> $HOME/.config/yabai/log.log
+# cmd - k : python3 $HOME/.config/yabai/scripts/focus_multiple_monitor.py north >> $HOME/.config/yabai/log.log
+# cmd - l : python3 $HOME/.config/yabai/scripts/focus_multiple_monitor.py east >> $HOME/.config/yabai/log.log
+cmd - h : python3 $HOME/.config/yabai/scripts/focus_smart.py west >> $HOME/.config/yabai/log.log
+cmd - j : python3 $HOME/.config/yabai/scripts/focus_smart.py south >> $HOME/.config/yabai/log.log
+cmd - k : python3 $HOME/.config/yabai/scripts/focus_smart.py north >> $HOME/.config/yabai/log.log
+cmd - l : python3 $HOME/.config/yabai/scripts/focus_smart.py east >> $HOME/.config/yabai/log.log
 
 # Window movement
-cmd + shift - h : yabai -m window --warp west
-cmd + shift - j : yabai -m window --warp south
-cmd + shift - k : yabai -m window --warp north
-cmd + shift - l : yabai -m window --warp east
+# cmd + shift - h : yabai -m window --warp west
+# cmd + shift - j : yabai -m window --warp south
+# cmd + shift - k : yabai -m window --warp north
+# cmd + shift - l : yabai -m window --warp east
+cmd + shift - h : bash $HOME/.config/yabai/scripts/move_float.sh west 70 >> $HOME/.config/yabai/log.log
+cmd + shift - j : bash $HOME/.config/yabai/scripts/move_float.sh south 70 >> $HOME/.config/yabai/log.log
+cmd + shift - k : bash $HOME/.config/yabai/scripts/move_float.sh north 70 >> $HOME/.config/yabai/log.log
+cmd + shift - l : bash $HOME/.config/yabai/scripts/move_float.sh east 70 >> $HOME/.config/yabai/log.log
 
 # Window resizing
-cmd + ctrl - h : yabai -m window --resize left:-100:0
-cmd + ctrl - j : yabai -m window --resize bottom:0:100
-cmd + ctrl - k : yabai -m window --resize top:0:-100
-cmd + ctrl - l : yabai -m window --resize right:100:0
+cmd + ctrl - h : yabai -m window --resize right:-70:0 || yabai -m window --resize left:-70:0
+cmd + ctrl - j : yabai -m window --resize bottom:0:70 || yabai -m window --resize top:0:70
+cmd + ctrl - k : yabai -m window --resize bottom:0:-70 || yabai -m window --resize top:0:-70
+cmd + ctrl - l : yabai -m window --resize right:70:0 || yabai -m window --resize left:70:0
+
+# Window move to other window
+cmd + ctrl + shift - h : yabai -m window --insert west  
+cmd + ctrl + shift - j : yabai -m window --insert south 
+cmd + ctrl + shift - k : yabai -m window --insert north 
+cmd + ctrl + shift - l : yabai -m window --insert east  
+cmd + ctrl + shift - s : yabai -m window --insert stack
+cmd + shift - n : yabai -m window --focus stack.next
+cmd + shift - p : yabai -m window --focus stack.prev
 
 # cmd - backslash : yabai -m space --layout bsp
 # cmd - minus : yabai -m space --layout stack
-cmd - z : yabai -m window --toggle zoom-fullscreen
+cmd + shift - z : yabai -m window --toggle zoom-fullscreen
 cmd + shift - t : yabai -m window --toggle sticky
 # cmd + shift - f : yabai -m window --toggle float
 cmd + shift - f : bash $HOME/.config/yabai/scripts/toggle-window-floating-tiling.sh

@@ -59,10 +59,50 @@ yabai -m rule --add title="^About This Mac$" manage=off
 yabai -m rule --add app="^Cisco Secure Client$" manage=off
 yabai -m rule --add app="^TencentMeeting$" manage=off
 yabai -m rule --add app="^Clash for Windows$" manage=off
+yabai -m rule --add app="^Raycast$" manage=off
+yabai -m rule --add app="^iDock$" manage=off
 
 # signals
 yabai -m signal --add event=window_destroyed active=yes action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse &> /dev/null || yabai -m window --focus \$(yabai -m query --windows --space | jq .[0].id) &> /dev/null"
 yabai -m signal --add event=window_minimized active=yes action="if \$(yabai -m query --windows --window \$YABAI_WINDOW_ID | jq -r '.\"is-floating\"'); then yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse &> /dev/null || yabai -m window --focus \$(yabai -m query --windows --space | jq .[0].id) &> /dev/null; fi"
+
+# yabai -m signal --add event=window_created \
+#     action="python3 $HOME/.config/sketchybar/yabai.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=window_destroyed \
+#     action="python3 $HOME/.config/sketchybar/yabai.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=window_focused \
+#     action="python3 $HOME/.config/sketchybar/yabai.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=window_moved \
+#     action="python3 $HOME/.config/sketchybar/yabai.py >> $HOME/.config/yabai/log.log"
+
+
+# yabai -m signal --add event=window_created action="python3 $HOME/.config/sketchybar/spaces.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=window_destroyed action="python3 $HOME/.config/sketchybar/spaces.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=window_focused action="python3 $HOME/.config/sketchybar/spaces.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=window_moved action="python3 $HOME/.config/sketchybar/spaces.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=window_created action="python3 $HOME/.config/sketchybar/spaces.py"
+# yabai -m signal --add event=window_destroyed action="python3 $HOME/.config/sketchybar/spaces.py"
+# yabai -m signal --add event=window_minimized action="python3 $HOME/.config/sketchybar/spaces.py"
+# yabai -m signal --add event=window_deminimized action="python3 $HOME/.config/sketchybar/spaces.py"
+yabai -m signal --add event=window_created action="python3 $HOME/.config/sketchybar/plugins/spaces.py >> $HOME/.config/yabai/log.log"
+yabai -m signal --add event=window_destroyed action="python3 $HOME/.config/sketchybar/plugins/spaces.py >> $HOME/.config/yabai/log.log"
+yabai -m signal --add event=window_minimized action="python3 $HOME/.config/sketchybar/plugins/spaces.py >> $HOME/.config/yabai/log.log"
+yabai -m signal --add event=window_deminimized action="python3 $HOME/.config/sketchybar/plugins/spaces.py >> $HOME/.config/yabai/log.log"
+yabai -m signal --add event=space_created action="python3 $HOME/.config/sketchybar/plugins/spaces.py >> $HOME/.config/yabai/log.log"
+yabai -m signal --add event=space_destroyed action="python3 $HOME/.config/sketchybar/plugins/spaces.py >> $HOME/.config/yabai/log.log"
+yabai -m signal --add event=space_changed action="python3 $HOME/.config/sketchybar/plugins/spaces.py >> $HOME/.config/yabai/log.log"
+yabai -m signal --add event=display_changed action="python3 $HOME/.config/sketchybar/plugins/spaces.py >> $HOME/.config/yabai/log.log"
+
+# yabai -m signal --add event=space_created action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=space_destroyed action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=space_changed action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=space_created action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=space_destroyed action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=space_changed action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
+
+# yabai -m signal --add event=space_changed  action="python3 $HOME/.config/sketchybar/spaces.py"
+# yabai -m signal --add event=window_focused action="python3 $HOME/.config/sketchybar/spaces.py"
+# yabai -m signal --add event=window_moved action="python3 $HOME/.config/sketchybar/spaces.py"
 
 # yabai -m rule --add app="^NetEaseMusic$" space=music
 yabai -m rule --add title="scratchpad" manage=off
@@ -75,13 +115,14 @@ yabai -m config --space games layout float
 
 # global settings
 yabai -m config                              \
-    external_bar                off:41:0     \
+    external_bar                off:40:0     \
     mouse_follows_focus         on           \
     focus_follows_mouse         autoraise    \
     window_placement            second_child \
     window_topmost              off          \
     window_shadow               off          \
-    window_animation_duration   0.00         \
+    window_animation_duration   0.30         \
+    window_animation_easing    ease_out_quint\
     window_opacity_duration     0.00         \
     active_window_opacity       1.00         \
     normal_window_opacity       0.85         \
@@ -98,10 +139,10 @@ yabai -m config                              \
     split_type                  auto         \
     auto_balance                off          \
     top_padding                 5           \
-    left_padding                5           \
-    right_padding               5           \
-    bottom_padding              40           \
-    window_gap                  10           \
+    left_padding                15           \
+    right_padding               15           \
+    bottom_padding              35           \
+    window_gap                  15           \
     layout                      bsp          \
     mouse_modifier              cmd           \
     mouse_action1               move         \
