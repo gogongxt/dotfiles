@@ -13,7 +13,7 @@ yabai -m space 4
 yabai -m space 5
 yabai -m space 6
 yabai -m space 7
-yabai -m space 8 --label music
+yabai -m space 8
 yabai -m space 9
 yabai -m space 10
 
@@ -63,8 +63,8 @@ yabai -m rule --add app="^Raycast$" manage=off
 yabai -m rule --add app="^iDock$" manage=off
 
 # signals
-yabai -m signal --add event=window_destroyed active=yes action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse &> /dev/null || yabai -m window --focus \$(yabai -m query --windows --space | jq .[0].id) &> /dev/null"
-yabai -m signal --add event=window_minimized active=yes action="if \$(yabai -m query --windows --window \$YABAI_WINDOW_ID | jq -r '.\"is-floating\"'); then yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse &> /dev/null || yabai -m window --focus \$(yabai -m query --windows --space | jq .[0].id) &> /dev/null; fi"
+# yabai -m signal --add event=window_destroyed active=yes action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse &> /dev/null || yabai -m window --focus \$(yabai -m query --windows --space | jq .[0].id) &> /dev/null"
+# yabai -m signal --add event=window_minimized active=yes action="if \$(yabai -m query --windows --window \$YABAI_WINDOW_ID | jq -r '.\"is-floating\"'); then yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse &> /dev/null || yabai -m window --focus \$(yabai -m query --windows --space | jq .[0].id) &> /dev/null; fi"
 
 # yabai -m signal --add event=window_created \
 #     action="python3 $HOME/.config/sketchybar/yabai.py >> $HOME/.config/yabai/log.log"
@@ -92,6 +92,9 @@ yabai -m signal --add event=space_created action="python3 $HOME/.config/sketchyb
 yabai -m signal --add event=space_destroyed action="python3 $HOME/.config/sketchybar/plugins/spaces.py >> $HOME/.config/yabai/log.log"
 yabai -m signal --add event=space_changed action="python3 $HOME/.config/sketchybar/plugins/spaces.py >> $HOME/.config/yabai/log.log"
 yabai -m signal --add event=display_changed action="python3 $HOME/.config/sketchybar/plugins/spaces.py >> $HOME/.config/yabai/log.log"
+
+yabai -m signal --add event=display_added action="python3 $HOME/.config/yabai/scripts/space_manager.py >> $HOME/.config/yabai/log.log"
+yabai -m signal --add event=display_removed action="python3 $HOME/.config/yabai/scripts/space_manager.py >> $HOME/.config/yabai/log.log"
 
 # yabai -m signal --add event=space_created action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
 # yabai -m signal --add event=space_destroyed action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"

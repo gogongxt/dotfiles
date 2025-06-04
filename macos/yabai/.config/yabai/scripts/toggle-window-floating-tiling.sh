@@ -3,8 +3,6 @@
 # Toggle a window between floating and tiling.
 # Only works when the workspace layout is bsp, i.e., the windows in it are tiled.
 
-forceCenter=${1:-}
-
 spaceType=$(yabai -m query --spaces --space | jq .type)
 if [ $spaceType = '"bsp"' ]; then
 
@@ -18,18 +16,8 @@ if [ $spaceType = '"bsp"' ]; then
   if [[ $floating = true ]]
   then
     [ -e $tmpfile ] && rm $tmpfile
-
-    if [ ! -z $forceCenter ]; then
-      display=$(yabai -m query --windows --window | jq .display)
-      . /tmp/yabai-tiling-floating-toggle/display-$display
-      yabai -m window --move abs:$x:$y
-      yabai -m window --resize abs:$w:$h
-    else
-      echo $(yabai -m query --windows --window | jq .frame) >> $tmpfile
-      yabai -m window --toggle float
-    fi
-
-    # [ $border = 'on' ] && yabai -m window --toggle border
+    echo $(yabai -m query --windows --window | jq .frame) >> $tmpfile
+    yabai -m window --toggle float
 
   # If the window is tiling, toggle it to be floating.
   # If it is floating before, restore its previous position and size. Otherwise, place
@@ -39,23 +27,29 @@ if [ $spaceType = '"bsp"' ]; then
   else
     yabai -m window --toggle float
     # [ $border = 'on' ] && yabai -m window --toggle border
-    if [ ! -z $forceCenter ]; then
-      display=$(yabai -m query --windows --window | jq .display)
-      . /tmp/yabai-tiling-floating-toggle/display-$display
-      yabai -m window --move abs:$x:$y
-      yabai -m window --resize abs:$w:$h
-      echo $(yabai -m query --windows --window | jq .frame) >> $tmpfile
-    elif [ -e $tmpfile ]
-    then
+    if [ -e $tmpfile ]; then
       read -r x y w h <<< $(echo $(cat $tmpfile | jq '.x, .y, .w, .h'))
       yabai -m window --move abs:$x:$y
       yabai -m window --resize abs:$w:$h
       rm $tmpfile
     else
-      display=$(yabai -m query --windows --window | jq .display)
-      . /tmp/yabai-tiling-floating-toggle/display-$display
-      yabai -m window --move abs:$x:$y
-      yabai -m window --resize abs:$w:$h
+      display_info=$(yabai -m query --displays --display $display)
+      display_width=$(echo $display_info | jq .frame.w)
+      display_height=$(echo $display_info | jq .frame.h)
+      display_width=${display_width%.*}
+      display_height=${display_height%.*}
+      # 计算 50% 宽高
+      window_width=$((display_width * 60 /100))
+      window_width=${window_width%.*}
+      window_height=$((display_height * 60 /100))
+      window_height=${window_height%.*}
+      # 计算居中位置
+      pos_x=$(( (display_width - window_width) / 2 ))
+      pos_x=${pos_x%.*}
+      pos_y=$(( (display_height - window_height) / 2 ))
+      pos_y=${pos_y%.*}
+      yabai -m window --resize abs:$window_width:$window_height
+      yabai -m window --move abs:$pos_x:$pos_y
     fi
   fi
 
