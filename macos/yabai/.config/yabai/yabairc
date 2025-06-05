@@ -96,6 +96,20 @@ yabai -m signal --add event=display_changed action="python3 $HOME/.config/sketch
 yabai -m signal --add event=display_added action="python3 $HOME/.config/yabai/scripts/space_manager.py >> $HOME/.config/yabai/log.log"
 yabai -m signal --add event=display_removed action="python3 $HOME/.config/yabai/scripts/space_manager.py >> $HOME/.config/yabai/log.log"
 
+
+# https://github.com/koekeishiya/yabai/issues/878#issuecomment-814266904
+# 记录当前窗口所在的显示器ID
+yabai -m signal --add event=window_focused \
+  action='yabai -m query --windows --window | jq ".display" > /tmp/.display_focus'
+yabai -m signal --add event=application_front_switched \
+  action='yabai -m query --windows --window | jq ".display" > /tmp/.display_focus'
+# 当窗口关闭或应用退出时，聚焦之前记录的显示器
+yabai -m signal --add event=window_destroyed \
+  action='if [ -f "/tmp/.display_focus" ]; then yabai -m display --focus $(cat "/tmp/.display_focus"); fi'
+yabai -m signal --add event=application_terminated \
+  action='if [ -f "/tmp/.display_focus" ]; then yabai -m display --focus $(cat "/tmp/.display_focus"); fi'
+
+
 # yabai -m signal --add event=space_created action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
 # yabai -m signal --add event=space_destroyed action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
 # yabai -m signal --add event=space_changed action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
@@ -113,8 +127,8 @@ yabai -m rule --add app="^D-Chat$" manage=off
 yabai -m rule --add app="^WeChat$" manage=off 
 
 # specific space settings
-yabai -m config --space mail  layout stack
-yabai -m config --space games layout float
+# yabai -m config --space mail  layout stack
+# yabai -m config --space games layout float
 
 # global settings
 yabai -m config                              \
@@ -122,7 +136,6 @@ yabai -m config                              \
     mouse_follows_focus         on           \
     focus_follows_mouse         autoraise    \
     window_placement            second_child \
-    window_topmost              off          \
     window_shadow               off          \
     window_animation_duration   0.30         \
     window_animation_easing    ease_out_quint\
@@ -131,13 +144,6 @@ yabai -m config                              \
     normal_window_opacity       0.85         \
     window_opacity              on           \
     insert_feedback_color       0xaad75f5f   \
-    active_window_border_color  0xBF775759   \
-    normal_window_border_color  0x7f353535   \
-    window_border_width         4            \
-    window_border_radius        12           \
-    window_border_blur          off           \
-    window_border_hidpi         on           \
-    window_border               on           \
     split_ratio                 0.50         \
     split_type                  auto         \
     auto_balance                off          \
