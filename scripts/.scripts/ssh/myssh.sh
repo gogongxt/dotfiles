@@ -3,12 +3,12 @@
 # Install required tools if needed
 if ! command -v yq &> /dev/null; then
     echo "please install yq first"
-    exit 1; 
+    exit 1;
 fi
 
 if ! command -v fzf &> /dev/null; then
     echo "please install fzf first"
-    exit 1; 
+    exit 1;
 fi
 
 # Parse YAML and prepare FZF selection
@@ -38,7 +38,19 @@ password_prompt=$(yq e ".servers[] | select(.name == \"$server_name\") | .auth.p
 expect_script=$(cat <<EOF
 #!/usr/bin/expect -f
 set timeout 20
+
+# Get initial terminal size
+set rows [stty rows]
+set cols [stty columns]
+
 spawn ssh -p $port $ssh_user@$host
+
+# Setup trap for window resize
+trap {
+    set rows [stty rows]
+    set cols [stty columns]
+    stty rows \$rows columns \$cols < \$spawn_out(slave,name)
+} WINCH
 
 expect {
     -exact "$username_prompt" {
@@ -47,33 +59,46 @@ expect {
     }
     -re "(?i)$password_prompt" {
         send -- "$password\r"
+        exp_continue
     }
     "Are you sure you want to continue connecting (yes/no)?" {
         send -- "yes\r"
         exp_continue
     }
-    "Last login:" {
-        interact
+    -re {Last login:|[$#%>\\]]\s*$} {
+        # Send initial resize in case window was resized during connection
+        stty rows \$rows columns \$cols < \$spawn_out(slave,name)
+        interact {
+            # Keep handling window resizes during interaction
+            WINCH {
+                stty rows [stty rows] columns [stty columns] < \$spawn_out(slave,name)
+            }
+        }
         exit 0
     }
     "Permission denied" {
-        puts "Authentication failed"
+        puts stderr "Authentication failed: Permission denied"
         exit 1
     }
     timeout {
-        puts "Connection timed out"
+        puts stderr "Connection timed out"
         exit 1
     }
     eof {
-        puts "Connection closed"
+        puts stderr "Connection closed or SSH command failed (EOF)"
         exit 1
     }
 }
-interact
 EOF
 )
 
-echo "$expect_script" > /tmp/ssh_connect.exp
-chmod +x /tmp/ssh_connect.exp
-/tmp/ssh_connect.exp
-rm /tmp/ssh_connect.exp
+# Create a temporary expect script file
+temp_expect_script="/tmp/ssh_connect.$$.exp"
+echo "$expect_script" > "$temp_expect_script"
+chmod +x "$temp_expect_script"
+
+# Execute the expect script
+"$temp_expect_script"
+
+# Clean up the temporary script
+rm "$temp_expect_script"
