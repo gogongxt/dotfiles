@@ -125,6 +125,7 @@ yabai -m signal --add event=application_terminated \
 yabai -m rule --add title="scratchpad" manage=off
 yabai -m rule --add app="^D-Chat$" manage=off 
 yabai -m rule --add app="^WeChat$" manage=off 
+yabai -m rule --add app="^NetEaseMusic$" manage=off 
 
 # specific space settings
 # yabai -m config --space mail  layout stack

@@ -121,6 +121,7 @@ cmd + shift - f : bash $HOME/.config/yabai/scripts/toggle-window-floating-tiling
 # scratchpad
 cmd + shift - d : bash $HOME/.config/yabai/scripts/scratchpad.sh app_name D-Chat "open -a /Applications/D-Chat.app/Contents/MacOS/D-Chat" >> $HOME/.config/yabai/log.log
 cmd + shift - w : bash $HOME/.config/yabai/scripts/scratchpad.sh app_name WeChat "open -a /Applications/WeChat.app/Contents/MacOS/WeChat" >> $HOME/.config/yabai/log.log
+cmd + shift - m : bash $HOME/.config/yabai/scripts/scratchpad.sh app_name NetEaseMusic "open -a /Applications/NeteaseMusic.app/Contents/MacOS/NeteaseMusic" >> $HOME/.config/yabai/log.log
 # cmd - `
 cmd - 0x32 : bash $HOME/.config/yabai/scripts/scratchpad.sh title scratchpad "kitty -T scratchpad tmux" >> $HOME/.config/yabai/log.log
 cmd - escape : bash $HOME/.config/yabai/scripts/scratchpad.sh title scratchpad "kitty -T scratchpad tmux" >> $HOME/.config/yabai/log.log
