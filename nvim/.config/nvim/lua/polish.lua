@@ -38,7 +38,8 @@ end
 vim.opt.jumpoptions = "stack"
 
 -- set for vim exec shell cmd
-vim.o.shellcmdflag = "-ci"
+-- vim.o.shellcmdflag = "-ci"
+vim.o.shellcmdflag = "-c"
 
 -- NOTE: gxt: Astronvim Feature_or_Bug?
 -- https://www.reddit.com/r/AstroNvim/comments/108cir5/keep_word_search_highlighting/
