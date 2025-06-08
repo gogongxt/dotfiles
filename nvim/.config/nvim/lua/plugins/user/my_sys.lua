@@ -1,29 +1,27 @@
 local M = {}
 
 function M.DEBUG(...)
-  local function pack(...)
-    return { n = select('#', ...), ... }
-  end
-  local home_path = os.getenv("HOME")
+  local function pack(...) return { n = select("#", ...), ... } end
+  local home_path = os.getenv "HOME"
   local file = io.open(home_path .. "/.config/nvim/.nvim.log", "a") -- 以追加模式打开文件，如果文件不存在则创建
   if file then
     local args = pack(...)
     for i = 1, args.n do
       file:write(tostring(args[i]) .. "\t") -- 将参数转换为字符串并写入文件
     end
-    file:write("\n")                        -- 写入换行符
-    file:close()                            -- 关闭文件
+    file:write "\n" -- 写入换行符
+    file:close() -- 关闭文件
   else
-    print("Failed to open the file for writing.")
+    print "Failed to open the file for writing."
   end
 end
 
 function GetFilesInFolder(folder)
   local files = {}
-  local handle = io.popen("ls \"" .. folder .. "\"")
-  local result = handle:read("*a")
+  local handle = io.popen('ls "' .. folder .. '"')
+  local result = handle:read "*a"
   handle:close()
-  for filename in result:gmatch("[^\r\n]+") do
+  for filename in result:gmatch "[^\r\n]+" do
     files[#files + 1] = filename
   end
   return files
@@ -38,9 +36,9 @@ function GetDirectoryLuaFileNames(dire_path)
   local files = GetFilesInFolder(dire_path)
   for _, filename in ipairs(files) do
     -- M.DEBUG("filename", filename)
-    if filename:match("%.lua$") then
+    if filename:match "%.lua$" then
       -- 移除文件名后缀
-      local filenameWithoutExtension = filename:match("(.+)%..+")
+      local filenameWithoutExtension = filename:match "(.+)%..+"
       -- M.DEBUG("filenameWithoutExtension", filenameWithoutExtension)
       table.insert(res, filenameWithoutExtension)
     end
@@ -81,13 +79,11 @@ function M.GetConfig(config_path, field, default_value)
   -- 加载配置文件
   -- local config = require(config_path)
   local status_ok, config = pcall(require, "config_")
-  if not status_ok then
-    return default_value
-  end
+  if not status_ok then return default_value end
 
   -- 检查配置项是否存在
   local value = config
-  for part in field:gmatch("[^.]+") do
+  for part in field:gmatch "[^.]+" do
     value = value[part]
     if value == nil then
       -- print("Configuration field '" .. field .. "' not found or incomplete")
