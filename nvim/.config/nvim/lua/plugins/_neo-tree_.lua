@@ -17,6 +17,7 @@ return {
         Y = "copy_selector",
         h = "parent_or_close",
         l = "child_or_open",
+        -- FIXME: have bug that: "Invalid mapping for <a-h>"
         ["<a-h>"] = "toggle_hidden",
         H = "prev_source",
         L = "next_source",
