@@ -1,4 +1,4 @@
-if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
+-- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
 -- AstroLSP allows you to customize the features in AstroNvim's LSP configuration engine
 -- Configuration documentation can be found with `:h astrolsp`
@@ -13,14 +13,14 @@ return {
     -- Configuration table of features provided by AstroLSP
     features = {
       codelens = true, -- enable/disable codelens refresh on start
-      inlay_hints = false, -- enable/disable inlay hints on start
+      inlay_hints = true, -- enable/disable inlay hints on start
       semantic_tokens = true, -- enable/disable semantic token highlighting
     },
     -- customize lsp formatting options
     formatting = {
       -- control auto formatting on save
       format_on_save = {
-        enabled = true, -- enable or disable format on save globally
+        enabled = false, -- enable or disable format on save globally
         allow_filetypes = { -- enable format on save for specified filetypes only
           -- "go",
         },
@@ -39,12 +39,39 @@ return {
     },
     -- enable servers that you already have installed without mason
     servers = {
+      -- use your own clangd in $PATH
+      "clangd",
       -- "pyright"
     },
     -- customize language server configuration options passed to `lspconfig`
     ---@diagnostic disable: missing-fields
     config = {
       -- clangd = { capabilities = { offsetEncoding = "utf-8" } },
+      pylsp = {
+        settings = {
+          pylsp = {
+            plugins = {
+              -- 不使用pycodestyle
+              pycodestyle = { enabled = false },
+            },
+          },
+        },
+      },
+      pyright = {
+        settings = {
+          python = {
+            analysis = {
+              autoSearchPaths = true,
+              -- diagnosticMode = "workspace",
+              typeCheckingMode = "off", -- here's me trying stuff
+              useLibraryCodeForTypes = true,
+              reportMissingModuleSource = "none", -- here's me trying stuff
+              reportMissingImports = "none", -- here's me trying stuff
+              reportUndefinedVariable = "none", -- here's me trying stuff, syntax errors are still reported on diagnostics
+            },
+          },
+        },
+      },
     },
     -- customize how language servers are attached
     handlers = {
@@ -81,6 +108,10 @@ return {
     mappings = {
       n = {
         -- a `cond` key can provided as the string of a server capability to be required to attach, or a function with `client` and `bufnr` parameters from the `on_attach` that returns a boolean
+        gh = {
+          function() vim.lsp.buf.hover() end,
+          desc = "Hover symbol details",
+        },
         gD = {
           function() vim.lsp.buf.declaration() end,
           desc = "Declaration of current symbol",
@@ -93,6 +124,8 @@ return {
             return client.supports_method "textDocument/semanticTokens/full" and vim.lsp.semantic_tokens ~= nil
           end,
         },
+        ["<Leader>lj"] = { vim.diagnostic.goto_next, desc = "Next Diagnostic", noremap = true, silent = true },
+        ["<Leader>lk"] = { vim.diagnostic.goto_prev, desc = "Prev Diagnostic", noremap = true, silent = true },
       },
     },
     -- A custom `on_attach` function to be run after the default `on_attach` function

@@ -1,0 +1,18 @@
+{
+  "hexo_blog_template": {
+    "prefix": "hexo_blog_template",
+    "body": [
+      "---",
+      "title: $TM_FILENAME_BASE",
+      "date: $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE $CURRENT_HOUR:$CURRENT_MINUTE:$CURRENT_SECOND",
+      "tags:",
+      "  - null",
+      "categories:",
+      "  - null",
+      "series:",
+      "---",
+      ""
+    ],
+    "description": "Hexo博客基础模板"
+  }
+}

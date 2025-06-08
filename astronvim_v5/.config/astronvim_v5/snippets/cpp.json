@@ -1,0 +1,26 @@
+{
+  "leetcode_prefix": {
+    "prefix": "leetcode_prefix",
+    "body": [
+      "#include <bits/stdc++.h>",
+      "",
+      "#include \"/home/gxt_kt/Projects/debugstream/debugstream.hpp\"",
+      "",
+      "using namespace std;",
+      "",
+      ""
+    ],
+    "description": "leetcode_prefix"
+  },
+  "leetcode_suffix": {
+    "prefix": "leetcode_suffix",
+    "body": [
+      "int main(int argc, char* argv[]) {",
+      "  Solution solution;",
+      "  $0",
+      "  return 0;",
+      "}"
+    ],
+    "description": "leetcode_suffix"
+  }
+}
