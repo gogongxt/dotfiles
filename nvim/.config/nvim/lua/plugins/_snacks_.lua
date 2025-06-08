@@ -50,6 +50,7 @@ return {
           },
           ["<Leader>fp"] = { function() require("snacks").picker.projects() end, desc = "Find projects" },
           ["<Leader>fy"] = { function() require("snacks").picker.registers() end, desc = "Find registers" },
+          ["<Leader>fn"] = { "<cmd>Noice pick<cr>", desc = "Find themes" },
           ["<Leader>fc"] = { function() require("snacks").picker.command_history() end, desc = "Find commands history" },
           ["<Leader>fC"] = { function() require("snacks").picker.commands() end, desc = "Find all commands" },
           ["<Leader>ut"] = { function() require("snacks").picker.colorschemes() end, desc = "Find themes" },
@@ -108,6 +109,9 @@ return {
             },
           },
         },
+      },
+      notifier = {
+        enabled = false,
       },
       -- input = {
       --   enabled = true,
