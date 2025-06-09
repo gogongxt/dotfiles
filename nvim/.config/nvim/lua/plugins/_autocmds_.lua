@@ -26,4 +26,14 @@ vim.api.nvim_create_autocmd({ "VimLeave" }, {
   end,
 })
 
+-- Python 专用配置：支持 if/elif/else 跳转
+-- TODO: add jump between """""" and '''''' comments
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "python",
+  callback = function()
+    vim.b.match_words =
+      [[\<if\>:\<elif\>:\<else\>,\<try\>:\<except\>,\<try\>:\<except\>:\<finally\>,\<while\>:\<continue\>:\<break\>]]
+  end,
+})
+
 return {}
