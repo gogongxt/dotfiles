@@ -61,7 +61,7 @@ expect {
         send -- "$password\r"
         exp_continue
     }
-    "Are you sure you want to continue connecting (yes/no)?" {
+    -re "Are you sure you want to continue connecting (yes/no)\?" {
         send -- "yes\r"
         exp_continue
     }
@@ -76,9 +76,42 @@ expect {
         }
         exit 0
     }
+    -re {Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by applicable law.} {
+        # Send initial resize in case window was resized during connection
+        stty rows \$rows columns \$cols < \$spawn_out(slave,name)
+        interact {
+            # Keep handling window resizes during interaction
+            WINCH {
+                stty rows [stty rows] columns [stty columns] < \$spawn_out(slave,name)
+            }
+        }
+        exit 0
+    }
     "Permission denied" {
         puts stderr "Authentication failed: Permission denied"
         exit 1
+    }
+    -re "Dkey shield code:" {
+        interact {
+            WINCH {
+                stty rows [stty rows] columns [stty columns] < \$spawn_out(slave,name)
+            }
+            eof {
+                exp_continue
+            }
+        }
+        exit 0
+    }
+    -re "Option>:" {
+        interact {
+            WINCH {
+                stty rows [stty rows] columns [stty columns] < \$spawn_out(slave,name)
+            }
+            eof {
+                exp_continue
+            }
+        }
+        exit 0
     }
     timeout {
         puts stderr "Connection timed out"
