@@ -103,7 +103,7 @@ cmd + ctrl + shift - h : yabai -m window --insert west
 cmd + ctrl + shift - j : yabai -m window --insert south 
 cmd + ctrl + shift - k : yabai -m window --insert north 
 cmd + ctrl + shift - l : yabai -m window --insert east  
-cmd + ctrl + shift - s : yabai -m window --insert stack
+cmd + ctrl + shift - f : yabai -m window --insert stack
 cmd + ctrl - n : yabai -m window --focus stack.next || while yabai -m window --focus stack.prev; do :; done
 cmd + ctrl - p : yabai -m window --focus stack.prev || while yabai -m window --focus stack.next; do :; done
 cmd + shift + ctrl - n : yabai -m space --focus next || yabai -m space --focus first
@@ -129,3 +129,7 @@ cmd - escape : bash $HOME/.config/yabai/scripts/scratchpad.sh title scratchpad "
 
 # cmd - m : bash $HOME/.config/yabai/scripts/open_application.sh "NetEaseMusic" /Applications/NeteaseMusic.app/Contents/MacOS/NeteaseMusic 8 >> $HOME/.config/yabai/log.log
 # cmd + shift - m : bash $HOME/.config/yabai/scripts/move_and_focus.sh 8 
+
+# record and resume window display position
+cmd + ctrl+ shift - s : bash $HOME/.config/yabai/scripts/record_resume_window.sh record
+cmd + ctrl+ shift - r : bash $HOME/.config/yabai/scripts/record_resume_window.sh resume
