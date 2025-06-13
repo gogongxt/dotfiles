@@ -86,7 +86,13 @@ function resume_window_states() {
     done
     
     echo "窗口状态恢复完成"
+
+    # reflush sketchybar
+    sleep 0.1
+    brew services restart sketchybar
+
     terminal-notifier -title "yabai" -message "窗口状态恢复完成" -sound "default" -activate "com.apple.Terminal"
+
 }
 
 # 主程序
@@ -104,7 +110,3 @@ case "$1" in
         exit 1
         ;;
 esac
-
-# reflush sketchybar
-sleep 0.1
-brew services restart sketchybar
