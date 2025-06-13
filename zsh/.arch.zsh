@@ -6,8 +6,6 @@ macos() {
   export LC_ALL=en_US.UTF-8  
   export LANG=en_US.UTF-8
 
-
-
   # header search file path
   export C_INCLUDE_PATH=${C_INCLUDE_PATH}:/opt/homebrew/include/
   export CPLUS_INCLUDE_PATH=${CPLUS_INCLUDE_PATH}:/opt/homebrew/include/
@@ -40,6 +38,12 @@ macos() {
   # alias clang="/opt/homebrew/opt/llvm/bin/clang"
   # alias clang++="/opt/homebrew/opt/llvm/bin/clang++"
   # alias ld="/opt/homebrew/bin/"
+
+  # support trash-cli trash-put
+  export PATH="/opt/homebrew/opt/trash-cli/bin:$PATH"
+
+  # use base python env
+  source ~/.venv/base/bin/activate
 }
 
 archlinux() {

@@ -306,7 +306,8 @@ alias mr='bash ~/.scripts/cmake/compile.sh mr'
 alias dump='bash ~/.scripts/code/dump.sh'
 alias count_lines='python3 ~/.scripts/code/count_lines.py'
 alias words_to_mp3='python3 ~/.scripts/english_helper/generate_mp3_from_words.py'
-alias myssh='bash ~/.scripts/ssh/myssh.sh'
+# alias myssh='bash ~/.scripts/ssh/myssh.sh'
+alias myssh='python3 ~/.scripts/ssh/myssh.py'
 #🔼🔼🔼
 
 
