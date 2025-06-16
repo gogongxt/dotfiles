@@ -359,6 +359,11 @@ if command -v zoxide &> /dev/null; then
 fi
 #🔼🔼🔼
 
+# set direnv
+#🔽🔽🔽
+command -v direnv &>/dev/null && eval "$(direnv hook zsh)"
+#🔼🔼🔼
+
 # clipboard support linux and macos platform
 #🔽🔽🔽
 function copy_to_clipboard {
@@ -488,3 +493,5 @@ zvm_after_lazy_keybindings() {
     zvm_bindkey visual 'x' my_zvm_vi_delete
     zvm_bindkey visual 'y' my_zvm_vi_yank
 }
+
+
