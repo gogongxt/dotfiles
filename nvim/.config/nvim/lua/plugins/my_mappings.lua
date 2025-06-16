@@ -7,8 +7,8 @@ keymap.set("n", "<leader>-", "<C-w>s", opts)
 keymap.set("n", "<C-s>", "<cmd>w<cr>", opts)
 -- keymap.set("n", "<S-h>", "<cmd>bpre<cr>", opts)
 -- keymap.set("n", "<S-l>", "<cmd>bnext<cr>", opts)
-keymap.set("n", "<S-h>", "<cmd>lua require('astrocore.buffer').nav(vim.v.count1)<cr>", opts)
-keymap.set("n", "<S-l>", "<cmd>lua require('astrocore.buffer').nav(-vim.v.count1)<cr>", opts)
+-- keymap.set("n", "<S-h>", "<cmd>lua require('astrocore.buffer').nav(vim.v.count1)<cr>", opts)
+-- keymap.set("n", "<S-l>", "<cmd>lua require('astrocore.buffer').nav(-vim.v.count1)<cr>", opts)
 --
 
 -- Visual --
@@ -33,6 +33,15 @@ return {
       mappings = {
         n = {
           -- keymap.set("n", "<leader>S", "<cmd>set invspell<cr>", opts) -- https<cmd>//vimtricks.com/p/vim-spell-check/
+
+          L = {
+            function() require("astrocore.buffer").nav(vim.v.count1) end,
+            desc = "Next buffer",
+          },
+          H = {
+            function() require("astrocore.buffer").nav(-vim.v.count1) end,
+            desc = "Previous buffer",
+          },
 
           -- universal
           ["<Leader>h"] = { "<cmd>nohl<cr>", desc = "<cmd>nohl" },

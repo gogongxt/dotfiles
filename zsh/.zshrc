@@ -161,6 +161,7 @@ alias tmux-ls="tmux list-sessions"
 alias tmux-cd="tmux -u attach-session -t"
 alias tmux-rm="tmux kill-session -t"
 alias tmux-reboot="tmux kill-server && tmux || tmux"
+alias tmux-save="tmux capture-pane -p -S - > tmux.txt"
 
 # default set TMUX in tmux. 
 # if [[ -v TMUX ]];
@@ -236,8 +237,15 @@ function proxy_status(){
 #🔼🔼🔼
 
 #🔽🔽🔽
+# neovim
+export EDITOR=$(bash -c 'if command -v nvim >/dev/null 2>&1; then echo "nvim"; elif command -v lvim >/dev/null 2>&1; then echo "lvim"; else echo "vim"; fi')
+# export EDITOR='nvim'
+#🔼🔼🔼
+
+#🔽🔽🔽
 # alias
 alias r="ranger"
+alias y="yazi"
 alias e="extract"
 command -v lolcat &>/dev/null && alias neofetch="neofetch | lolcat"
 # 依次检测bat/cat是否存在，存在替换成对应的，推荐使用bat，并且使用--style=plain更朴素一点
@@ -246,12 +254,9 @@ alias cat='bash -c '\''my_cat=""; if command -v bat >/dev/null 2>&1; then my_cat
 # 依次检测lvim/nvim是否存在，存在替换成对应的
 alias v='bash -c '\''my_vim=""; if command -v nvim >/dev/null 2>&1; then my_vim="nvim"; else if command -v lvim >/dev/null 2>&1; then my_vim="lvim"; else my_vim="vim"; fi; fi; if [ $# -gt 0 ]; then $my_vim "$@"; else $my_vim .; fi'\'' bash'
 alias vim='bash -c '\''my_vim=""; if command -v nvim >/dev/null 2>&1; then my_vim="nvim"; else if command -v lvim >/dev/null 2>&1; then my_vim="lvim"; else my_vim="vim"; fi; fi; if [ $# -gt 0 ]; then $my_vim "$@"; else $my_vim .; fi'\'' bash'
-#🔼🔼🔼
-
-#🔽🔽🔽
-# neovim
-export EDITOR=$(bash -c 'if command -v nvim >/dev/null 2>&1; then echo "nvim"; elif command -v lvim >/dev/null 2>&1; then echo "lvim"; else echo "vim"; fi')
-# export EDITOR='nvim'
+alias v-edit="$EDITOR $HOME/.config/nvim"
+alias vim-edit="$EDITOR $HOME/.config/nvim"
+alias nvim-edit="$EDITOR $HOME/.config/nvim"
 #🔼🔼🔼
 
 #🔽🔽🔽
@@ -308,6 +313,7 @@ alias count_lines='python3 ~/.scripts/code/count_lines.py'
 alias words_to_mp3='python3 ~/.scripts/english_helper/generate_mp3_from_words.py'
 # alias myssh='bash ~/.scripts/ssh/myssh.sh'
 alias myssh='python3 ~/.scripts/ssh/myssh.py'
+alias myssh-edit='$EDITOR ~/.scripts/ssh/servers.yaml'
 #🔼🔼🔼
 
 
@@ -353,5 +359,132 @@ if command -v zoxide &> /dev/null; then
 fi
 #🔼🔼🔼
 
+# clipboard support linux and macos platform
+#🔽🔽🔽
+function copy_to_clipboard {
+    local CONTENT="$1"
+    if [[ -n "$SSH_CONNECTION" ]]; then
+        # 远程环境使用 OSC52 协议
+        printf "\033]52;c;$(echo -n "$CONTENT" | base64)\a"
+    else
+        # 本地环境尝试使用不同系统的剪贴板工具
+        if (( $+commands[pbcopy] )); then
+            # macOS
+            echo -n "$CONTENT" | pbcopy
+        elif (( $+commands[xsel] )); then
+            # Linux with xsel
+            echo -n "$CONTENT" | xsel --clipboard --input
+        elif (( $+commands[xclip] )); then
+            # Linux with xclip
+            echo -n "$CONTENT" | xclip -selection clipboard
+        elif (( $+commands[wl-copy] )); then
+            # Wayland
+            echo -n "$CONTENT" | wl-copy
+        else
+            # 如果没有找到任何剪贴板工具，回退到 OSC52
+            printf "\033]52;c;$(echo -n "$CONTENT" | base64)\a"
+        fi
+    fi
+}
+function get_from_clipboard {
+    local clipboard_content
+    # 本地环境尝试使用不同系统的剪贴板工具
+    if (( $+commands[pbpaste] )); then
+        # macOS
+        clipboard_content=$(pbpaste 2>/dev/null) || {
+            echo "Error: Failed to access macOS clipboard" >&2
+            return 1
+        }
+    elif (( $+commands[xsel] )); then
+        # Linux with xsel
+        clipboard_content=$(xsel --clipboard --output 2>/dev/null) || {
+            echo "Error: Failed to access X11 clipboard via xsel" >&2
+            return 1
+        }
+    elif (( $+commands[xclip] )); then
+        # Linux with xclip
+        clipboard_content=$(xclip -o -selection clipboard 2>/dev/null) || {
+            echo "Error: Failed to access X11 clipboard via xclip" >&2
+            return 1
+        }
+    elif (( $+commands[wl-paste] )); then
+        # Wayland
+        clipboard_content=$(wl-paste 2>/dev/null) || {
+            echo "Error: Failed to access Wayland clipboard" >&2
+            return 1
+        }
+    else
+        echo "Error: Unsupported operating system or no clipboard tool available" >&2
+        echo "Supported tools: pbpaste (macOS), xsel/xclip (X11), wl-paste (Wayland)" >&2
+        return 1
+    fi
+    # 返回剪切板内容
+    printf '%s' "$clipboard_content"
+    return 0
+}
+#🔼🔼🔼
+
 # solve bug ssh zsh-vi-mode will caplitalizes the last character
 unset zle_bracketed_paste
+
+# zsh-vi-mode plugin enable copy cmd to system clipboard in vi mode
+# ref: https://github.com/jeffreytse/zsh-vi-mode/issues/19
+my_zvm_vi_yank() {
+    zvm_vi_yank
+    copy_to_clipboard "$CUTBUFFER" 
+}
+my_zvm_vi_delete() {
+    zvm_vi_delete
+    copy_to_clipboard "$CUTBUFFER" 
+}
+my_zvm_vi_change() {
+    zvm_vi_change
+    copy_to_clipboard "$CUTBUFFER" 
+}
+my_zvm_vi_change_eol() {
+    zvm_vi_change_eol
+    copy_to_clipboard "$CUTBUFFER" 
+}
+my_zvm_vi_substitute() {
+    zvm_vi_substitute
+    copy_to_clipboard "$CUTBUFFER" 
+}
+my_zvm_vi_substitute_whole_line() {
+    zvm_vi_substitute_whole_line
+    copy_to_clipboard "$CUTBUFFER" 
+}
+my_zvm_vi_put_after() {
+    CUTBUFFER=$(pbpaste)
+    zvm_vi_put_after
+    zvm_highlight clear # zvm_vi_put_after introduces weird highlighting
+}
+my_zvm_vi_replace_selection() {
+    CUTBUFFER=$(get_from_clipboard)
+    zvm_vi_replace_selection
+}
+my_zvm_vi_put_before() {
+    CUTBUFFER=$(get_from_clipboard)
+    zvm_vi_put_before
+    zvm_highlight clear # zvm_vi_put_before introduces weird highlighting
+}
+zvm_after_lazy_keybindings() {
+    zvm_define_widget my_zvm_vi_yank
+    zvm_define_widget my_zvm_vi_delete
+    zvm_define_widget my_zvm_vi_change
+    zvm_define_widget my_zvm_vi_change_eol
+    zvm_define_widget my_zvm_vi_put_after
+    zvm_define_widget my_zvm_vi_put_before
+    zvm_define_widget my_zvm_vi_substitute
+    zvm_define_widget my_zvm_vi_substitute_whole_line
+    zvm_define_widget my_zvm_vi_replace_selection
+    zvm_bindkey vicmd 'C' my_zvm_vi_change_eol
+    zvm_bindkey vicmd 'P' my_zvm_vi_put_before
+    zvm_bindkey vicmd 'S' my_zvm_vi_substitute_whole_line
+    zvm_bindkey vicmd 'p' my_zvm_vi_put_after
+    zvm_bindkey visual 'p' my_zvm_vi_replace_selection
+    zvm_bindkey visual 'c' my_zvm_vi_change
+    zvm_bindkey visual 'd' my_zvm_vi_delete
+    zvm_bindkey visual 's' my_zvm_vi_substitute
+    zvm_bindkey visual 'x' my_zvm_vi_delete
+    zvm_bindkey visual 'y' my_zvm_vi_yank
+}
