@@ -161,7 +161,7 @@ alias tmux-ls="tmux list-sessions"
 alias tmux-cd="tmux -u attach-session -t"
 alias tmux-rm="tmux kill-session -t"
 alias tmux-reboot="tmux kill-server && tmux || tmux"
-alias tmux-save="tmux capture-pane -p -S - > tmux.txt"
+alias tmux-save="tmux capture-pane -p -S - > tmux.txt && echo 'content save to ./tmux.txt'"
 
 # default set TMUX in tmux. 
 # if [[ -v TMUX ]];
