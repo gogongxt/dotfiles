@@ -494,4 +494,22 @@ zvm_after_lazy_keybindings() {
     zvm_bindkey visual 'y' my_zvm_vi_yank
 }
 
-
+# copy use OSC52
+# use: 
+#   1. copy file: $copy test.txt
+#   2. copy content: echo "test" | copy
+#🔽🔽🔽
+copy() {
+    local content
+    if [[ -n "$1" ]]; then
+        if [[ ! -f "$1" ]]; then
+            echo "Error: File '$1' not found" >&2
+            return 1
+        fi
+        content=$(base64 -w 0 < "$1")
+    else
+        content=$(base64 -w 0)
+    fi
+    printf '\033]52;c;%s\a' "$content"
+}
+#🔼🔼🔼
