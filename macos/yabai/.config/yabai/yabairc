@@ -48,6 +48,7 @@ yabai -m rule --add app="^Reminders$" manage=off
 yabai -m rule --add app="^Freeform$" manage=off
 yabai -m rule --add app="^App Store$" manage=off
 yabai -m rule --add app="^Transmit$" manage=off
+yabai -m rule --add app="^TextEdit$" manage=off
 # 其他常用浮动应用
 yabai -m rule --add app="^Activity Monitor$" manage=off
 yabai -m rule --add app="^活动监视器$" manage=off
