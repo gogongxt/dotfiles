@@ -181,7 +181,12 @@ tmux() {
                 if command tmux -u attach-session -t "$1" 2>/dev/null; then
                     :
                 else
-                    command tmux -u new-session -s "$1"
+                    if [[ -n "$2" ]]; then
+                        # 如果有第二个参数，先 cd 到该路径
+                        command tmux -u new-session -s "$1" -c "$2"
+                    else
+                        command tmux -u new-session -s "$1"
+                    fi
                 fi
             fi
             ;;
