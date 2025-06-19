@@ -155,15 +155,39 @@ fi
 # TMUX config
 # if set this , home and end in tmux will be strange, need remap home and end in tmux.
 export TERM=xterm-256color
+export TMUX_EXEC=$(which tmux) # remember tmux executable path
+tmux_choose_window() {
+    # 检查是否在 tmux 中
+    if [[ -z "$TMUX" ]]; then
+        # 不在 tmux 中，检查是否有可用的会话
+        sessions=$(tmux ls 2>/dev/null)
+        if [[ -z "$sessions" ]]; then
+            echo "no server running"
+            return 1
+        fi
+        # 获取第一个会话的名称
+        first_session=$(echo "$sessions" | head -n 1 | cut -d: -f1)
+        echo $first_session
+        # 附加到会话并执行 choose-window
+        $TMUX_EXEC attach -t "$first_session" \; choose-window
+    else
+        # 已经在 tmux 中，直接执行 choose-window
+        $TMUX_EXEC choose-window
+    fi
+}
 tmux() {
     case "$1" in
-        rm)
+        rm|kill)
             shift
             command tmux kill-session -t "$@"
             ;;
         ls)
             shift
             command tmux ls
+            ;;
+        sw)
+            shift
+            tmux_choose_window
             ;;
         reboot)
             shift

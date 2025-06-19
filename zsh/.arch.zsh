@@ -41,9 +41,6 @@ macos() {
 
   # support trash-cli trash-put
   export PATH="/opt/homebrew/opt/trash-cli/bin:$PATH"
-
-  # use base python env
-  source ~/.venv/base/bin/activate
 }
 
 archlinux() {
