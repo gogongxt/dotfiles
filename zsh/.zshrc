@@ -155,14 +155,38 @@ fi
 # TMUX config
 # if set this , home and end in tmux will be strange, need remap home and end in tmux.
 export TERM=xterm-256color
-
-alias tmux="tmux -u"
-alias tmux-ls="tmux list-sessions"
-alias tmux-cd="tmux -u attach-session -t"
-alias tmux-rm="tmux kill-session -t"
-alias tmux-reboot="tmux kill-server && tmux || tmux"
-alias tmux-save="tmux capture-pane -p -S - > tmux.txt && echo 'content save to ./tmux.txt'"
-
+tmux() {
+    case "$1" in
+        rm)
+            shift
+            command tmux kill-session -t "$@"
+            ;;
+        ls)
+            shift
+            command tmux ls
+            ;;
+        reboot)
+            shift
+            command tmux kill-server && command tmux || command tmux
+            ;;
+        save)
+            shift
+            command tmux capture-pane -p -S - > tmux.txt && echo 'content saved to ./tmux.txt'
+            ;;
+        *)
+            if [[ $# -eq 0 ]]; then
+                command tmux -u
+            else
+                # 尝试 attach，如果失败则新建会话
+                if command tmux -u attach-session -t "$1" 2>/dev/null; then
+                    :
+                else
+                    command tmux -u new-session -s "$1"
+                fi
+            fi
+            ;;
+    esac
+}
 # default set TMUX in tmux. 
 # if [[ -v TMUX ]];
 # then
