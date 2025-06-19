@@ -258,6 +258,25 @@ function proxy_status(){
     echo -e "rsync_proxy: ${rsync_proxy}"
     echo -e "RSYNC_PROXY: ${RSYNC_PROXY}"
 }
+proxy() {
+    case "$1" in
+        on)
+            shift
+            proxy_on
+            ;;
+        off)
+            shift
+            proxy_off
+            ;;
+        status)
+            shift
+            proxy_status
+            ;;
+        *)
+            echo "Error: unknown command proxy $1"
+            ;;
+    esac
+}
 #🔼🔼🔼
 
 #🔽🔽🔽
