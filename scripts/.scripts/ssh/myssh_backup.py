@@ -14,9 +14,6 @@ from pathlib import Path
 import logging
 import subprocess
 
-# --- 从 password.py 模块导入需要的类 ---
-from password import EnhancedPasswordManager
-
 # ANSI 颜色代码
 YELLOW = "\033[33m"
 CYAN = "\033[36m"
@@ -97,7 +94,7 @@ def select_server(config_file):
         sys.exit(1)
 
 
-def get_server_details(config_file, server_name, pwd_manager: EnhancedPasswordManager):
+def get_server_details(config_file, server_name):
     try:
         script_dir = Path(__file__).parent.resolve()
         config_path = script_dir / config_file
@@ -114,32 +111,32 @@ def get_server_details(config_file, server_name, pwd_manager: EnhancedPasswordMa
         if not found_server:
             raise ValueError(f"Server '{server_name}' not found in config")
 
-        auth_details = found_server.get("auth", {})
-        details = {
-            "host": found_server["host"],
-            "ssh_user": found_server["ssh_user"],
-            "port": str(found_server.get("port", 22)),
-            "username": auth_details.get("username"),
-            "password": auth_details.get("password"),
-            "username_prompt": auth_details.get("username_prompt", "Username: "),
-            "password_prompt": auth_details.get("password_prompt", "Password: "),
-        }
+        # 使用 .get() 方法安全地提取信息
+        try:
+            # 安全地获取 auth 字典，如果不存在，则返回一个空字典 {}
+            # 这是处理可选嵌套字典的最佳实践
+            auth_details = found_server.get("auth", {})
 
-        # --- 使用传入的 pwd_manager 进行解密 ---
-        encrypted_pass = details.get("password")
-        if encrypted_pass:
-            print("检测到加密密码，需要输入主密码进行解密...")
-            try:
-                decrypted_pass = pwd_manager.decrypt_to_real_password(encrypted_pass)
-                details["password"] = decrypted_pass
-                print("密码解密成功。")
-            except Exception as e:
-                print(f"密码解密失败: {e}", file=sys.stderr)
-                sys.exit(1)
+            details = {
+                # 必需字段：如果缺失会触发 KeyError，被下面的 except 捕获
+                "host": found_server["host"],
+                "ssh_user": found_server["ssh_user"],
+                # 可选字段：使用 .get() 并提供默认值
+                "port": str(found_server.get("port", 22)),
+                # 从安全的 auth_details 字典中获取可选信息
+                "username": auth_details.get("username"),  # 如果没有，返回 None
+                "password": auth_details.get("password"),  # 如果没有，返回 None
+                "username_prompt": auth_details.get("username_prompt", "Username: "),
+                "password_prompt": auth_details.get("password_prompt", "Password: "),
+            }
+            return details
 
-        return details
-    except KeyError as e:
-        raise ValueError(f"配置错误: 服务器 '{server_name}' 缺少必需的键 '{e.args[0]}'")
+        except KeyError as e:
+            # 捕获必需字段缺失的错误，并给出清晰的提示
+            raise ValueError(
+                f"Configuration error for server '{server_name}': Missing required key '{e.args[0]}'"
+            )
+
     except Exception as e:
         print(f"Error getting server details: {e}")
         sys.exit(1)
@@ -157,9 +154,10 @@ def get_terminal_size():
 
 
 def sigwinch_handler(signum, frame):
+    # 处理终端resize事件
+    rows, cols = get_terminal_size()
     global child
     if child and child.isalive():
-        rows, cols = get_terminal_size()
         child.setwinsize(rows, cols)
 
 
@@ -261,28 +259,17 @@ def connect_to_server(server_details):
 
 def main():
     install_required_tools()
-    parser = argparse.ArgumentParser(description="集成了密码安全管理的SSH连接工具")
+
+    parser = argparse.ArgumentParser(description="SSH connection manager")
     parser.add_argument(
-        "--config", default="servers.yaml", help="服务器YAML配置文件路径"
+        "--config", default="servers.yaml", help="Path to servers YAML config"
     )
     args = parser.parse_args()
 
-    # --- 初始化密码管理器 ---
-    # 路径将与 ssh_login.py 脚本在同一目录
-    script_dir = Path(__file__).parent.resolve()
-    key_file = script_dir / "encrypted_key.bin"
-    salt_file = script_dir / "salt.bin"
-
-    try:
-        pwd_manager = EnhancedPasswordManager(
-            key_file=str(key_file), salt_file=str(salt_file)
-        )
-    except Exception as e:
-        print(f"初始化密码管理器失败: {e}", file=sys.stderr)
-        sys.exit(1)
-
     server_name = select_server(args.config)
-    server_details = get_server_details(args.config, server_name, pwd_manager)
+
+    server_details = get_server_details(args.config, server_name)
+
     connect_to_server(server_details)
 
 
