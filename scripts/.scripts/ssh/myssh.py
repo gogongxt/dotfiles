@@ -188,10 +188,11 @@ def connect_to_server(server_details):
                     "(Last login:|[$#>%\\]]\\s*$)",  # 3
                     "Ubuntu comes with ABSOLUTELY NO WARRANTY.*",  # 4
                     "Permission denied",  # 5
-                    "Dkey shield code:",  # 6  <--- 我们要处理这个
-                    "Option>:",  # 7
-                    pexpect.TIMEOUT,  # 8
-                    pexpect.EOF,  # 9
+                    "Dkey shield code:",  # 6
+                    "Luban LES Password:",  # 7
+                    "Option>:",  # 8
+                    pexpect.TIMEOUT,  # 9
+                    pexpect.EOF,  # 10
                 ],
                 timeout=60,  # 动态口令可能需要更长的等待时间
             )
@@ -237,15 +238,17 @@ def connect_to_server(server_details):
                 continue
             # --- 新逻辑结束 ---
 
-            elif index == 7:  # Special cases like "Option>:"
+            elif index == 7:  # Special cases like "Luban LES Password:"
+                child.sendline(str(server_details["password"]))
+            elif index == 8:  # Special cases like "Option>:"
                 # print("\n--- Special prompt detected. Handing over to user. ---", file=sys.stderr)
                 child.logfile_read = None
                 child.interact()
                 break
-            elif index == 8:  # Timeout
+            elif index == 9:  # Timeout
                 # print("\nConnection timed out", file=sys.stderr)
                 sys.exit(1)
-            elif index == 9:  # EOF
+            elif index == 10:  # EOF
                 # print("\nConnection closed (EOF)", file=sys.stderr)
                 break
 
