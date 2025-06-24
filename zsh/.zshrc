@@ -200,21 +200,73 @@ tmux() {
         *)
             if [[ $# -eq 0 ]]; then
                 command tmux -u
+                return
+            fi
+            local session_name="$1"
+            local start_directory="$2"
+            if [[ -n "$TMUX" ]]; then
+                if command tmux has-session -t "$session_name" 2>/dev/null; then
+                    command tmux switch-client -t "$session_name"
+                else
+                    if [[ -n "$start_directory" ]]; then
+                        command tmux new-session -s "$session_name" -c "$start_directory"
+                    else
+                        command tmux new-session -s "$session_name"
+                    fi
+                fi
             else
-                # 尝试 attach，如果失败则新建会话
-                if command tmux -u attach-session -t "$1" 2>/dev/null; then
+                if command tmux -u attach-session -t "$session_name" 2>/dev/null; then
+                    # On success, do nothing.
                     :
                 else
-                    if [[ -n "$2" ]]; then
-                        # 如果有第二个参数，先 cd 到该路径
-                        command tmux -u new-session -s "$1" -c "$2"
+                    # If attach fails, the session doesn't exist, so create it.
+                    if [[ -n "$start_directory" ]]; then
+                        command tmux -u new-session -s "$session_name" -c "$start_directory"
                     else
-                        command tmux -u new-session -s "$1"
+                        command tmux -u new-session -s "$session_name"
                     fi
                 fi
             fi
             ;;
     esac
+}
+# set tmux completion(only for zsh)
+_tmux() {
+    local -a subcommands
+    local state
+    # 定义静态子命令和它们的描述
+    subcommands=(
+        'ls:List active sessions'
+        'rm:Kill a session'
+        'kill:Kill a session (alias for rm)'
+        'sw:Switch window'
+        'reboot:Kill and restart tmux server'
+        'save:Save pane content to a file'
+    )
+    # 动态获取会话列表
+    # 使用 -F '#S' 可以只输出会话名称，更稳定
+    local -a sessions
+    sessions=($(command tmux ls -F '#S' 2>/dev/null))
+    # Zsh 补全的核心逻辑
+    _arguments -C \
+        '1: :->first_arg' \
+        '2: :->second_arg'
+    case $state in
+        first_arg)
+            # 当补全第一个参数时，同时提供子命令和会话列表
+            _describe 'session to attach' sessions
+            _describe 'subcommand' subcommands
+            ;;
+        second_arg)
+            # 当补全第二个参数时，根据第一个参数的内容决定补全项
+            case "$words[2]" in
+                rm|kill)
+                    _describe 'session to kill' sessions
+                    ;;
+            esac
+            ;;
+    esac
+    return 0
 }
 # default set TMUX in tmux. 
 # if [[ -v TMUX ]];
