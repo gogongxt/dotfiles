@@ -1,0 +1,22 @@
+[[plugin.deps]]
+use = "yazi-rs/plugins:smart-enter"
+rev = "5eea960"
+hash = "56fdabc96fc1f4d53c96eb884b02a5be"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:smart-paste"
+rev = "5eea960"
+hash = "a8050052e59f3952abe0b3e27a5843de"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:toggle-pane"
+rev = "5eea960"
+hash = "d6f60c24d8c0cf57a855bf46115b2502"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:full-border"
+rev = "5eea960"
+hash = "3996fc74044bc44144b323686f887e1"
+
+[flavor]
+deps = []
