@@ -368,7 +368,7 @@ export EDITOR=$(bash -c 'if command -v nvim >/dev/null 2>&1; then echo "nvim"; e
 
 #🔽🔽🔽
 # alias
-alias r="ranger"
+command -v yazi &>/dev/null && alias r="yazi" || alias r="ranger"
 alias y="yazi"
 alias e="extract"
 command -v lolcat &>/dev/null && alias neofetch="neofetch | lolcat"

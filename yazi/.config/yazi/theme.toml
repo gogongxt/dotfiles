@@ -1,0 +1,27 @@
+# A TOML linter such as https://taplo.tamasfe.dev/ can use this schema to validate your config.
+# If you encounter any issues, please make an issue at https://github.com/yazi-rs/schemas.
+"$schema" = "https://yazi-rs.github.io/schemas/theme.json"
+
+[flavor]
+dark = "catppuccin-macchiato"
+
+[mgr]
+
+# Tab
+# tab_width = 20
+
+# Border
+# border_symbol = " "
+# border_style = { fg = "gray" }
+
+# Highlighting
+# syntect_theme = ""
+
+[status]
+# mode_normal = { bg = "blue", bold = true }
+# mode_select = { bg = "red", bold = true }
+# mode_unset = { bg = "yellow", bold = true }
+
+[tabs]
+active   = { fg = "#c52984", bg = "#eed49f", bold = true }
+inactive = { fg = "#eed49f", bg = "#363a4f" }

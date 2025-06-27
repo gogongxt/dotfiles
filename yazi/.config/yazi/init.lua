@@ -27,3 +27,17 @@ end, 500, Status.RIGHT)
 -- 	-- Available values: ui.Border.PLAIN, ui.Border.ROUNDED
 -- 	type = ui.Border.ROUNDED,
 -- })
+
+-- yazi git plugin
+require("git"):setup()
+
+-- yazi starship plugin
+require("starship"):setup()
+
+-- NOTE: show user and host name in the header line
+-- Header:children_add(function()
+-- 	if ya.target_family() ~= "unix" then
+-- 		return ""
+-- 	end
+-- 	return ui.Span(ya.user_name() .. "@" .. ya.host_name() .. "  "):fg("blue")
+-- end, 500, Header.LEFT)
