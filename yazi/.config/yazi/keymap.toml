@@ -69,8 +69,7 @@ keymap = [
 	{ on = "d",         run = "remove",                      desc = "Trash selected files" },
 	{ on = "D",         run = "remove --permanently",        desc = "Permanently delete selected files" },
 	{ on = "a",         run = "create",                      desc = "Create a file (ends with / for directories)" },
-	# TODO: mkdir
-	# { on = "A",         run = "", 				 desc = "create directory" },
+	{ on = "A",         run = "create --dir", 				 desc = "create directory" },
 	{ on = "r",         run = "rename --cursor=before_ext",  desc = "Rename selected file(s)" },
 	{ on = ";",         run = "shell --interactive",         desc = "Run a shell command" },
 	{ on = ":",         run = "shell --block --interactive", desc = "Run a shell command (block until finishes)" },
@@ -83,7 +82,7 @@ keymap = [
 	{ on = "<S-s>", run = 'shell "$SHELL" --block --confirm',desc = "Spawn a subshell in the current directory" },
 	{ on = [",","g","g"], run = "shell --confirm --block gitui",               desc = "gitui" },
 	{ on = [",","g","d"], run = "plugin diff",               desc = "Diff the selected with the hovered file" },
-	{ on =  "<A-t>" , run = "plugin eza-preview",  desc = "Toggle tree/list dir preview" },
+	# { on =  "<A-t>" , run = "plugin eza-preview",  desc = "Toggle tree/list dir preview" },
 	{ on =  "K" , run = "plugin parent-arrow -1",  desc = "move parent arrow" },
 	{ on =  "J" , run = "plugin parent-arrow 1",  desc = "move parent arrow" },
 
@@ -392,3 +391,12 @@ desc = "Jump to char"
 on   = "F"
 run  = "plugin jump-to-char"
 desc = "Jump to char"
+
+[[mgr.prepend_keymap]]
+on = "v" 
+run = "toggle_all"
+desc = "Toggle selection" 
+[[mgr.prepend_keymap]]
+on = "V"
+run = "plugin visual-mode"
+desc = "Toggle visual mode" 
