@@ -439,6 +439,7 @@ alias words_to_mp3='python3 ~/.scripts/english_helper/generate_mp3_from_words.py
 alias myssh='python3 ~/.scripts/ssh/myssh.py'
 alias password='python3 ~/.scripts/ssh/password.py'
 alias myssh-edit='$EDITOR ~/.scripts/ssh/servers.yaml'
+alias documents='python3 ~/.scripts/code/documents.py'
 #🔼🔼🔼
 
 
