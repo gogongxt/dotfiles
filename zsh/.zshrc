@@ -305,7 +305,6 @@ function proxy_on() {
         fi
         local proxy=$1
     fi
-
     export http_proxy=$proxy \
            https_proxy=$proxy \
            HTTP_PROXY=$proxy \
@@ -343,7 +342,7 @@ proxy() {
     case "$1" in
         on)
             shift
-            proxy_on
+            proxy_on $@
             ;;
         off)
             shift
