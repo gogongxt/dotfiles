@@ -5,6 +5,9 @@ import json
 import sys
 from typing import List, Dict, Any, Optional
 
+exclude_title = ["scratchpad"]
+exclude_app = ["WeChat", "D-Chat", "ripdrag"]
+
 def get_current_space() -> int:
     """Get the currently focused space index using yabai.
     
@@ -41,8 +44,9 @@ def get_space_windows(space_id: int) -> List[Dict[str, Any]]:
                 and w['has-ax-reference'] 
                 and not w['is-hidden']
                 and not w['is-minimized']
-                and w['title'] not in ["scratchpad"]
-                and w['app'] not in ["WeChat", "D-Chat"]]
+                and w['title'] not in exclude_title
+                and w['app'] not in exclude_app 
+        ]
         return res_w
     except (subprocess.CalledProcessError, json.JSONDecodeError):
         print("error!!!!!!")
