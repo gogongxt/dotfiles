@@ -56,7 +56,8 @@ keymap = [
 
 	# Operation
 	# { on = "<Enter>",   run = "open",                        desc = "Open selected files" },
-	{ on = "<Enter>",   run = '''shell 'ripdrag "$@" -a -s 96 -x 2>/dev/null &\' --confirm''',                        desc = "Open selected files" },
+	# { on = "<Enter>",   run = '''shell 'ripdrag "$@" -a -s 96 -x 2>/dev/null &\' --confirm''',                        desc = "Open selected files" },
+	{ on = "<Enter>",   run = '''shell 'open -R "$@"' ''',                        desc = "Open selected files" },
 	{ on = "<S-Enter>", run = "open --interactive",          desc = "Open selected files interactively" },
 	{ on = "y",         run = "yank",                        desc = "Yank selected files (copy)" },
 	{ on = "x",         run = "yank --cut",                  desc = "Yank selected files (cut)" },
