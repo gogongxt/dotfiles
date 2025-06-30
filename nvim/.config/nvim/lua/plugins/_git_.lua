@@ -38,8 +38,8 @@ mappings.set_mappings {
     },
     ["<Leader>gBw"] = { "<cmd>BlameToggle window<cr>", desc = "Blame window" },
     ["<Leader>gBv"] = { "<cmd>BlameToggle virtual<cr>", desc = "Blame virtual" },
-    ["<Leader>gd"] = { "<cmd>lua require('gitsigns').diffthis()<cr>", desc = "Git Giff" },
-    ["<Leader>gD"] = { function() require("gitsigns").diffthis "~" end, desc = "Git Giff!" },
+    ["<Leader>gd"] = { "<cmd>lua require('gitsigns').diffthis()<cr>", desc = "Git Giff" }, -- see diff unstaged
+    ["<Leader>gD"] = { function() require("gitsigns").diffthis "~" end, desc = "Git Giff!" }, -- see diff all include unstaged and staged
     ["<Leader>gg"] = { "<cmd>lua require('plugins.user.my_funcs').git_gitui_toggle()<cr>", desc = "gitui" },
   },
 }
