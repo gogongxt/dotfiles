@@ -63,11 +63,43 @@ return {
   {
     "catppuccin/nvim",
     name = "catppuccin",
-    config = function()
-      require("catppuccin").setup {
-        flavour = "frappe", -- latte, frappe, macchiato, mocha
-      }
-    end,
+    priority = 1000,
+    opts = {
+      flavour = "frappe", -- latte, frappe, macchiato, mocha
+      transparent_background = true,
+      -- can find all color in : https://github.com/catppuccin/catppuccin/blob/main/docs/style-guide.md
+      -- but not the all color can use.
+      -- print color cmd :lua print(vim.inspect(require("catppuccin.palettes").get_palette("frappe")))
+      custom_highlights = function(colors)
+        return {
+          -- LineNr = { fg = colors.surface2 }, -- line number color
+          -- CursorLineNr = { fg = colors.yellow, style = { "bold" } }, -- current line number color
+          -- Visual = { bg = colors.overlay0 },
+          Search = { bg = colors.blue, fg = colors.base },
+          IncSearch = { bg = colors.pink, fg = colors.base },
+          CurSearch = { bg = colors.pink, fg = colors.base },
+          MatchParen = { bg = colors.peach, fg = colors.base, bold = true },
+
+          -- git diff
+          DiffAdd = { bg = "#394F3A" }, -- new line
+          DiffDelete = { bg = "#4A2E32", fg = colors.red }, -- delete line
+          DiffChange = { bg = "#6a6240", fg = colors.blue }, -- changed line
+          -- DiffText = { bg = colors.crust, fg = colors.peach, bold = true }, -- changed strings
+          -- DiffText = { bg = colors.surface0, fg = colors.mauve, bold = true }, -- changed strings
+          DiffText = { bg = colors.mantle, fg = colors.red, bold = true }, -- changed strings
+        }
+      end,
+      integrations = {
+        barbar = true,
+        blink_cmp = true,
+        gitsigns = true,
+        mason = true,
+        noice = true,
+        notify = true,
+        nvimtree = true,
+        rainbow_delimiters = true,
+      },
+    },
   },
   {
     "EdenEast/nightfox.nvim",
@@ -114,7 +146,6 @@ return {
           "dap",
           "dashboard",
           "eyeliner",
-
           "fidget",
           "flash",
           "gitsigns",
