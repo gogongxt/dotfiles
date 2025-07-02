@@ -4,6 +4,28 @@
 -- This is just pure lua so anything that doesn't
 -- fit in the normal config locations above can go here
 
+local mappings = require "mappings"
+mappings.set_mappings {
+  n = {
+    -- delete comments
+    ["<leader>ld"] = {
+      "<cmd>lua require('plugins.user.my_funcs.delete_comments').delete_comments()<cr>",
+      desc = "Delete Comments",
+      noremap = true,
+      silent = true,
+    },
+  },
+  v = {
+    -- delete comments
+    ["<leader>ld"] = {
+      "<cmd>lua require('plugins.user.my_funcs.delete_comments').delete_comments('v')<cr>",
+      desc = "Delete Comments",
+      noremap = true,
+      silent = true,
+    },
+  },
+}
+
 -- use for some terminal only support osc52 copy but not paste
 local function paste()
   return {

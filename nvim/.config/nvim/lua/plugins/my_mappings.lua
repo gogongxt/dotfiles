@@ -72,6 +72,14 @@ return {
             silent = true,
           },
 
+          -- delete empty lines
+          ["<Leader>lc"] = {
+            "<cmd>lua require('plugins.user.my_funcs.delete_empty_lines').delete_empty_lines()<CR>",
+            desc = "Delete Empty Lines",
+            noremap = true,
+            silent = true,
+          },
+
           -- change to tab
           -- TODO: add tabs
           -- ["<Leader>t"] = { name = "Tabs" },
@@ -98,8 +106,8 @@ return {
 
           -- delete empty lines
           ["<Leader>lc"] = {
-            "<cmd>lua require('plugins.user.my_funcs').DeleteEmptyLinesInVisual()<CR>",
-            desc = "Clear Empty Lines",
+            "<cmd>lua require('plugins.user.my_funcs.delete_empty_lines').delete_empty_lines('v')<CR>",
+            desc = "Delete Empty Lines",
             noremap = true,
             silent = true,
           },
