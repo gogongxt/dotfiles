@@ -34,7 +34,7 @@ return {
           enabled = true, -- enable highlighting the current scope
           priority = 200,
           char = "▏",
-          underline = true, -- underline the start of the scope
+          underline = false, -- underline the start of the scope
           only_current = false, -- only show scope in the current window
           hl = "MyChunkColor", ---@type string|string[] hl group for scopes
         },

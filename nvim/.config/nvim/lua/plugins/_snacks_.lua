@@ -59,7 +59,7 @@ return {
           --   function() require("snacks").picker.grep { hidden = true, ignored = true } end,
           --   desc = "Find words in all files",
           -- }
-          ["<Leader>ft"] = {
+          ["<Leader>fT"] = {
             function()
               if not package.loaded["todo-comments"] then -- make sure to load todo-comments
                 require("lazy").load { plugins = { "todo-comments.nvim" } }
@@ -68,7 +68,7 @@ return {
             end,
             desc = "Find TODO",
           },
-          ["<Leader>fT"] = {
+          ["<Leader>ft"] = {
             function()
               if not package.loaded["todo-comments"] then -- make sure to load todo-comments
                 require("lazy").load { plugins = { "todo-comments.nvim" } }
