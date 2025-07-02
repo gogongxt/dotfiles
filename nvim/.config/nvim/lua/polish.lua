@@ -41,6 +41,10 @@ vim.opt.jumpoptions = "stack"
 -- vim.o.shellcmdflag = "-ci"
 vim.o.shellcmdflag = "-c"
 
+-- minimal number of screen lines
+vim.o.scrolloff = 5 -- keep above and below the cursor.
+vim.o.sidescrolloff = 8 -- keep left and right of the cursor.
+
 -- NOTE: gxt: Astronvim Feature_or_Bug?
 -- https://www.reddit.com/r/AstroNvim/comments/108cir5/keep_word_search_highlighting/
 -- https://github.com/AstroNvim/AstroNvim/issues/2109
