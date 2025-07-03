@@ -6,6 +6,7 @@ if ! type mapfile &> /dev/null; then
     echo "error: extrakto needs a newer Bash"
     if [[ $platform == Darwin ]]; then
         echo "On macOS you need to install/update it with Homebrew."
+        echo "exec: brew install bash"
     fi
     read # pause
     exit 1
@@ -197,6 +198,7 @@ capture() {
                 --expect=${insert_key},${copy_key},${filter_key},${edit_key},${open_key},${grab_key},${help_key},ctrl-c,esc \
                 --tiebreak=index \
                 --layout="$fzf_layout" \
+                --no-preview \
                 --no-info)"
         res=$?
         {
