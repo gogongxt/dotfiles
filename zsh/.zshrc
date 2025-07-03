@@ -283,6 +283,45 @@ alias gll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%ci) %C(gre
 alias glll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%ci) %C(green)%cn %C(reset)%s'  --all --graph --abbrev-commit -20"
 alias gllll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%ci) %C(green)%cn %C(reset)%s'  --all --graph --abbrev-commit"
 alias gam='git add . && echo "exec git add all" && git commit -m '
+alias gcm='git commit --amend'
+function gsp() {
+  local stashed_something=0
+  # 检查工作区和暂存区是否有未提交的更改, git diff-index --quiet HEAD -- 会在有更改时返回1，没有更改时返回0
+  if ! git diff-index --quiet HEAD --; then
+    echo " stash (储藏本地更改)..."
+    # 使用 git stash push 并附带一条信息，方便识别 -u 参数表示同时储藏未被追踪的文件
+    if git stash push -u -m "gsp-stash-$(date +%s)"; then
+      stashed_something=1
+    else
+      echo " 'git stash' failed. Aborting. " >&2
+      return 1
+    fi
+  else
+    echo " Working directory is clean. No need to stash."
+  fi
+  echo " pull $@ ..."
+  # 将所有传递给函数的参数 ($@) 传递给 git pull
+  if ! git pull "$@"; then
+    echo " 'git pull' failed." >&2
+    # 如果拉取失败，并且我们之前确实储藏了东西，就尝试恢复它
+    if [ "$stashed_something" -eq 1 ]; then
+      echo " Attempting to restore your stashed changes..."
+      git stash pop
+    fi
+    return 1
+  fi
+  if [ "$stashed_something" -eq 1 ]; then # 如果我们之前储藏了更改，现在就把它恢复回来
+    echo " apply stash ..."
+    # 使用 pop 会在成功应用后删除该储藏，保持储藏列表干净
+    if ! git stash pop; then
+      echo " Warning: Could not automatically apply stash." >&2
+      echo " Your changes are still in the stash list." >&2
+      echo " Please resolve conflicts manually and then run 'git stash drop'. " >&2
+      return 1
+    fi
+  fi
+  echo " Done. Your branch is up-to-date and your changes are restored."
+}
 #🔼🔼🔼
 
 #🔽🔽🔽
