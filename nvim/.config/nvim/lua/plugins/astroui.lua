@@ -66,7 +66,7 @@ return {
     priority = 1000,
     opts = {
       flavour = "frappe", -- latte, frappe, macchiato, mocha
-      transparent_background = true,
+      -- transparent_background = true,
       -- can find all color in : https://github.com/catppuccin/catppuccin/blob/main/docs/style-guide.md
       -- but not the all color can use.
       -- print color cmd :lua print(vim.inspect(require("catppuccin.palettes").get_palette("frappe")))
@@ -79,14 +79,6 @@ return {
           IncSearch = { bg = colors.pink, fg = colors.base },
           CurSearch = { bg = colors.pink, fg = colors.base },
           MatchParen = { bg = colors.peach, fg = colors.base, bold = true },
-
-          -- git diff
-          DiffAdd = { bg = "#394F3A" }, -- new line
-          DiffDelete = { bg = "#4A2E32", fg = colors.red }, -- delete line
-          DiffChange = { bg = "#6a6240", fg = colors.blue }, -- changed line
-          -- DiffText = { bg = colors.crust, fg = colors.peach, bold = true }, -- changed strings
-          -- DiffText = { bg = colors.surface0, fg = colors.mauve, bold = true }, -- changed strings
-          DiffText = { bg = colors.mantle, fg = colors.red, bold = true }, -- changed strings
         }
       end,
       integrations = {
@@ -202,78 +194,4 @@ return {
       }
     end,
   },
-
-  -- CycleColors
-  -- Ref: https://neovim.discourse.group/t/creating-a-color-picker-using-telescope/1986
-  -- In order to mapp this function you have to map the command below:
-  -- :lua require('${file}').choose_colors()
-  ChooseColors = function()
-    local actions = require "telescope.actions"
-    local actions_state = require "telescope.actions.state"
-    local pickers = require "telescope.pickers"
-    local finders = require "telescope.finders"
-    local sorters = require "telescope.sorters"
-    local dropdown = require("telescope.themes").get_dropdown()
-
-    local function enter(prompt_bufnr)
-      local selected = actions_state.get_selected_entry()
-      local cmd = "colorscheme " .. selected[1]
-      vim.cmd(cmd)
-      actions.close(prompt_bufnr)
-    end
-
-    local function move_next(prompt_bufnr) actions.move_selection_next(prompt_bufnr) end
-    local function move_prev(prompt_bufnr) actions.move_selection_previous(prompt_bufnr) end
-
-    local function next_color(prompt_bufnr)
-      move_next(prompt_bufnr)
-      local selected = actions_state.get_selected_entry()
-      local cmd = "colorscheme " .. selected[1]
-      vim.cmd(cmd)
-    end
-    local function prev_color(prompt_bufnr)
-      move_prev(prompt_bufnr)
-      local selected = actions_state.get_selected_entry()
-      local cmd = "colorscheme " .. selected[1]
-      vim.cmd(cmd)
-    end
-
-    local all_colors = vim.fn.getcompletion("", "color")
-
-    -- 获取当前的颜色主题
-    local current_color = vim.g.colors_name or vim.o.background or ""
-    -- 设定默认选择的颜色
-    local default_selection = nil
-    for i, color in ipairs(all_colors) do
-      if color == current_color then
-        default_selection = i
-        break
-      end
-    end
-
-    local opts = {
-      --Modify the list of colors
-      -- finder = finders.new_table {"gruvbox", "nordfox", "nightfox", "monokai", "tokyonight"},
-      finder = finders.new_table(all_colors),
-      sorter = sorters.get_generic_fuzzy_sorter {},
-
-      prompt_title = "Change Colorscheme: ( <C-n/p> <C-j/k> Enter )",
-
-      -- 设置默认选择当前的主题
-      default_selection_index = default_selection,
-
-      attach_mappings = function(prompt_bufnr, map)
-        map("i", "<CR>", enter)
-        map("i", "<C-n>", move_next)
-        map("i", "<C-p>", move_prev)
-        map("i", "<C-j>", next_color)
-        map("i", "<C-k>", prev_color)
-        return true
-      end,
-    }
-
-    local colors = pickers.new(dropdown, opts)
-
-    colors:find()
-  end,
 }

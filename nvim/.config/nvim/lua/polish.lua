@@ -4,6 +4,24 @@
 -- This is just pure lua so anything that doesn't
 -- fit in the normal config locations above can go here
 
+-- define function to change color for catppuccin*
+local function set_diff_highlights()
+  vim.cmd [[
+    highlight DiffAdd    guibg=#496F4A
+    highlight DiffDelete guibg=#4A2E32 guifg=#E78284
+    highlight DiffChange   guibg=#000000 guifg=#aaaaaa gui=none
+    highlight DiffText     guibg=#cccccc guifg=#ff0000 gui=bold
+  ]]
+end
+-- need set color once when start neovim
+if vim.g.colors_name:find "catppuccin" then set_diff_highlights() end
+-- make auto change diff color when change colorscheme
+vim.api.nvim_create_autocmd("ColorScheme", {
+  pattern = "catppuccin*", -- pair all catppuccin theme（frappe, macchiato, etc）
+  callback = function() set_diff_highlights() end,
+  desc = "Override diff colors for Catppuccin",
+})
+
 local mappings = require "mappings"
 mappings.set_mappings {
   n = {
