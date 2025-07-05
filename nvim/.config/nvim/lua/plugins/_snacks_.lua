@@ -106,6 +106,11 @@ return {
               ["<c-d>"] = { "list_scroll_down", mode = { "i", "n" } },
               ["<c-f>"] = { "preview_scroll_down", mode = { "i", "n" } },
               ["<c-u>"] = { "list_scroll_up", mode = { "i", "n" } },
+              ["\\"] = { "edit_vsplit", mode = { "n" } },
+              ["<c-\\>"] = { "edit_vsplit", mode = { "i", "n" } },
+              ["-"] = { "edit_split", mode = { "n" } },
+              ["<C-_>"] = { "edit_split", mode = { "i", "n" } },
+              -- ["<c-->"] = { "edit_split", mode = { "i", "n" } }, -- cannot map ctrl--
             },
           },
         },

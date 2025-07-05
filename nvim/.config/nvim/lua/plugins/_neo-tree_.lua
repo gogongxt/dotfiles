@@ -10,17 +10,25 @@ return {
         y = "copy_to_clipboard", -- disable space until we figure out which-key disabling
         -- ["<S-h>"] = "prev_source",
         -- ["<S-l>"] = "next_source",
-        ["<a-p>"] = { "toggle_preview", config = { use_float = true, use_image_nvim = true } },
+        ["<a-p>"] = {
+          "toggle_preview",
+          config = {
+            use_float = true,
+            use_snacks_image = true,
+            use_image_nvim = true,
+          },
+        },
         -- P = false,
         p = "paste_from_clipboard",
         o = "system_open",
         Y = "copy_selector",
         h = "parent_or_close",
         l = "child_or_open",
-        -- FIXME: have bug that: "Invalid mapping for <a-h>"
         ["<a-h>"] = "toggle_hidden",
         H = "prev_source",
         L = "next_source",
+        ["<c-\\>"] = "open_vsplit",
+        ["<c-_>"] = "open_split",
       },
       fuzzy_finder_mappings = { -- define keymaps for filter popup window in fuzzy_finder_mode
         ["<C-J>"] = "move_cursor_down",
