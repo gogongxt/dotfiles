@@ -50,15 +50,14 @@ return {
           -- save file
           ["<leader>w"] = { "<cmd>w<cr>", desc = "Save File" },
           ["<C-s>"] = { "<cmd>w<cr>", desc = "Save File" },
-          ["<Leader>W"] = { function() require("plugins.user.my_funcs").sudo_write() end, desc = "Write with root" },
+          ["<Leader>W"] = {
+            function() require("plugins.user.my_funcs.sudo_write").sudo_write() end,
+            desc = "Write with root",
+          },
 
           -- run cmd
           ["<Leader>R"] = {
-            -- function()
-            --   vim.cmd('normal! V')  -- 进入可视模式
-            --   my_funcs.execute_and_print_cmd()
-            -- end,
-            "V<cmd>lua require('plugins.user.my_funcs').execute_and_print_cmd()<cr>",
+            "V<cmd>lua require('plugins.user.my_funcs.execute_and_print_cmd').execute_and_print_cmd()<cr>",
             desc = "Run cmd",
             noremap = true,
             silent = true,
@@ -66,7 +65,7 @@ return {
 
           -- go to file
           ["gf"] = {
-            "<cmd>lua require('plugins.user.my_funcs').extract_file_info()<cr>",
+            "<cmd>lua require('plugins.user.my_funcs.goto_file').extract_file_info()<cr>",
             desc = "Goto file",
             noremap = true,
             silent = true,
@@ -92,7 +91,7 @@ return {
           ["p"] = { '"_dP', desc = "", noremap = true, silent = true },
 
           ["<Leader>R"] = {
-            "<cmd>lua require('plugins.user.my_funcs').execute_and_print_cmd()<cr>",
+            "<cmd>lua require('plugins.user.my_funcs.execute_and_print_cmd').execute_and_print_cmd()<cr>",
             desc = "Run cmd",
             noremap = true,
             silent = true,
@@ -100,7 +99,7 @@ return {
 
           -- go to file
           ["gf"] = {
-            "<cmd>lua require('plugins.user.my_funcs').extract_file_info(require('plugins.user.my_funcs').get_text('v'))<cr>",
+            "<cmd>lua require('plugins.user.my_funcs.goto_file').extract_file_info(require('plugins.user.my_funcs').get_text('v'))<cr>",
             desc = "Goto file",
           },
 
