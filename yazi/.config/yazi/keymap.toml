@@ -385,6 +385,10 @@ desc = "Enter the child directory, or open the file"
 on   = "<S-p>"
 run  = "plugin toggle-pane max-preview"
 desc = "Maximize or restore the preview pane"
+[[mgr.prepend_keymap]]
+on   = "<A-p>"
+run  = "plugin toggle-pane max-preview"
+desc = "Maximize or restore the preview pane"
 
 [[mgr.prepend_keymap]]
 on   = "f"
