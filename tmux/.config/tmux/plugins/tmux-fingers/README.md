@@ -1,4 +1,3 @@
-
 ![tmux-fingers](./logo.svg)
 
 ![demo](https://github.com/Morantron/tmux-fingers/assets/3304507/cafe8877-1c98-41b1-bb65-b72129fea701)
@@ -47,7 +46,11 @@ Add the following to your list of TPM plugins in `.tmux.conf`:
 set -g @plugin 'Morantron/tmux-fingers'
 ```
 
-Hit <kbd>prefix</kbd> + <kbd>I</kbd> to fetch and source the plugin. The first time you run it you'll be presented with a wizard to complete the installation.
+Hit <kbd>prefix</kbd> + <kbd>I</kbd> to fetch and source the plugin. The first time you run it you'll be presented with a wizard to complete the installation. Depending on the platform, the wizard will offer the following installation methods:
+
+- Building from source (requires [crystal](https://crystal-lang.org/install/)). _Available in all platforms_
+- Install through [brew](https://brew.sh). _Mac OS only_.
+- Download standalone binary. _Linux x86 only_.
 
 ## Manual
 
@@ -69,7 +72,7 @@ Reload TMUX conf by running:
 $ tmux source-file ~/.tmux.conf
 ```
 
- The first time you run it you'll be presented with a wizard to complete the installation.
+The first time you run it you'll be presented with a wizard to complete the installation.
 
 # Configuration
 
@@ -77,7 +80,7 @@ NOTE: for changes to take effect, you'll need to source again your `.tmux.conf` 
 
 * [@fingers-key](#fingers-key)
 * [@fingers-jump-key](#fingers-jump-key)
-* [@fingers-patterns-N](#fingers-patterns-N)
+* [@fingers-pattern-N](#fingers-pattern-n)
 * [@fingers-main-action](#fingers-main-action)
 * [@fingers-ctrl-action](#fingers-ctrl-action)
 * [@fingers-alt-action](#fingers-alt-action)
@@ -117,7 +120,7 @@ Customize how to enter fingers jump mode. Always preceded by prefix: `prefix + @
 
 In jump mode, the cursor will be placed in the position of the match after the hint is selected.
 
-## @fingers-patterns-N
+## @fingers-pattern-N
 
 You can also add additional patterns if you want more stuff to be highlighted:
 
@@ -197,13 +200,13 @@ Supported styles are: `bright`, `bold`, `dim`, `underscore`, `italics`.
 
 `default: "fg=yellow"`
 
-Custom styles for the highlighted match. See [@fingers-hint-format](#fingers-hint-format) for more details.
+Custom styles for the highlighted match. See [@fingers-hint-style](#fingers-hint-style) for more details.
 
 ## @fingers-backdrop-style
 
 `default: ""`
 
-Custom styles for all the text that is not matched. See [@fingers-hint-format](#fingers-hint-format) for more details.
+Custom styles for all the text that is not matched. See [@fingers-hint-style](#fingers-hint-style) for more details.
 
 ## @fingers-selected-hint-style
 
@@ -277,6 +280,31 @@ A list of comma separated pattern names. Built-in patterns are the following:
 | git-status-branch | will match branch name in the output of git status        | `Your branch is up to date withname-of-branch` |
 | diff              | will match paths in diff output                           | `+++ a/path/to/file`                           |
 
+## @fingers-cli
+
+You can set up key bindings directly to invoke tmux-fingers by using a special global option `@fingers-cli` exposed by the plugin.
+
+The following options are available:
+
+```
+Usage:
+        tmux-fingers start <arguments> [options]
+
+Arguments:
+        pane_id    pane id (also accepts tmux target-pane tokens specified in tmux man pages) (required)
+
+Options:
+        --mode              can be "jump" or "default" (default: default)
+        --patterns          comma separated list of pattern names
+        --main-action       command to which the output will be piped
+        --ctrl-action       command to which the output will be piped when holding CTRL key
+        --alt-action        command to which the output will be piped when holding ALT key
+        --shift-action      command to which the output will be pipedwhen holding SHIFT key
+        -h, --help          prints help
+```
+
+Check some examples in the [Recipes](#Recipes) section below.
+
 # Recipes
 
 ## Start tmux-fingers without prefix
@@ -300,17 +328,42 @@ You can start tmux-fingers with an specific set of built-in or custom patterns.
 
 ```
 # match urls with prefix + u
-bind -n u run -b "#{@fingers-cli} start #{pane_id} --patterns url"
+bind u run -b "#{@fingers-cli} start #{pane_id} --patterns url"
 
 # match hashes with prefix + h
-bind -n h run -b "#{@fingers-cli} start #{pane_id} --patterns sha"
+bind h run -b "#{@fingers-cli} start #{pane_id} --patterns sha"
 
 # match git stuff with prefix + g
-bind -n g run -b "#{@fingers-cli} start #{pane_id} --patterns git-status,git-status-branch"
+bind g run -b "#{@fingers-cli} start #{pane_id} --patterns git-status,git-status-branch"
 
 # match custom pattern with prefix + y
 set -g @fingers-pattern-yolo "yolo.*"
-bind -n y run -b "#{@fingers-cli} start #{pane_id} --patterns yolo"
+bind y run -b "#{@fingers-cli} start #{pane_id} --patterns yolo"
+```
+
+## Using arbitrary commands
+
+You can use tmux-fingers with any arbitrary command.
+
+```
+# edit file using nvim in a new tmux window with prefix + e
+bind e run -b "#{@fingers-cli} start #{pane_id} --patterns path --main-action 'xargs tmux new-window nvim'"
+```
+
+## Target adjacent panes
+
+You can use tmux target-pane tokens to target adjacent panes. This
+configuration uses vim-style <kbd>ALT</kbd>+<kbd>hjkl</kbd> keys to
+directionally adjacent panes.
+
+Also uses <kbd>ALT</kbd>+<kbd>o</kbd> to target the last pane.
+
+```
+bind -n M-h run -b "#{@fingers-cli} start {left-of}"
+bind -n M-j run -b "#{@fingers-cli} start {down-of}"
+bind -n M-k run -b "#{@fingers-cli} start {up-of}"
+bind -n M-l run -b "#{@fingers-cli} start {right-of}"
+bind -n M-o run -b "#{@fingers-cli} start {last}"
 ```
 
 # Acknowledgements and inspiration

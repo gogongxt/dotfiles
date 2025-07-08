@@ -34,11 +34,14 @@ function install_from_source() {
   # check if shards is installed
   if ! command -v shards >/dev/null 2>&1; then
     echo "crystal is not installed. Please install it first."
+    echo ""
+    echo "  https://crystal-lang.org/install/"
+    echo ""
     exit 1
   fi
 
   pushd $CURRENT_DIR > /dev/null
-    shards build --production
+    WIZARD_INSTALLATION_METHOD=build-from-source shards build --production
   popd > /dev/null
 
   echo "Build complete!"
@@ -69,6 +72,11 @@ function download_binary() {
   url=$(curl -s "https://api.github.com/repos/morantron/tmux-fingers/releases" | grep browser_download_url | head -1 | grep -o https://.*x86_64)
 
   echo "Downloading binary from $url"
+
+  if [[ -z "$url" ]]; then
+    echo "Could not find a release for tmux-fingers. Please try again later."
+    exit 1
+  fi
 
   # download binary to bin/tmux-fingers
   curl -L $url -o $CURRENT_DIR/bin/tmux-fingers
@@ -126,6 +134,6 @@ tmux display-menu -T "tmux-fingers" \
   "- " "" ""\
   "" \
   "$(binary_or_brew_label)" b "new-window \"$CURRENT_DIR/install-wizard.sh $(binary_or_brew_action)\"" \
-  "Build from source" s "new-window \"$CURRENT_DIR/install-wizard.sh install-from-source\"" \
+  "Build from source (crystal required)" s "new-window \"$CURRENT_DIR/install-wizard.sh install-from-source\"" \
   "" \
   "Exit" q ""

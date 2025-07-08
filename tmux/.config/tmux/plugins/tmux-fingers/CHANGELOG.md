@@ -1,3 +1,36 @@
+## 2.4.1 - 18 May 2025
+
+* Fix active pane restore when passing a format as target.
+
+## 2.4.0 - 04 Apr 2025
+
+* Add support to tmux target-pane tokens, which allows to target other panes
+  rather than the active one like: adjacent panes, previous pane, etc... ( Fixes #138 )
+
+## 2.3.3 - 06 Feb 2025
+
+* Fix :paste: action again, this time for real. Working in copy mode and non-copy mode. ( Fixes #137 )
+
+## 2.3.2 - 02 Feb 2025
+
+* :paste: will now exit copy mode right before pasting.
+* Documentation improvements.
+* Properly handle single quotes in url pattern.
+
+## 2.3.1 - 10 Dec 2024
+
+* Fix :paste: action.
+
+## 2.3.0 - 09 Dec 2024
+
+* Added --(main|ctrl|alt|shift)-action cli options.
+* Add info command to show information.
+* Improved git-status builtin pattern
+* Fixed root key table not being properly restored ( Fixes #130 )
+* Updated to Crystal 1.14.
+* Various perfomance improvements (from 50ms to 40ms on my machine :tm:)
+* Improved benchmark and development scripts.
+
 ## 2.2.2 - 14 Aug 2024
 
 * Fixed error in multi-user environments.

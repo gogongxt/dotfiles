@@ -4,13 +4,24 @@ module Fingers
   class ActionRunner
     @final_shell_command : String | Nil
 
-    def initialize(@modifier : String, @match : String, @hint : String, @original_pane : Tmux::Pane, @offset : Tuple(Int32, Int32) | Nil, @mode : String)
+    def initialize(
+      @modifier : String,
+      @match : String,
+      @hint : String,
+      @original_pane : Tmux::Pane,
+      @offset : Tuple(Int32, Int32) | Nil,
+      @mode : String,
+      @main_action : String | Nil,
+      @ctrl_action : String | Nil,
+      @alt_action : String | Nil,
+      @shift_action : String | Nil,
+    )
     end
 
     def run
       tmux.set_buffer(match)
 
-      return if final_shell_command.nil?
+      return if final_shell_command.nil? || final_shell_command.not_nil!.empty?
 
       cmd_path, *args = Process.parse_arguments(final_shell_command.not_nil!)
 
@@ -28,24 +39,28 @@ module Fingers
       cmd.input.flush
     end
 
-    private getter :match, :modifier, :hint, :original_pane, :offset, :mode
+    private getter :match, :modifier, :hint, :original_pane, :offset, :mode, :main_action, :ctrl_action, :alt_action, :shift_action
 
     def final_shell_command
       return jump if mode == "jump"
       return @final_shell_command if @final_shell_command
 
-      @final_shell_command = case action
-                             when ":copy:"
-                               copy
-                             when ":open:"
-                               open
-                             when ":paste:"
-                               paste
-                             when nil
-                               # do nothing
-                             else
-                               shell_action
-                             end
+      @final_shell_command = action_command
+    end
+
+    private def action_command
+      case action
+      when ":copy:"
+        copy
+      when ":open:"
+        open
+      when ":paste:"
+        paste
+      when nil
+        # do nothing
+      else
+        shell_action
+      end
     end
 
     def copy
@@ -72,7 +87,11 @@ module Fingers
     end
 
     def paste
-      "tmux paste-buffer"
+      if original_pane.pane_in_mode
+        "tmux send-keys -t #{original_pane.pane_id} -X cancel \; paste-buffer -t #{original_pane.pane_id}"
+      else
+        "tmux paste-buffer -t #{original_pane.pane_id}"
+      end
     end
 
     def shell_action
@@ -86,13 +105,13 @@ module Fingers
     private property action : String | Nil do
       case modifier
       when "main"
-        Fingers.config.main_action
+        main_action || Fingers.config.main_action
       when "shift"
-        Fingers.config.shift_action
+        shift_action || Fingers.config.shift_action
       when "alt"
-        Fingers.config.alt_action
+        alt_action || Fingers.config.alt_action
       when "ctrl"
-        Fingers.config.ctrl_action
+        ctrl_action || Fingers.config.ctrl_action
       end
     end
 

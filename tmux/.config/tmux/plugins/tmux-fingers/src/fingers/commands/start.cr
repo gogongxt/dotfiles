@@ -27,27 +27,62 @@ module Fingers::Commands
 
   class Start < Cling::Command
     @original_options : Hash(String, String) = {} of String => String
+    @last_key_table : String = "root"
     @last_pane_id : String | Nil
     @mode : String = "default"
     @pane_id : String = ""
+    @active_pane : Tmux::Pane | Nil
     @patterns : Array(String) = [] of String
+    @main_action : String | Nil
+    @ctrl_action : String | Nil
+    @shift_action : String | Nil
+    @alt_action : String | Nil
 
     def setup : Nil
       @name = "start"
-      add_argument "pane_id", required: true
+      add_argument "pane_id",
+                 description: "pane id (also accepts tmux target-pane tokens specified in tmux man pages)",
+                 required: true
       add_option "mode",
-                 description: "jump or not",
+                 description: "can be \"jump\" or \"default\"",
                  type: :single,
                  default: "default"
 
       add_option "patterns",
                  description: "comma separated list of pattern names",
                  type: :single
+
+      add_option "main-action",
+                 description: "command to which the output will be piped",
+                 type: :single
+
+      add_option "ctrl-action",
+                 description: "command to which the output will be piped when holding CTRL key",
+                 type: :single
+
+      add_option "alt-action",
+                 description: "command to which the output will be piped when holding ALT key",
+                 type: :single
+
+      add_option "shift-action",
+                 description: "command to which the output will be pipedwhen holding SHIFT key",
+                 type: :single
+
+      add_option 'h', "help", description: "prints help"
+    end
+
+    def pre_run(arguments, options) : Bool
+      if options.has?("help")
+        puts help_template
+        false
+      else
+        true
+      end
     end
 
     def run(arguments, options) : Nil
       @mode = options.get("mode").as_s
-      @pane_id = arguments.get("pane_id").as_s
+      parse_pane_target_format!(arguments.get("pane_id").as_s)
 
       if options.has?("patterns")
         @patterns = patterns_from_options(options.get("patterns").as_s)
@@ -55,8 +90,13 @@ module Fingers::Commands
         @patterns = Fingers.config.patterns.values
       end
 
-      track_options_to_restore
-      track_last_pane
+      @main_action = options.get?("main-action").try(&.as_s)
+      @ctrl_action = options.get?("ctrl-action").try(&.as_s)
+      @alt_action = options.get?("alt-action").try(&.as_s)
+      @shift_action = options.get?("shift-action").try(&.as_s)
+
+      track_tmux_state
+
       show_hints
 
       if Fingers.config.benchmark_mode == "1"
@@ -64,7 +104,7 @@ module Fingers::Commands
       end
 
       handle_input
-
+      process_result
       teardown
     end
 
@@ -86,11 +126,20 @@ module Fingers::Commands
       result
     end
 
-    private def track_options_to_restore
-      options_to_preserve.each do |option|
-        value = tmux.get_global_option(option)
-        @original_options[option] = value
-      end
+    private def track_tmux_state
+      output = tmux.exec("display-message -t '{last}' -p '\#{pane_id};\#{client_key_table};\#{prefix};\#{prefix2}'").chomp
+
+      last_pane_id, last_key_table, prefix, prefix2 = output.split(";")
+
+      @last_pane_id = last_pane_id
+      @last_key_table = if last_key_table.empty?
+                          "root"
+                        else
+                          last_key_table
+                        end
+
+      @original_options["prefix"] = prefix
+      @original_options["prefix2"] = prefix2
     end
 
     private def restore_options
@@ -99,18 +148,27 @@ module Fingers::Commands
       end
     end
 
-    private def restore_last_pane
-      tmux.select_pane(@last_pane_id)
-      tmux.select_pane(target_pane.pane_id)
+    private def restore_last_key_table
+      tmux.set_key_table(@last_key_table)
     end
 
-    private def track_last_pane
-      last_pane_id = tmux.exec("display-message -t '{last}' -p '\#{pane_id}'").chomp
-      @last_pane_id = last_pane_id unless last_pane_id.empty?
+    private def restore_last_pane
+      tmux.select_pane(@last_pane_id)
+      select_active_pane
     end
 
     private def options_to_preserve
       %w[prefix prefix2]
+    end
+
+    private def parse_pane_target_format!(pane_target_format)
+      if pane_target_format.match(/^%[0-9]+$/)
+        @pane_id = pane_target_format
+        @active_pane = target_pane
+      else
+        @pane_id = tmux.exec("display-message -t #{pane_target_format} -p '\#{pane_id}'").chomp
+        @active_pane = tmux.list_panes("\#{pane_active}", target_pane.window_id).first
+      end
     end
 
     private def show_hints
@@ -139,25 +197,51 @@ module Fingers::Commands
       end
     end
 
+    private def process_result
+      return unless state.result
+
+      match = hinter.lookup(state.input)
+
+      ActionRunner.new(
+        hint: state.input,
+        modifier: state.modifier,
+        match: state.result,
+        original_pane: active_pane,
+        offset: match ? match.not_nil!.offset : nil,
+        mode: mode,
+        main_action: @main_action,
+        ctrl_action: @ctrl_action,
+        alt_action: @alt_action,
+        shift_action: @shift_action,
+      ).run
+
+      tmux.display_message("Copied: #{state.result}", 1000) if should_notify?
+    end
+
+    private def select_active_pane
+      tmux.select_pane(active_pane.pane_id)
+    end
+
     private def needs_resize?
       pane_width = target_pane.pane_width.to_i
       pane_contents.any? { |line| line.size > pane_width }
     end
 
     private def teardown
-      tmux.set_key_table "root"
-
       tmux.swap_panes(fingers_pane_id, target_pane.pane_id)
       tmux.kill_pane(fingers_pane_id)
 
       restore_last_pane
+      restore_last_key_table
       restore_options
-
-      view.run_action if state.result
     end
 
     private getter target_pane : Tmux::Pane do
       tmux.find_pane_by_id(@pane_id).not_nil!
+    end
+
+    private getter active_pane : Tmux::Pane do
+      @active_pane.not_nil!
     end
 
     private getter mode : String do
@@ -202,12 +286,16 @@ module Fingers::Commands
         output: pane_printer,
         original_pane: target_pane,
         tmux: tmux,
-        mode: mode
+        mode: mode,
       )
     end
 
     private getter tmux : Tmux do
       Tmux.new(Fingers.config.tmux_version)
+    end
+
+    private def should_notify?
+      !state.result.empty? && Fingers.config.show_copied_notification == "1"
     end
   end
 end

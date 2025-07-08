@@ -10,8 +10,7 @@ module Fingers
       selected_highlight_style : String = Fingers.config.selected_highlight_style,
       backdrop_style : String = Fingers.config.backdrop_style,
       hint_position : String = Fingers.config.hint_position,
-      # TODO #perf remove this shell call
-      reset_sequence : String = `tput sgr0`.chomp
+      reset_sequence : String = "\e[0m"
     )
       @hint_style = hint_style
       @highlight_style = highlight_style

@@ -21,7 +21,7 @@ module Fingers
       @original_pane,
       @state,
       @tmux,
-      @mode
+      @mode,
     )
     end
 
@@ -52,21 +52,6 @@ module Fingers
       when "fzf"
         # soon
       end
-    end
-
-    def run_action
-      match = hinter.lookup(state.input)
-
-      ActionRunner.new(
-        hint: state.input,
-        modifier: state.modifier,
-        match: state.result,
-        original_pane: original_pane,
-        offset: match ? match.not_nil!.offset : nil,
-        mode: mode
-      ).run
-
-      tmux.display_message("Copied: #{state.result}", 1000) if should_notify?
     end
 
     private def hide_cursor
@@ -119,10 +104,6 @@ module Fingers
 
     private def request_exit!
       state.exiting = true
-    end
-
-    private def should_notify?
-      !state.result.empty? && Fingers.config.show_copied_notification == "1"
     end
   end
 end

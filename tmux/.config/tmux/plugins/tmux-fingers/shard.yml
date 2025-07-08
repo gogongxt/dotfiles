@@ -1,5 +1,5 @@
 ---
-version: 2.2.2
+version: 2.4.1
 name: fingers
 authors:
 - Jorge Morante <jorge@morante.eu>
@@ -12,5 +12,7 @@ dependencies:
     version: '>= 3.0.0'
   xdg_base_directory:
     github: tijn/xdg_base_directory
-crystal: 1.11.2
+  tablo:
+    github: hutou/tablo
+crystal: 1.14
 license: MIT
