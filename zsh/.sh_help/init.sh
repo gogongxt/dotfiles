@@ -41,11 +41,12 @@ CUR_DIR="$(get_current_dir)"
 
 source "$CUR_DIR/functions/copy.sh"
 source "$CUR_DIR/functions/proxy.sh"
+source "$CUR_DIR/completion/nsys.sh"
+source "$CUR_DIR/completion/tmux.sh"
 
 case "$CUR_SHELL" in
 zsh)
   source "$CUR_DIR/zsh/zsh-vi-mode.zsh"
-  source "$CUR_DIR/zsh/tmux.zsh"
   ;;
 
 bash)

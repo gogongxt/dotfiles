@@ -77,8 +77,31 @@ tmux() {
             ;;
     esac
 }
-# set tmux completion(only for zsh)
-_tmux() {
+
+# ---------------- Bash 补全函数 ----------------
+_tmux_completion_bash() {
+    local cur prev words cword
+    _get_comp_words_by_ref -n : cur prev words cword
+
+    local subcommands="ls rm kill sw reboot save"
+    local sessions=$(command tmux ls -F '#S' 2>/dev/null)
+
+    if [ "$cword" -eq 1 ]; then
+        # 第一个参数可以是会话名或子命令
+        COMPREPLY=($(compgen -W "${subcommands} ${sessions}" -- "${cur}"))
+        return 0
+    fi
+
+    case "${words[1]}" in
+        rm|kill)
+            # rm/kill 命令需要会话名作为参数
+            COMPREPLY=($(compgen -W "${sessions}" -- "${cur}"))
+            ;;
+    esac
+}
+
+# ---------------- Zsh 补全函数 ----------------
+_tmux_completion_zsh() {
     local -a subcommands
     local state
     # 定义静态子命令和它们的描述
@@ -115,9 +138,14 @@ _tmux() {
     esac
     return 0
 }
-# default set TMUX in tmux. 
-# if [[ -v TMUX ]];
-# then
-#     # unset TMUX
-# fi
-#🔼🔼🔼
+
+# ---------------- 自动注册补全 ----------------
+if [[ -n ${ZSH_VERSION:+zsh} ]]; then
+    compdef _tmux_completion_zsh tmux
+elif [[ -n ${BASH_VERSION:+bash} ]]; then
+    if type -t _init_completion &>/dev/null; then
+        complete -F _tmux_completion_bash tmux
+    else
+        echo "警告: bash-completion 未安装，tmux 补全不可用。" >&2
+    fi
+fi
