@@ -37,6 +37,21 @@ if [ -z "$CUR_SHELL" ]; then
   fi
 fi
 
+# bash need to load bash_completion
+if [ "$CUR_SHELL" = "bash" ]; then
+  if ! type -t _init_completion &>/dev/null; then
+    # 尝试加载 bash-completion
+    if [ -f /etc/bash_completion ]; then
+        source /etc/bash_completion
+    fi
+  fi
+  if type -t _init_completion &>/dev/null; then
+      complete -F _nsys_completion_bash nsys
+  else
+      echo "警告: bash-completion 未安装或无法加载，补全可能不可用。" >&2
+  fi
+fi
+
 CUR_DIR="$(get_current_dir)"
 
 source "$CUR_DIR/functions/copy.sh"
