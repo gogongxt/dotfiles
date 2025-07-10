@@ -25,6 +25,23 @@ keymap.set("x", "K", ":move '<-2<CR>gv-gv", opts)
 keymap.set("x", "<A-j>", ":move '>+1<CR>gv-gv", opts)
 keymap.set("x", "<A-k>", ":move '<-2<CR>gv-gv", opts)
 
+-- nvim tab operation
+for i = 1, 9 do
+  vim.keymap.set("n", "<Leader>" .. i, function()
+    local tab_count = vim.fn.tabpagenr "$"
+    if i <= tab_count then
+      -- Tab exists, just switch to it
+      vim.cmd(i .. "tabnext")
+    elseif i == tab_count + 1 then
+      -- Next sequential tab, create it
+      vim.cmd "tabnew"
+    else
+      -- Trying to jump to non-sequential tab
+      vim.notify("Can't jump to tab " .. i .. ". Create tab " .. (tab_count + 1) .. " first.", vim.log.levels.WARN)
+    end
+  end, { desc = i <= 1 and "Go to tab " .. i or "Go to or create tab " .. i })
+end
+
 return {
   {
     "AstroNvim/astrocore",
