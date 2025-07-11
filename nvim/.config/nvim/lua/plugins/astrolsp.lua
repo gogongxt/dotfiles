@@ -41,6 +41,7 @@ return {
     servers = {
       -- use your own clangd in $PATH
       "clangd",
+      "clang-format",
       -- "pyright"
     },
     -- customize language server configuration options passed to `lspconfig`
