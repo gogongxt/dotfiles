@@ -59,6 +59,14 @@ return {
             function() require("astrocore.buffer").nav(-vim.v.count1) end,
             desc = "Previous buffer",
           },
+          ["<Leader>H"] = {
+            function() require("astrocore.buffer").move(-vim.v.count1) end,
+            desc = "Move buffer tab left",
+          },
+          ["<Leader>L"] = {
+            function() require("astrocore.buffer").move(vim.v.count1) end,
+            desc = "Move buffer tab right",
+          },
 
           -- universal
           ["<Leader>h"] = { "<cmd>nohl<cr>", desc = "<cmd>nohl" },
