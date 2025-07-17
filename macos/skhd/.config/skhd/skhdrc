@@ -1,4 +1,4 @@
-cmd - return : kitty -d ~ --title "kitty"
+cmd + shift - return : kitty -d ~ --title "kitty"
 # shift - return : osascript -e 'tell application "System Events" to keystroke return using command down'
 
 # shift - return : skhd -k "cmd - return"
