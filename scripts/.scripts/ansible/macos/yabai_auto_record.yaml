@@ -1,0 +1,30 @@
+- name: Yabai auto record setup
+  hosts: localhost
+  connection: local
+  vars:
+    log_file: "{{ ansible_user_dir }}/.config/yabai/log.log"
+    script_path: "{{ ansible_user_dir }}/.config/yabai/scripts/record_resume_window.sh"
+    # 定义您希望执行任务的时间列表，格式为 "小时.分钟"
+    execution_times:
+      - "11.50"
+      - "17.50"
+
+  tasks:
+    - name: Ensure script is executable
+      ansible.builtin.file:
+        path: "{{ script_path }}"
+        mode: 'u+x'
+
+    - name: Yabai auto record at specific times
+      ansible.builtin.cron:
+        # 为每个任务创建一个唯一的名称，防止冲突
+        name: "Run yabai record script at {{ item.split('.')[0] }}:{{ item.split('.')[1] }}"
+        # 从 "12.00" 中解析出小时 "12"
+        hour: "{{ item.split('.')[0] }}"
+        # 从 "12.00" 中解析出分钟 "00"
+        minute: "{{ item.split('.')[1] }}"
+        user: "{{ ansible_user_id }}"
+        job: "/bin/bash {{ script_path }} record >> {{ log_file }} 2>&1"
+        state: present
+      # 遍历上面定义的 execution_times 列表
+      loop: "{{ execution_times }}"
