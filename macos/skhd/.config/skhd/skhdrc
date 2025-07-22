@@ -118,6 +118,7 @@ cmd + shift - z : yabai -m window --toggle zoom-fullscreen
 cmd + shift - t : yabai -m window --toggle sticky
 # cmd + shift - f : yabai -m window --toggle float
 cmd + shift - f : bash $HOME/.config/yabai/scripts/toggle-window-floating-tiling.sh
+cmd + shift - n : osascript -e 'tell application "TextEdit" to make new document with properties {text: (the clipboard)}' -e 'tell application "TextEdit" to activate'
 # cmd + tab : yabai -m window --focus recent
 
 

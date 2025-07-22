@@ -13,9 +13,9 @@
     - name: Ensure script is executable
       ansible.builtin.file:
         path: "{{ script_path }}"
-        mode: 'u+x'
+        mode: "u+x"
 
-    - name: Yabai auto record at specific times
+    - name: Yabai auto record at specific times (Mon-Fri)
       ansible.builtin.cron:
         # 为每个任务创建一个唯一的名称，防止冲突
         name: "Run yabai record script at {{ item.split('.')[0] }}:{{ item.split('.')[1] }}"
@@ -23,6 +23,8 @@
         hour: "{{ item.split('.')[0] }}"
         # 从 "12.00" 中解析出分钟 "00"
         minute: "{{ item.split('.')[1] }}"
+        # 新增：设置任务只在周一到周五执行 (1=周一, 5=周五)
+        weekday: "1-5"
         user: "{{ ansible_user_id }}"
         job: "/bin/bash {{ script_path }} record >> {{ log_file }} 2>&1"
         state: present
