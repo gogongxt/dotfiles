@@ -43,6 +43,11 @@ use = "yazi-rs/plugins:diff"
 rev = "7c174cc"
 hash = "47865a70cade14a0b9b6bc6a54f16bdb"
 
+[[plugin.deps]]
+use = "gogongxt/smart-tab"
+rev = "b549375"
+hash = "268eecfdcb159461834c5d27072990b"
+
 [[flavor.deps]]
 use = "yazi-rs/flavors:catppuccin-macchiato"
 rev = "d04a298"
