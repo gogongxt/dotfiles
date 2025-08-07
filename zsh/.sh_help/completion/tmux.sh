@@ -143,7 +143,7 @@ _tmux_completion_zsh() {
 if [[ -n ${ZSH_VERSION:+zsh} ]]; then
     compdef _tmux_completion_zsh tmux
 elif [[ -n ${BASH_VERSION:+bash} ]]; then
-    if type -t _init_completion &>/dev/null; then
+    if type -t _command &>/dev/null; then
         complete -F _tmux_completion_bash tmux
     else
         echo "警告: bash-completion 未安装，tmux 补全不可用。" >&2

@@ -112,7 +112,7 @@ if [[ -n ${ZSH_VERSION:+zsh} ]]; then
     compdef _nsys_completion_zsh nsys
 elif [[ -n ${BASH_VERSION:+bash} ]]; then
     # 确保 bash-completion 可用
-    if type -t _init_completion &>/dev/null; then
+    if type -t _command &>/dev/null; then
         complete -F _nsys_completion_bash nsys
     else
         echo "警告: bash-completion 未安装，nsys 补全不可用。" >&2

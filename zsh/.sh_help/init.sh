@@ -46,16 +46,21 @@ fi
 
 # bash need to load bash_completion
 if [ "$CUR_SHELL" = "bash" ]; then
-  if ! type -t _init_completion &>/dev/null; then
-    # 尝试加载 bash-completion
-    if [ -f /etc/bash_completion ]; then
-        source /etc/bash_completion
+  # 尝试加载 bash-completion
+  if ! type -t _command &>/dev/null; then
+    # linux
+    if [ -f /usr/share/bash-completion/bash_completion ]; then
+      source /usr/share/bash-completion/bash_completion
+    elif [ -f /etc/bash_completion ]; then
+      source /etc/bash_completion
+    fi
+    # macos
+    if [ -f /opt/homebrew/etc/profile.d/bash_completion.sh ]; then
+      source /opt/homebrew/etc/profile.d/bash_completion.sh
     fi
   fi
-  if type -t _init_completion &>/dev/null; then
-      complete -F _nsys_completion_bash nsys
-  else
-      echo "警告: bash-completion 未安装或无法加载，补全可能不可用。" >&2
+  if ! type -t _command &>/dev/null; then
+    echo "警告: bash-completion 未安装或无法加载，补全可能不可用。" >&2
   fi
 fi
 
