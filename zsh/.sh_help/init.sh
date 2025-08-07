@@ -25,6 +25,13 @@ get_current_dir() {
   echo "$dir_path"
 }
 
+# TODO: a better get current shell method
+# CURRENT_SHELL=$(basename $(ps -p $$ -o comm= | sed 's/^-//'))
+# case $CURRENT_SHELL in
+#   zsh|bash|fish|dash) ;;
+#   *) echo "Unsupported shell: $CURRENT_SHELL" >&2 ;;
+# esac
+
 CUR_SHELL="$1"
 if [ -z "$CUR_SHELL" ]; then
   if [ -n "$ZSH_VERSION" ]; then

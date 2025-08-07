@@ -1,13 +1,19 @@
+CURRENT_SHELL=$(basename $(ps -p $$ -o comm= | sed 's/^-//')) # zsh or bash
+case $CURRENT_SHELL in
+zsh | bash) ;;
+*) echo "Unsupported shell: $CURRENT_SHELL" >&2 ;;
+esac
+
 export PATH="$HOME/.local/bin":$PATH
 export PATH="$HOME/.cargo/bin":$PATH
 
-# source my other config zsh file
+# source my other config sh file
 #🔽🔽🔽
-if [ -f $HOME/.arch.zsh ]; then  
-    source $HOME/.arch.zsh  
+if [ -f $HOME/.arch.sh ]; then
+  source $HOME/.arch.sh
 fi
-if [ -f $HOME/.user.zsh ]; then  
-    source $HOME/.user.zsh  
+if [ -f $HOME/.user.sh ]; then
+  source $HOME/.user.sh
 fi
 #🔼🔼🔼
 
@@ -70,7 +76,8 @@ export EDITOR=$(bash -c 'if command -v nvim >/dev/null 2>&1; then echo "nvim"; e
 command -v yazi &>/dev/null && alias r="yazi" || alias r="ranger"
 alias y="yazi"
 alias e="extract"
-alias c="clear"
+alias clear="/usr/bin/clear"
+alias c="/usr/bin/clear"
 command -v lolcat &>/dev/null && alias neofetch="neofetch | lolcat"
 # 依次检测bat/cat是否存在，存在替换成对应的，推荐使用bat，并且使用--style=plain更朴素一点
 # command -v ccat &>/dev/null && alias cat="ccat"
@@ -85,7 +92,7 @@ alias nvim-edit="$EDITOR $HOME/.config/nvim"
 
 #🔽🔽🔽
 # fzf
-local fzf_ignore=".wine,.git,.idea,.vscode,node_modules,build"
+fzf_ignore=".wine,.git,.idea,.vscode,node_modules,build"
 export FZF_DEFAULT_COMMAND="fd --hidden --follow --exclude={${fzf_ignore}} "
 export FZF_DEFAULT_OPTS="--height 80% --layout=reverse --preview 'echo {} | ~/.config/fzf/fzf_preview.py' --preview-window=down --border \
   --bind ctrl-d:page-down,ctrl-u:page-up \
@@ -97,12 +104,13 @@ export FZF_DEFAULT_OPTS="--height 80% --layout=reverse --preview 'echo {} | ~/.c
 #   fd --type d --hidden --exclude={${fzf_ignore}}
 # }
 # optimizer fzf for zsh
-command -v fzf &>/dev/null && source <(fzf --zsh)
+command -v fzf &>/dev/null && source <(fzf --${CURRENT_SHELL})
+unset fzf_ignore
 #🔼🔼🔼
 
 #🔽🔽🔽
 # docker display
-xhost +&>/dev/null
+xhost + &>/dev/null
 #🔼🔼🔼
 
 #🔽🔽🔽
@@ -144,6 +152,22 @@ alias cmake_install_release='sudo cmake --install build/release'
 
 # set direnv
 #🔽🔽🔽
-command -v direnv &>/dev/null && eval "$(direnv hook zsh)"
+command -v direnv &>/dev/null && eval "$(direnv hook ${CURRENT_SHELL})"
 #🔼🔼🔼
 
+# zoxide
+#🔽🔽🔽
+if command -v zoxide &>/dev/null; then
+  eval "$(zoxide init ${CURRENT_SHELL})"
+  z() {
+    if [[ $# -eq 0 ]]; then
+      __zoxide_zi
+    else
+      __zoxide_z $@
+    fi
+  }
+  j() {
+    z $@
+  }
+fi
+#🔼🔼🔼

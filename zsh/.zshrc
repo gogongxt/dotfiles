@@ -152,36 +152,46 @@ fi
 #🔼🔼🔼
 
 #🔽🔽🔽
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-# __conda_setup="$('/home/gxt_kt/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-__conda_setup="$($HOME/miniconda3/bin/conda shell.zsh hook 2>/dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "$HOME/miniconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="$HOME/miniconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-# <<< conda initialize <<<
-#🔼🔼🔼
-
-# zoxide
-#🔽🔽🔽
-if command -v zoxide &> /dev/null; then  
-    eval "$(zoxide init zsh)"
-    z() {
-      if [[ $# -eq 0 ]]; then
-        __zoxide_zi
-      else
-        __zoxide_z $@
-      fi
-    }
-    j() {
-        z $@
-    }
-fi
+# # >>> conda initialize >>>                                                                                
+# # !! Contents within this block are managed by 'conda init' !!                                            
+# __conda_setup="$('/nfs/volume-1757-3/user/gogongxt/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+# if [ $? -eq 0 ]; then                                                                                     
+#     eval "$__conda_setup"
+# else                                                                                                      
+#     if [ -f "/nfs/volume-1757-3/user/gogongxt/miniconda3/etc/profile.d/conda.sh" ]; then                  
+#         . "/nfs/volume-1757-3/user/gogongxt/miniconda3/etc/profile.d/conda.sh"                            
+#     else                                                                                                  
+#         export PATH="/nfs/volume-1757-3/user/gogongxt/miniconda3/bin:$PATH"                               
+#     fi                                                                                                    
+# fi                                                                                                        
+# unset __conda_setup                                                                                       
+# # <<< conda initialize <<<                                                                                
+#🔼🔼🔼                                                                                                     
+# ======================================================                                                    
+#  Lazy Load Conda for Faster Shell Startup                                                                 
+# ======================================================                                                    
+function conda() {                                                                                          
+    # 移除这个临时的 conda 函数定义，以便后续直接调用真正的 conda 命令                                      
+    unset -f conda                                                                                          
+    # --- Conda 初始化核心逻辑 ---                                                                          
+    # 这部分逻辑直接取自 'conda init'，确保与官方行为一致                                                   
+    local conda_bin="/nfs/volume-1757-3/user/gogongxt/miniconda3/bin/conda"                                 
+    __conda_setup="$('$conda_bin' 'shell.zsh' 'hook' 2> /dev/null)"                                         
+    if [ $? -eq 0 ]; then                                                                                   
+        eval "$__conda_setup"                                                                               
+    else                                                                                                    
+        local conda_sh_path="/nfs/volume-1757-3/user/gogongxt/miniconda3/etc/profile.d/conda.sh"            
+        if [ -f "$conda_sh_path" ]; then                                                                    
+            . "$conda_sh_path"                                                                              
+        else                                                                                                
+            export PATH="/nfs/volume-1757-3/user/gogongxt/miniconda3/bin:$PATH"                             
+        fi                                                                                                  
+    fi                                                                                                      
+    unset __conda_setup                                                                                     
+    # --- Conda 初始化结束 ---                                                                              
+    # 现在 Conda 已经初始化完毕，执行你最初想要运行的命令                                                   
+    # "$@" 会将所有传递给此函数的参数原封不动地传递给真正的 conda 命令                                      
+    # 例如，你输入 "conda activate base"，"$@" 就是 "activate base"                                         
+    conda "$@"                                                                                              
+}                                                                                                           
 #🔼🔼🔼
