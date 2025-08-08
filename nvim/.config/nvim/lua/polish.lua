@@ -32,6 +32,18 @@ mappings.set_mappings {
       noremap = true,
       silent = true,
     },
+    ["<C-_>"] = {
+      function()
+        if vim.bo.filetype == "markdown" then
+          vim.cmd "RenderMarkdown toggle"
+        elseif vim.bo.filetype == "csv" then
+          vim.cmd "CsvViewToggle display_mode=border"
+        else
+          vim.cmd "Neogen"
+        end
+      end,
+      desc = "Toggle Render",
+    },
   },
   v = {
     -- delete comments

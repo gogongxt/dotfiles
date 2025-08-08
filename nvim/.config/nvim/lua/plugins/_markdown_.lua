@@ -5,16 +5,6 @@ mappings.set_mappings {
   n = {
     ["md"] = { "<cmd>MarkdownPreview<cr>", desc = "markdown preview" },
     -- ["<C-_>"] = { "<cmd>RenderMarkdown toggle<cr>", desc = "markdown render" },
-    ["<C-_>"] = {
-      function()
-        if vim.bo.filetype == "markdown" then
-          vim.cmd "RenderMarkdown toggle"
-        else
-          vim.cmd "Neogen"
-        end
-      end,
-      desc = "markdown render",
-    },
   },
   v = {},
 }
