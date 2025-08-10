@@ -42,7 +42,8 @@ tmux() {
             ;;
         save)
             shift
-            command tmux capture-pane -p -S - > tmux.txt && echo 'content saved to ./tmux.txt'
+            local filename="${1:-tmux.txt}"  # if no file name use default tmux.txt
+            command tmux capture-pane -p -S - > "$filename" && echo "content saved to $filename"
             ;;
         *)
             if [[ $# -eq 0 ]]; then
