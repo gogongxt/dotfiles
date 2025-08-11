@@ -24,13 +24,16 @@ return {
         "tree-sitter-cli",
 
         -- python
-        "pyright",
+        -- "pyright",
+        "basedpyright",
         "black",
+        "isort",
         -- "debugpy",
 
         -- bash
         "bash-language-server",
         "shfmt",
+        "shellcheck", -- bashls use with shellcheck for Linter
 
         -- cmake
         "neocmakelsp",

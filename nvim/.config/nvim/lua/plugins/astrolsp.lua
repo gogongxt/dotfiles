@@ -12,15 +12,15 @@ return {
   opts = {
     -- Configuration table of features provided by AstroLSP
     features = {
-      codelens = true, -- enable/disable codelens refresh on start
-      inlay_hints = true, -- enable/disable inlay hints on start
+      codelens = true,        -- enable/disable codelens refresh on start
+      inlay_hints = true,     -- enable/disable inlay hints on start
       semantic_tokens = true, -- enable/disable semantic token highlighting
     },
     -- customize lsp formatting options
     formatting = {
       -- control auto formatting on save
       format_on_save = {
-        enabled = false, -- enable or disable format on save globally
+        enabled = false,    -- enable or disable format on save globally
         allow_filetypes = { -- enable format on save for specified filetypes only
           -- "go",
         },
@@ -32,7 +32,7 @@ return {
         -- disable lua_ls formatting capability if you want to use StyLua to format your lua code
         -- "lua_ls",
       },
-      timeout_ms = 1000, -- default format timeout
+      timeout_ms = 5000, -- default format timeout
       -- filter = function(client) -- fully override the default formatting function
       --   return true
       -- end
@@ -63,11 +63,29 @@ return {
             analysis = {
               autoSearchPaths = true,
               -- diagnosticMode = "workspace",
-              typeCheckingMode = "off", -- here's me trying stuff
+              typeCheckingMode = "off",           -- here's me trying stuff
               useLibraryCodeForTypes = true,
               reportMissingModuleSource = "none", -- here's me trying stuff
-              reportMissingImports = "none", -- here's me trying stuff
-              reportUndefinedVariable = "none", -- here's me trying stuff, syntax errors are still reported on diagnostics
+              reportMissingImports = "none",      -- here's me trying stuff
+              reportUndefinedVariable = "none",   -- here's me trying stuff, syntax errors are still reported on diagnostics
+            },
+          },
+        },
+      },
+      basedpyright = {
+        -- basedpyright config: https://docs.basedpyright.com/v1.23.1/configuration/language-server-settings/
+        settings = {
+          basedpyright = {
+            analysis = {
+              -- autoSearchPaths = true,
+              -- diagnosticMode = "workspace",
+              typeCheckingMode = "off", -- here's me trying stuff
+              useLibraryCodeForTypes = true,
+              diagnosticSeverityOverrides = {
+                reportMissingModuleSource = "none", -- here's me trying stuff
+                reportMissingImports = "none",      -- here's me trying stuff
+                reportUndefinedVariable = "none",   -- here's me trying stuff, syntax errors are still reported on diagnostics
+              },
             },
           },
         },
