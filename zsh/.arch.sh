@@ -60,10 +60,33 @@ archlinux() {
 
 ubuntu() {
 
-# add nvm (npm and nodejs)
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+  # add nvm (npm and nodejs)
+  # export NVM_DIR="$HOME/.nvm"
+  # [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+  # [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+  #🔽🔽🔽
+  # nvm lazy load
+  # Ref: https://github.com/nvm-sh/nvm/issues/2724#issuecomment-1336537635
+  lazy_load_nvm() {
+    unset -f npm node nvm
+    export NVM_DIR=~/.nvm
+    [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
+  }
+  npm() {
+    lazy_load_nvm
+    npm $@
+  }
+  node() {
+    lazy_load_nvm
+    node $@
+  }
+  nvm() {
+    lazy_load_nvm
+    nvm $@
+  }
+  #🔼🔼🔼
 
 }
 
