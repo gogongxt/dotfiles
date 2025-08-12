@@ -174,3 +174,46 @@ if command -v zoxide &>/dev/null; then
   }
 fi
 #🔼🔼🔼
+
+# pycd: cd to python lib packages path
+#🔽🔽🔽
+pycd() {
+  # 获取当前Python解释器的路径
+  python3 --version 2>/dev/null || python --version 2>/dev/null
+  which python3 2>/dev/null || which python 2>/dev/null
+  local python_path=$(which python3 2>/dev/null || which python 2>/dev/null)
+  if [ -z "$python_path" ]; then
+    echo "Error: Python not found in PATH" >&2
+    return 1
+  fi
+  # 检查是否是conda环境
+  if [[ "$python_path" == *"conda"* ]] || [[ "$python_path" == *"miniconda"* ]] || [ -n "$CONDA_PREFIX" ]; then
+    # Conda环境处理
+    local conda_env_path=""
+    if [ -n "$CONDA_PREFIX" ]; then
+        conda_env_path="$CONDA_PREFIX"
+    else
+        # 如果不是通过conda activate激活的环境，尝试从路径中提取
+        conda_env_path=$(dirname $(dirname "$python_path"))
+    fi
+    local site_packages="$conda_env_path/lib/python$($python_path -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")/site-packages"
+    if [ -d "$site_packages" ]; then
+        cd "$site_packages"
+        echo "Changed to conda site-packages: $site_packages"
+    else
+        echo "Error: Conda site-packages directory not found: $site_packages" >&2
+        return 1
+    fi
+  else
+    # 系统Python或虚拟环境处理
+    local python_lib=$($python_path -c "import sysconfig; print(sysconfig.get_path('purelib'))")
+    if [ -d "$python_lib" ]; then
+        cd "$python_lib"
+        echo "Changed to Python site-packages: $python_lib"
+    else
+        echo "Error: Python site-packages directory not found: $python_lib" >&2
+        return 1
+    fi
+  fi
+}
+#🔼🔼🔼
