@@ -119,7 +119,7 @@ return {
         enabled = false,
       },
       image = {
-        enabled = true,
+        enabled = os.getenv "SSH_CONNECTION" == nil,
         -- TODO: need to toggle doc image show inline
         -- https://github.com/folke/snacks.nvim/issues/1739
         doc = {
