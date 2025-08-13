@@ -67,10 +67,14 @@ ubuntu() {
 
   #🔽🔽🔽
   # nvm lazy load
+  # pre load install binary
+  export NVM_DIR="$HOME/.nvm"
+  LATEST_NODE_PATH=$(ls -dv $NVM_DIR/versions/node/* | sort -V | tail -n1)
+  export PATH="$LATEST_NODE_PATH/bin:$PATH"
+  unset LATEST_NODE_PATH
   # Ref: https://github.com/nvm-sh/nvm/issues/2724#issuecomment-1336537635
   lazy_load_nvm() {
     unset -f npm node nvm
-    export NVM_DIR=~/.nvm
     [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
     [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
   }
