@@ -73,7 +73,9 @@ export EDITOR=$(bash -c 'if command -v nvim >/dev/null 2>&1; then echo "nvim"; e
 
 #🔽🔽🔽
 # alias
+command -v python &>/dev/null || alias python="python3"
 command -v yazi &>/dev/null && alias r="yazi" || alias r="ranger"
+command -v fastfetch &>/dev/null && alias neofetch="fastfetch"
 alias y="yazi"
 alias e="extract"
 alias clear="/usr/bin/clear"
@@ -85,8 +87,29 @@ command -v lolcat &>/dev/null && alias neofetch="neofetch | lolcat"
 # command -v ccat &>/dev/null && alias cat="ccat"
 alias cat='bash -c '\''my_cat=""; if command -v bat >/dev/null 2>&1; then my_cat="bat --style=plain"; else if command -v ccat >/dev/null 2>&1; then my_cat="ccat"; else my_cat="cat"; fi; fi; if [ $# -gt 0 ]; then $my_cat "$@"; else $my_cat .; fi'\'' bash'
 # 依次检测lvim/nvim是否存在，存在替换成对应的
-alias v='bash -c '\''my_vim=""; if command -v nvim >/dev/null 2>&1; then my_vim="nvim"; else if command -v lvim >/dev/null 2>&1; then my_vim="lvim"; else my_vim="vim"; fi; fi; if [ $# -gt 0 ]; then $my_vim "$@"; else $my_vim .; fi'\'' bash'
-alias vim='bash -c '\''my_vim=""; if command -v nvim >/dev/null 2>&1; then my_vim="nvim"; else if command -v lvim >/dev/null 2>&1; then my_vim="lvim"; else my_vim="vim"; fi; fi; if [ $# -gt 0 ]; then $my_vim "$@"; else $my_vim .; fi'\'' bash'
+# alias v='bash -c '\''my_vim=""; if command -v nvim >/dev/null 2>&1; then my_vim="nvim"; else if command -v lvim >/dev/null 2>&1; then my_vim="lvim"; else my_vim="vim"; fi; fi; if [ $# -gt 0 ]; then $my_vim "$@"; else $my_vim .; fi'\'' bash'
+# alias vim='bash -c '\''my_vim=""; if command -v nvim >/dev/null 2>&1; then my_vim="nvim"; else if command -v lvim >/dev/null 2>&1; then my_vim="lvim"; else my_vim="vim"; fi; fi; if [ $# -gt 0 ]; then $my_vim "$@"; else $my_vim .; fi'\'' bash'
+# alias v='bash -c '\''my_vim=""; if command -v nvim >/dev/null 2>&1; then my_vim="nvim"; else my_vim="vim"; fi; if [ $# -gt 0 ]; then $my_vim "$@"; else $my_vim .; fi'\'' bash'
+# alias vim='bash -c '\''my_vim=""; if command -v nvim >/dev/null 2>&1; then my_vim="nvim"; else my_vim="vim"; fi; if [ $# -gt 0 ]; then $my_vim "$@"; else $my_vim .; fi'\'' bash'
+_vim_launcher() {
+    local my_vim
+    if command -v nvim >/dev/null 2>&1; then
+        my_vim="nvim"
+        if [ -z "$NVIM_APPNAME" ] && [ ! -d "$HOME/.config/nvim" ] && [ -f "$HOME/.vimrc" ]; then
+            my_vim="nvim -u ~/.vimrc"
+        fi
+    else
+        my_vim="vim"
+    fi
+    if [ $# -gt 0 ]; then
+        $my_vim "$@"
+    else
+        $my_vim .
+    fi
+}
+# 设置别名
+alias v='_vim_launcher'
+alias vim='_vim_launcher'
 alias v-edit="$EDITOR $HOME/.config/nvim"
 alias vim-edit="$EDITOR $HOME/.config/nvim"
 alias nvim-edit="$EDITOR $HOME/.config/nvim"
