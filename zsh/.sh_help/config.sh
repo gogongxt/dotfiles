@@ -76,21 +76,15 @@ export EDITOR=$(bash -c 'if command -v nvim >/dev/null 2>&1; then echo "nvim"; e
 command -v python &>/dev/null || alias python="python3"
 command -v yazi &>/dev/null && alias r="yazi" || alias r="ranger"
 command -v fastfetch &>/dev/null && alias neofetch="fastfetch"
+command -v lolcat &>/dev/null && alias fastfetch="fastfetch | lolcat"
+command -v rsync &>/dev/null && alias mycp="rsync -avz --progress"
+command -v bat &>/dev/null && alias cat="bat --style=plain"
 alias y="yazi"
 alias e="extract"
 alias clear="/usr/bin/clear"
 alias c="/usr/bin/clear"
 alias b="btop"
 alias nv="watch -d -n 1 nvidia-smi"
-command -v lolcat &>/dev/null && alias neofetch="neofetch | lolcat"
-# 依次检测bat/cat是否存在，存在替换成对应的，推荐使用bat，并且使用--style=plain更朴素一点
-# command -v ccat &>/dev/null && alias cat="ccat"
-alias cat='bash -c '\''my_cat=""; if command -v bat >/dev/null 2>&1; then my_cat="bat --style=plain"; else if command -v ccat >/dev/null 2>&1; then my_cat="ccat"; else my_cat="cat"; fi; fi; if [ $# -gt 0 ]; then $my_cat "$@"; else $my_cat .; fi'\'' bash'
-# 依次检测lvim/nvim是否存在，存在替换成对应的
-# alias v='bash -c '\''my_vim=""; if command -v nvim >/dev/null 2>&1; then my_vim="nvim"; else if command -v lvim >/dev/null 2>&1; then my_vim="lvim"; else my_vim="vim"; fi; fi; if [ $# -gt 0 ]; then $my_vim "$@"; else $my_vim .; fi'\'' bash'
-# alias vim='bash -c '\''my_vim=""; if command -v nvim >/dev/null 2>&1; then my_vim="nvim"; else if command -v lvim >/dev/null 2>&1; then my_vim="lvim"; else my_vim="vim"; fi; fi; if [ $# -gt 0 ]; then $my_vim "$@"; else $my_vim .; fi'\'' bash'
-# alias v='bash -c '\''my_vim=""; if command -v nvim >/dev/null 2>&1; then my_vim="nvim"; else my_vim="vim"; fi; if [ $# -gt 0 ]; then $my_vim "$@"; else $my_vim .; fi'\'' bash'
-# alias vim='bash -c '\''my_vim=""; if command -v nvim >/dev/null 2>&1; then my_vim="nvim"; else my_vim="vim"; fi; if [ $# -gt 0 ]; then $my_vim "$@"; else $my_vim .; fi'\'' bash'
 _vim_launcher() {
     local my_vim
     if command -v nvim >/dev/null 2>&1; then
