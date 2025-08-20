@@ -41,6 +41,9 @@ return {
 
         -- toml
         "taplo",
+
+        -- rust
+        "rust-analyzer",
       },
     },
   },
