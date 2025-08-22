@@ -85,28 +85,25 @@ alias clear="/usr/bin/clear"
 alias c="/usr/bin/clear"
 alias b="btop"
 alias nv="watch -d -n 1 nvidia-smi"
-_vim_launcher() {
-    local my_vim
-    if command -v nvim >/dev/null 2>&1; then
-        my_vim="nvim"
-        if [ -z "$NVIM_APPNAME" ] && [ ! -d "$HOME/.config/nvim" ] && [ -f "$HOME/.vimrc" ]; then
-            my_vim="nvim -u ~/.vimrc"
-        fi
-    else
-        my_vim="vim"
+vim() {
+  local my_vim
+  if command -v nvim >/dev/null 2>&1; then
+    my_vim="nvim"
+    if [ -z "$NVIM_APPNAME" ] && [ ! -d "$HOME/.config/nvim" ] && [ -f "$HOME/.vimrc" ]; then
+        my_vim="nvim -u ~/.vimrc"
     fi
-    if [ $# -gt 0 ]; then
-        $my_vim "$@"
-    else
-        $my_vim .
-    fi
+  else
+    my_vim="vim"
+  fi
+  if [ $# -gt 0 ]; then
+    eval "$my_vim \"\$@\""
+  else
+    eval "$my_vim ."
+  fi
 }
-# 设置别名
-alias v='_vim_launcher'
-alias vim='_vim_launcher'
-alias v-edit="$EDITOR $HOME/.config/nvim"
-alias vim-edit="$EDITOR $HOME/.config/nvim"
-alias nvim-edit="$EDITOR $HOME/.config/nvim"
+v() {
+  vim "$@"
+}
 #🔼🔼🔼
 
 #🔽🔽🔽
