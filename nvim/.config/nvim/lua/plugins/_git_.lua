@@ -4,8 +4,8 @@ vim.g.gitblame_message_when_not_committed = "" -- set null when nothing commit
 
 -- local k_opts = { noremap = true, silent = true }
 local keymap = vim.keymap.set
-keymap({ "n" }, "<Leader>gj", "<cmd>lua require('gitsigns').nav_hunk('prev')<cr>", { desc = "Hunk next" })
-keymap({ "n" }, "<Leader>gk", "<cmd>lua require('gitsigns').nav_hunk('prev')<cr>", { desc = "Hunk prev" })
+-- keymap({ "n" }, "<Leader>gj", "<cmd>lua require('gitsigns').nav_hunk('prev')<cr>", { desc = "Hunk next" })
+-- keymap({ "n" }, "<Leader>gk", "<cmd>lua require('gitsigns').nav_hunk('prev')<cr>", { desc = "Hunk prev" })
 -- keymap({ "n"}, "<Leader>gB", {name="123"}, { desc = "Git Blame" })
 
 -- ["<Leader>gB"] = { name = "Git Blame" },
@@ -32,6 +32,14 @@ mappings.set_mappings {
       "<cmd>lua require('gitsigns').nav_hunk('prev')<cr>",
       desc = "Hunk Prev",
     },
+    ["<Leader>gJ"] = {
+      "<cmd>lua require('gitsigns').nav_hunk('next',{target='staged'})<cr>",
+      desc = "Hunk Next(staged)",
+    },
+    ["<Leader>gK"] = {
+      "<cmd>lua require('gitsigns').nav_hunk('prev',{target='staged'})<cr>",
+      desc = "Hunk Prev(staged)",
+    },
     ["<Leader>gB"] = {
       "",
       desc = "Git Blame",
@@ -39,8 +47,12 @@ mappings.set_mappings {
     ["<Leader>gBw"] = { "<cmd>BlameToggle window<cr>", desc = "Blame window" },
     ["<Leader>gBv"] = { "<cmd>BlameToggle virtual<cr>", desc = "Blame virtual" },
     ["<Leader>gd"] = { "<cmd>lua require('gitsigns').diffthis()<cr>", desc = "Git Giff" }, -- see diff unstaged
-    ["<Leader>gD"] = { function() require("gitsigns").diffthis "~" end, desc = "Git Giff!" }, -- see diff all include unstaged and staged
+    ["<Leader>gD"] = { function() require("gitsigns").diffthis "~" end, desc = "Git Giff(staged)" }, -- see diff all include unstaged and staged
     ["<Leader>gg"] = { "<cmd>lua require('plugins.user.my_funcs').git_gitui_toggle()<cr>", desc = "gitui" },
+    ["<Leader>gP"] = { "<cmd>lua require('gitsigns').preview_hunk()<cr>", desc = "Hunk Preview Hover" },
+    ["<Leader>gi"] = { "<cmd>lua require('gitsigns').blame_line()<cr>", desc = "Line Info" },
+    ["<Leader>gq"] = { "<cmd>lua require('gitsigns').setqflist()<cr>", desc = "Git Quickfix" },
+    ["<Leader>gQ"] = { "<cmd>lua require('gitsigns').setqflist('all')<cr>", desc = "Git Quickfix(all files)" },
   },
 }
 
