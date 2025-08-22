@@ -69,6 +69,7 @@ CUR_DIR="$(get_current_dir)"
 source "$CUR_DIR/config.sh"
 source "$CUR_DIR/functions/copy.sh"
 source "$CUR_DIR/functions/proxy.sh"
+source "$CUR_DIR/functions/extract.sh"
 source "$CUR_DIR/completion/nsys.sh"
 source "$CUR_DIR/completion/tmux.sh"
 
