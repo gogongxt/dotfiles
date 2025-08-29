@@ -43,6 +43,19 @@ def find_source_display(spaces_map):
             return display_idx
     return None
 
+def get_safe_spaces_to_remove(spaces_by_display):
+    """获取可以安全删除的空间列表（不是显示器上的最后一个空间）"""
+    safe_to_remove = []
+    for display_idx, spaces in spaces_by_display.items():
+        # 只有当显示器上有多个空间时，才能删除其中一个
+        if len(spaces) > 1:
+            # 按索引排序，选择最大的索引（通常是最后创建的空间）
+            sorted_spaces = sorted(spaces, key=lambda x: x['index'], reverse=True)
+            safe_to_remove.extend(sorted_spaces[:len(sorted_spaces) - 1])  # 保留至少一个空间
+    
+    # 按索引降序排列，这样我们先删除索引较大的空间
+    return sorted(safe_to_remove, key=lambda x: x['index'], reverse=True)
+
 def manage_linear_spaces():
     """
     主函数，专门用于管理线性空间模式 (macOS 的 "Displays have separate Spaces" 关闭时)。
@@ -71,6 +84,11 @@ def manage_linear_spaces():
     current_total_spaces = len(all_spaces)
     print(f"当前空间总数: {current_total_spaces}")
 
+    # 按显示器分组空间
+    spaces_by_display = defaultdict(list)
+    for space in all_spaces:
+        spaces_by_display[space['display']].append(space)
+
     diff = current_total_spaces - target_total_spaces
 
     if diff < 0:
@@ -85,16 +103,27 @@ def manage_linear_spaces():
         # --- 修正后的删除逻辑 ---
         num_to_destroy = diff
         print(f"➖ 检测到空间过多，需要删除 {num_to_destroy} 个空间。")
+        
+        # 获取可以安全删除的空间列表
+        safe_spaces_to_remove = get_safe_spaces_to_remove(spaces_by_display)
+        
+        if len(safe_spaces_to_remove) < num_to_destroy:
+            print(f"⚠️ 警告: 只能安全删除 {len(safe_spaces_to_remove)} 个空间，但需要删除 {num_to_destroy} 个。")
+            print("   将先删除可安全删除的空间，剩余的空间将在阶段二中通过移动来调整。")
+            num_to_destroy = len(safe_spaces_to_remove)
+        
+        removed_count = 0
         for i in range(num_to_destroy):
-            # 安全检查：确保我们不会删除系统上最后一个空间
-            if (current_total_spaces - i) > 1:
-                print(f"   正在删除最后一个空间 (第 {i+1}/{num_to_destroy} 次操作)...")
-                # 使用 'last' 选择器，让 yabai 自己找到最后一个空间并删除
-                run_command(["yabai", "-m", "space", "last", "--destroy"], is_json=False)
-            else:
-                print("⚠️ 警告：无法删除最后一个空间。脚本中止。")
-                break 
-        print("✅ 空间总数已调整完毕。")
+            space_to_remove = safe_spaces_to_remove[i]
+            print(f"   正在删除空间 #{space_to_remove['index']} (第 {i+1}/{num_to_destroy} 次操作)...")
+            try:
+                run_command(["yabai", "-m", "space", str(space_to_remove['index']), "--destroy"], is_json=False)
+                removed_count += 1
+            except subprocess.CalledProcessError as e:
+                print(f"   ⚠️ 删除空间 #{space_to_remove['index']} 失败: {e.stderr.strip()}")
+                # 继续尝试删除其他空间
+        
+        print(f"✅ 成功删除了 {removed_count} 个空间。")
 
     else:
         print("👍 空间总数正确，无需操作。")
@@ -114,7 +143,7 @@ def manage_linear_spaces():
         spaces_by_display[space['display']].append(space)
     
     # 检查是否真的需要移动，以防万一
-    needs_moving = any(len(s) != DESIRED_SPACES_PER_DISPLAY for d_idx in spaces_by_display for s in [spaces_by_display[d_idx]] if d_idx in [d['index'] for d in displays])
+    needs_moving = any(len(spaces) != DESIRED_SPACES_PER_DISPLAY for display_idx, spaces in spaces_by_display.items())
     if not needs_moving:
         print("👍 所有显示器的空间分布已正确，无需移动。")
         print("-" * 40)
@@ -123,29 +152,44 @@ def manage_linear_spaces():
         
     print("🚚 检测到空间分布不均，开始智能调度...")
     
+    # 首先，计算每个显示器需要多少空间
+    display_needs = {}
     for display in displays:
-        target_display_index = display['index']
-        needed_count = DESIRED_SPACES_PER_DISPLAY - len(spaces_by_display[target_display_index])
-        
+        display_idx = display['index']
+        current_count = len(spaces_by_display.get(display_idx, []))
+        needed = DESIRED_SPACES_PER_DISPLAY - current_count
+        display_needs[display_idx] = needed
+    
+    # 移动空间以满足需求
+    moved_count = 0
+    for target_display_idx, needed_count in display_needs.items():
         if needed_count > 0:
-            print(f"🖥️ 显示器 {target_display_index} 需要 {needed_count} 个空间。")
+            print(f"🖥️ 显示器 {target_display_idx} 需要 {needed_count} 个空间。")
             for i in range(needed_count):
-                source_display_index = find_source_display(spaces_by_display)
+                source_display_idx = find_source_display(spaces_by_display)
                 
-                if source_display_index is None:
-                    print("🚨 错误：找不到有多余空间的源显示器了，但仍有显示器需要空间。任务中止。")
-                    return
+                if source_display_idx is None:
+                    print("🚨 错误：找不到有多余空间的源显示器了，但仍有显示器需要空间。")
+                    break
                 
-                space_to_move = spaces_by_display[source_display_index].pop()
-                
-                print(f"   (第 {i+1}/{needed_count} 步) 将空间 #{space_to_move['index']} 从显示器 {source_display_index} 移动到显示器 {target_display_index}...")
-                
-                run_command([
-                    "yabai", "-m", "space", str(space_to_move['index']),
-                    "--display", str(target_display_index)
-                ], is_json=False)
-                
-                spaces_by_display[target_display_index].append(space_to_move)
+                # 从源显示器获取一个空间（不是最后一个空间）
+                if len(spaces_by_display[source_display_idx]) > 1:
+                    # 选择索引最大的空间（通常是最后创建的空间）
+                    space_to_move = max(spaces_by_display[source_display_idx], key=lambda x: x['index'])
+                    spaces_by_display[source_display_idx].remove(space_to_move)
+                    
+                    print(f"   (第 {moved_count+1} 步) 将空间 #{space_to_move['index']} 从显示器 {source_display_idx} 移动到显示器 {target_display_idx}...")
+                    
+                    run_command([
+                        "yabai", "-m", "space", str(space_to_move['index']),
+                        "--display", str(target_display_idx)
+                    ], is_json=False)
+                    
+                    spaces_by_display[target_display_idx].append(space_to_move)
+                    moved_count += 1
+                else:
+                    print(f"   ⚠️ 无法从显示器 {source_display_idx} 移动空间，因为它是该显示器上最后一个空间。")
+                    break
 
     print("✅ 空间移动和分配完成。")
     print("-" * 40)

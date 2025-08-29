@@ -136,4 +136,4 @@ cmd - escape : bash $HOME/.config/yabai/scripts/scratchpad.sh title scratchpad "
 
 # record and resume window display position
 cmd + ctrl+ shift - s : bash $HOME/.config/yabai/scripts/record_resume_window.sh record
-cmd + ctrl+ shift - r : bash $HOME/.config/yabai/scripts/record_resume_window.sh resume
+cmd + ctrl+ shift - r : python3 $HOME/.config/yabai/scripts/space_manager.py >> $HOME/.config/yabai/log.log ; bash $HOME/.config/yabai/scripts/record_resume_window.sh resume
