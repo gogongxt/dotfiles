@@ -26,6 +26,8 @@ alias glll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%ci) %C(gr
 alias gllll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%ci) %C(green)%cn %C(reset)%s'  --all --graph --abbrev-commit"
 alias gam='git add . && echo "exec git add all" && git commit -m '
 alias gcm='git commit --amend'
+alias serie="serie -p kitty"
+alias gg="serie"
 function gsp() {
   local stashed_something=0
   # 检查工作区和暂存区是否有未提交的更改, git diff-index --quiet HEAD -- 会在有更改时返回1，没有更改时返回0
@@ -79,10 +81,8 @@ command -v fastfetch &>/dev/null && alias neofetch="fastfetch"
 command -v lolcat &>/dev/null && alias fastfetch="fastfetch | lolcat"
 command -v rsync &>/dev/null && alias mycp="rsync -avz --progress"
 command -v bat &>/dev/null && alias cat="bat --style=plain"
-alias y="yazi"
-alias e="extract"
-alias clear="/usr/bin/clear"
-alias c="/usr/bin/clear"
+alias clear="`which clear`"
+alias c="`which clear`"
 alias b="btop"
 alias nv="watch -d -n 1 nvidia-smi"
 vim() {
@@ -127,6 +127,10 @@ unset fzf_ignore
 #🔽🔽🔽
 # docker display
 xhost + &>/dev/null
+# docker proxy 
+# Ref: https://github.com/DaoCloud/public-image-mirror
+# usage: sudo docker pull $DOCKER_PROXY/lmsysorg/sglang:blackwell
+export DOCKER_PROXY="docker.m.daocloud.io"
 #🔼🔼🔼
 
 #🔽🔽🔽
