@@ -84,9 +84,10 @@ command -v rclone &>/dev/null && alias mycp_parallel="rclone copy --create-empty
 command -v bat &>/dev/null && alias cat="bat --style=plain"
 command -v eza &>/dev/null && {
   unset LS_COLORS
+  export EZA_CONFIG_DIR="$HOME/.config/eza"
   EZA_PREFIX=(
     --group 
-    --git
+    # --git
     # --icons 
   )
 	alias ls="eza $EZA_PREFIX"
