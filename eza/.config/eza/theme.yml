@@ -1,7 +1,7 @@
 colourful: true
 
 filekinds:
-  normal: { foreground: "#BAC2DE" }
+  normal: { foreground: "#DAE2FE" }
   directory: { foreground: "#89B4FA" }
   symlink: { foreground: "#89DCEB" }
   pipe: { foreground: "#7F849C" }
@@ -42,7 +42,7 @@ size:
   unit_huge: { foreground: "#74C7EC" }
 
 users:
-  user_you: { foreground: "#CDD6F4" }
+  user_you: { foreground: "#BAC2DE" }
   user_root: { foreground: "#F38BA8" }
   user_other: { foreground: "#CBA6F7" }
   group_yours: { foreground: "#BAC2DE" }
@@ -80,13 +80,13 @@ file_type:
   video: { foreground: "#F38BA8" }
   music: { foreground: "#A6E3A1" }
   lossless: { foreground: "#94E2D5" }
-  crypto: { foreground: "#585B70" }
-  document: { foreground: "#CDD6F4" }
+  crypto: { foreground: "#DAE2FE" }
+  document: { foreground: "#DAE2FE" }
   compressed: { foreground: "#F5C2E7" }
   temp: { foreground: "#EBA0AC" }
   compiled: { foreground: "#74C7EC" }
-  build: { foreground: "#585B70" }
-  source: { foreground: "#89B4FA" }
+  build: { foreground: "#DAE2FE", is_underline: false, is_bold: false }
+  source: { foreground: "#DAE2FE", is_underline: false, is_bold: false }
 
 punctuation: { foreground: "#7F849C" }
 date: { foreground: "#F9E2AF" }
