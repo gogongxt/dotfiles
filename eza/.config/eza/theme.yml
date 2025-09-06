@@ -9,7 +9,7 @@ filekinds:
   char_device: { foreground: "#EBA0AC" }
   socket: { foreground: "#585B70" }
   special: { foreground: "#CBA6F7" }
-  executable: { foreground: "#A6E3A1" }
+  executable: { foreground: "#A6FFA1", is_underline: false, is_bold: false }
   mount_point: { foreground: "#74C7EC" }
 
 perms:

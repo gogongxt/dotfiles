@@ -83,6 +83,7 @@ command -v rsync &>/dev/null && alias mycp="rsync -avz --progress"
 command -v rclone &>/dev/null && alias mycp_parallel="rclone copy --create-empty-src-dirs --progress --copy-links"
 command -v bat &>/dev/null && alias cat="bat --style=plain"
 command -v eza &>/dev/null && {
+  unset LS_COLORS
   EZA_PREFIX=(
     --group 
     --git
