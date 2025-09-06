@@ -153,15 +153,6 @@ alias documents='python3 ~/.scripts/code/documents.py'
 export CMAKE_EXPORT_COMPILE_COMMANDS=1
 #🔼🔼🔼
 
-# trash-cli alis : https://github.com/andreafrancia/trash-cli
-#🔽🔽🔽
-alias rm='bash -c '\''my_rm=""; if command -v trash-put >/dev/null 2>&1; then my_rm="trash-put"; else my_rm="rm"; fi; if [ "$#" -gt 0 ]; then $my_rm "$@"; fi'\'' _'
-alias trash-autoclean='trash-empty 30'
-alias trash-cd='cd ${HOME}/.local/share/Trash'
-alias trash-ls='trash-list'
-alias trash-ll='trash-ls'
-#🔼🔼🔼
-
 # cmake
 #🔽🔽🔽
 alias cmake_build='cmake -S. -Bbuild && cmake --build build -j'
