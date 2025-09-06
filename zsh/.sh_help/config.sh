@@ -82,6 +82,18 @@ command -v lolcat &>/dev/null && alias fastfetch="fastfetch | lolcat"
 command -v rsync &>/dev/null && alias mycp="rsync -avz --progress"
 command -v rclone &>/dev/null && alias mycp_parallel="rclone copy --create-empty-src-dirs --progress --copy-links"
 command -v bat &>/dev/null && alias cat="bat --style=plain"
+command -v eza &>/dev/null && {
+  EZA_PREFIX=(
+    --group 
+    --git
+    # --icons 
+  )
+	alias ls="eza $EZA_PREFIX"
+	alias ll="eza $EZA_PREFIX -l"
+	alias la="eza $EZA_PREFIX -a"
+	alias lla="eza $EZA_PREFIX -la"
+	unset EZA_PREFIX
+}
 alias clear="printf '\033c'"
 alias c="printf '\033c'"
 alias b="btop"
