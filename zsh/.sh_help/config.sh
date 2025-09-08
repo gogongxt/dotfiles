@@ -96,8 +96,9 @@ command -v eza &>/dev/null && {
 	alias lla="eza $EZA_PREFIX -la"
 	unset EZA_PREFIX
 }
-alias clear="printf '\033c'"
-alias c="printf '\033c'"
+# alias clear="printf '\033c'"
+# alias c="printf '\033c'"
+alias c="/usr/bin/clear"
 alias b="btop"
 alias nv="watch -d -n 1 nvidia-smi"
 vim() {
