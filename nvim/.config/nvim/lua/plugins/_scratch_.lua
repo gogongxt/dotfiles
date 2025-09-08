@@ -1,7 +1,7 @@
 -- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
 return {
-  "gogongxt/scratch.nvim",
+  "LintaoAmons/scratch.nvim",
   dependencies = { "nvim-lua/plenary.nvim" },
   event = "VeryLazy",
   config = function()
