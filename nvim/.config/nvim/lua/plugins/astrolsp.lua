@@ -12,15 +12,15 @@ return {
   opts = {
     -- Configuration table of features provided by AstroLSP
     features = {
-      codelens = true,        -- enable/disable codelens refresh on start
-      inlay_hints = true,     -- enable/disable inlay hints on start
+      codelens = true, -- enable/disable codelens refresh on start
+      inlay_hints = true, -- enable/disable inlay hints on start
       semantic_tokens = true, -- enable/disable semantic token highlighting
     },
     -- customize lsp formatting options
     formatting = {
       -- control auto formatting on save
       format_on_save = {
-        enabled = false,    -- enable or disable format on save globally
+        enabled = false, -- enable or disable format on save globally
         allow_filetypes = { -- enable format on save for specified filetypes only
           -- "go",
         },
@@ -63,11 +63,11 @@ return {
             analysis = {
               autoSearchPaths = true,
               -- diagnosticMode = "workspace",
-              typeCheckingMode = "off",           -- here's me trying stuff
+              typeCheckingMode = "off", -- here's me trying stuff
               useLibraryCodeForTypes = true,
               reportMissingModuleSource = "none", -- here's me trying stuff
-              reportMissingImports = "none",      -- here's me trying stuff
-              reportUndefinedVariable = "none",   -- here's me trying stuff, syntax errors are still reported on diagnostics
+              reportMissingImports = "none", -- here's me trying stuff
+              reportUndefinedVariable = "none", -- here's me trying stuff, syntax errors are still reported on diagnostics
             },
           },
         },
@@ -83,8 +83,8 @@ return {
               useLibraryCodeForTypes = true,
               diagnosticSeverityOverrides = {
                 reportMissingModuleSource = "none", -- here's me trying stuff
-                reportMissingImports = "none",      -- here's me trying stuff
-                reportUndefinedVariable = "none",   -- here's me trying stuff, syntax errors are still reported on diagnostics
+                reportMissingImports = "none", -- here's me trying stuff
+                reportUndefinedVariable = "none", -- here's me trying stuff, syntax errors are still reported on diagnostics
               },
             },
           },
@@ -144,6 +144,22 @@ return {
         },
         ["<Leader>lj"] = { vim.diagnostic.goto_next, desc = "Next Diagnostic", noremap = true, silent = true },
         ["<Leader>lk"] = { vim.diagnostic.goto_prev, desc = "Prev Diagnostic", noremap = true, silent = true },
+        -- code action
+        ["<Leader>la"] = {
+          function() require("tiny-code-action").code_action() end,
+          desc = "LSP code action",
+          noremap = true,
+          silent = true,
+        },
+      },
+      x = {
+        -- code action
+        ["<Leader>la"] = {
+          function() require("tiny-code-action").code_action() end,
+          desc = "LSP code action",
+          noremap = true,
+          silent = true,
+        },
       },
     },
     -- A custom `on_attach` function to be run after the default `on_attach` function
