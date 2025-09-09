@@ -5,14 +5,13 @@
 
 local M = {}
 
-
 local terminal_maps = {
-  { vim.o.shell, "<M-`>",         "Float Terminal1",      "float",      nil },
-  { vim.o.shell, "<M-Esc>",       "Float Terminal2",      "float",      nil },
-  { vim.o.shell, "<M-->",         "Horizontal Terminal1", "horizontal", 0.3 },
-  { vim.o.shell, "<M-=>",         "Horizontal Terminal2", "horizontal", 0.3 },
-  { vim.o.shell, "<M-\\>",        "Vertical Terminal1",   "vertical",   0.4 },
-  { vim.o.shell, "<M-BackSpace>", "Vertical Terminal2",   "vertical",   0.4 },
+  { vim.o.shell, "<M-`>", "Float Terminal1", "float", nil },
+  { vim.o.shell, "<M-Esc>", "Float Terminal2", "float", nil },
+  { vim.o.shell, "<M-->", "Horizontal Terminal1", "horizontal", 0.3 },
+  { vim.o.shell, "<M-=>", "Horizontal Terminal2", "horizontal", 0.3 },
+  { vim.o.shell, "<M-\\>", "Vertical Terminal1", "vertical", 0.4 },
+  { vim.o.shell, "<M-BackSpace>", "Vertical Terminal2", "vertical", 0.4 },
 }
 
 -- 这里原来是用的buffer size为基准
@@ -29,9 +28,7 @@ local terminal_maps = {
 --   return { width = bufinfo.width, height = bufinfo.height }
 -- end
 -- 我改成了用总共窗口的size
-local function get_buf_size()
-  return { width = vim.o.columns, height = vim.o.lines }
-end
+local function get_buf_size() return { width = vim.o.columns, height = vim.o.lines } end
 
 --- Get the dynamic terminal size in cells
 ---@param direction number
@@ -49,7 +46,6 @@ local function get_dynamic_terminal_size(direction, size)
   end
 end
 
-
 M.init = function(terminal_execs)
   for i, exec in pairs(terminal_execs) do
     local direction = exec[4] or "float"
@@ -61,9 +57,7 @@ M.init = function(terminal_execs)
       -- NOTE: unable to consistently bind id/count <= 9, see #2146
       count = i + 100,
       direction = direction,
-      size = function()
-        return get_dynamic_terminal_size(direction, exec[5])
-      end,
+      size = function() return get_dynamic_terminal_size(direction, exec[5]) end,
     }
 
     M.add_exec(opts)
@@ -74,29 +68,32 @@ M.add_exec = function(opts)
   local binary = opts.cmd:match "(%S+)"
   if vim.fn.executable(binary) ~= 1 then
     -- Log:debug("Skipping configuring executable " .. binary .. ". Please make sure it is installed properly.")
-    require("plugins.user.my_sys").DEBUG("Skipping configuring executable " ..
-      binary .. ". Please make sure it is installed properly.")
+    require("plugins.user.my_sys").DEBUG(
+      "Skipping configuring executable " .. binary .. ". Please make sure it is installed properly."
+    )
     return
   end
 
-  vim.keymap.set({ "n", "t" }, opts.keymap, function()
-    M._exec_toggle { cmd = opts.cmd, count = opts.count, direction = opts.direction, size = opts.size() }
-  end, { desc = opts.label, noremap = true, silent = true })
+  vim.keymap.set(
+    { "n", "t" },
+    opts.keymap,
+    function() M._exec_toggle { cmd = opts.cmd, count = opts.count, direction = opts.direction, size = opts.size() } end,
+    { desc = opts.label, noremap = true, silent = true }
+  )
 end
 
 M._exec_toggle = function(opts)
   local Terminal = require("toggleterm.terminal").Terminal
   -- local term = Terminal:new { cmd = opts.cmd, count = opts.count, direction = opts.direction }
   -- term:toggle(opts.size, opts.direction)
-  local term = Terminal:new {size=opts.size, cmd = opts.cmd, count = opts.count, direction = opts.direction }
+  local term = Terminal:new { size = opts.size, cmd = opts.cmd, count = opts.count, direction = opts.direction }
   term:toggle(opts.size)
 end
-
 
 M.init(terminal_maps)
 
 -- if you only want these mappings for toggle term use term://*toggleterm#* instead
-vim.cmd('autocmd! TermOpen term://* lua set_terminal_keymaps()')
+vim.cmd "autocmd! TermOpen term://* lua set_terminal_keymaps()"
 -- vim.keymap.set("n", "<C-t>", "<cmd>ToggleTerm<cr>")
 -- vim.keymap.set("t", "<C-t>", "<cmd>ToggleTerm<cr>")
 -- lvim.keys.normal_mode["<C-t>"] = "<cmd>ToggleTerminal<cr>"
@@ -120,5 +117,14 @@ function _G.set_terminal_keymaps()
   end
 end
 
--- return M
+-- return {
+--   "akinsho/toggleterm.nvim",
+--   opts = function(_, opts)
+--     opts.highlights = opts.highlights or {}
+--     opts.highlights.FloatBorder = {
+--       guifg = "#dd7878",
+--     }
+--     return opts
+--   end,
+-- }
 return {}
