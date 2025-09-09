@@ -1,5 +1,8 @@
 -- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
+-- maybe need a larger number if the machine's performance is low
+local debounce_delay = os.getenv "NVIM_AUTOSAVE_DEBOUNCE_DELAY" or 135
+
 -- auto save
 return {
   -- {
@@ -14,6 +17,7 @@ return {
     opts = {
       -- your config goes here
       -- or just leave it empty :)
+      debounce_delay = debounce_delay, -- delay after which a pending save is executed
     },
   },
   -- {
