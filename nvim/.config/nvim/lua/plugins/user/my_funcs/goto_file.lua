@@ -79,21 +79,29 @@ end
 
 M.go_to_file = function(file, line, col)
   local buf = vim.api.nvim_get_current_buf()
-  -- 需要根据是否是终端而进行区分，如果在终端就需要先回到主窗口
-  -- if (cur_file_type == "toggleterm") then
-  --   vim.api.nvim_command(":ToggleTerm")
-  -- end
-  -- toggleterm#101 是浮动终端
-  -- print(vim.api.nvim_buf_get_name(cur_buf))
-  -- if vim.api.nvim_buf_get_name(cur_buf):find("toggleterm#101") then
-  --   vim.api.nvim_command(":ToggleTerm")
-  -- end
-  if vim.api.nvim_buf_get_name(buf):find "toggleterm" then vim.api.nvim_command "wincmd w" end
+  local buf_name = vim.api.nvim_buf_get_name(buf)
+  local buf_type = vim.api.nvim_buf_get_option(buf, "buftype")
 
-  -- 如果是从":term"执行的输出，buffertype就是terminal
-  if vim.api.nvim_buf_get_option(buf, "buftype"):find "terminal" then vim.api.nvim_command "wincmd w" end
+  -- Check if we're in a toggleterm buffer (regular or float)
+  if buf_name:match "toggleterm" or buf_type == "terminal" then
+    -- Try to move to the previous window
+    vim.api.nvim_command "wincmd p"
 
+    -- If we're still in a terminal buffer, try alternative navigation
+    local current_buf = vim.api.nvim_get_current_buf()
+    local current_buf_name = vim.api.nvim_buf_get_name(current_buf)
+    local current_buf_type = vim.api.nvim_buf_get_option(current_buf, "buftype")
+
+    if current_buf_name:match "toggleterm" or current_buf_type == "terminal" then
+      -- Fall back to navigating to the main editing area
+      vim.api.nvim_command "wincmd w"
+    end
+  end
+
+  -- Open the target file
   vim.api.nvim_command("edit " .. file)
+
+  -- Navigate to the specific line and column if provided
   if line then vim.api.nvim_win_set_cursor(0, { tonumber(line), tonumber(col) }) end
 end
 
