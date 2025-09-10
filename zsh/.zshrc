@@ -103,6 +103,16 @@ ZVM_INIT_MODE=sourcing
 # plugin: zsh-autosuggestions
 export ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 
+# source my other config sh file
+#🔽🔽🔽
+if [ -f $HOME/.arch.sh ]; then
+  source $HOME/.arch.sh
+fi
+if [ -f $HOME/.user.sh ]; then
+  source $HOME/.user.sh
+fi
+#🔼🔼🔼
+
 source $ZSH/oh-my-zsh.sh
 
 # User configuration

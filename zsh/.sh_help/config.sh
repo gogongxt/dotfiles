@@ -7,16 +7,6 @@ esac
 export PATH="$HOME/.local/bin":$PATH
 export PATH="$HOME/.cargo/bin":$PATH
 
-# source my other config sh file
-#🔽🔽🔽
-if [ -f $HOME/.arch.sh ]; then
-  source $HOME/.arch.sh
-fi
-if [ -f $HOME/.user.sh ]; then
-  source $HOME/.user.sh
-fi
-#🔼🔼🔼
-
 #🔽🔽🔽
 #git
 alias g="gitui"
