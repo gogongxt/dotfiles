@@ -168,6 +168,11 @@ alias documents='python3 ~/.scripts/code/documents.py'
 export CMAKE_EXPORT_COMPILE_COMMANDS=1
 #🔼🔼🔼
 
+# rust cargo
+#🔽🔽🔽
+command -v sccache &>/dev/null && export RUSTC_WRAPPER="`which sccache`"
+#🔼🔼🔼
+
 # cmake
 #🔽🔽🔽
 alias cmake_build='cmake -S. -Bbuild && cmake --build build -j'
