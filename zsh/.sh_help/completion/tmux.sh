@@ -42,8 +42,12 @@ tmux() {
             ;;
         save)
             shift
-            local filename="${1:-tmux.txt}"  # if no file name use default tmux.txt
-            command tmux capture-pane -p -S - > "$filename" && echo "content saved to $filename"
+            local filename="${1:-tmux.txt}"
+            if [[ -e "$filename" ]]; then
+                echo -e "\033[31mError: File '$filename' already exists. Please change save file name.\033[0m"
+                return 1
+            fi
+            command tmux capture-pane -p -S - > "$filename" && echo -e "\033[32mContent saved to $filename\033[0m"
             ;;
         *)
             if [[ $# -eq 0 ]]; then
