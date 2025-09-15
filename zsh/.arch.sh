@@ -113,3 +113,7 @@ fi
 if [ "$(uname)" = "Darwin" ]; then
   macos
 fi
+
+unfunction macos
+unfunction ubuntu
+unfunction archlinux
