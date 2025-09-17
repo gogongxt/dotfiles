@@ -44,6 +44,18 @@ mappings.set_mappings {
       end,
       desc = "Toggle Render",
     },
+    ["gn"] = {
+      "<cmd>lua require('illuminate').goto_next_reference(true)<cr>",
+      desc = "Delete Comments",
+      noremap = true,
+      silent = true,
+    },
+    ["gp"] = {
+      "<cmd>lua require('illuminate').goto_prev_reference(true)<cr>",
+      desc = "Delete Comments",
+      noremap = true,
+      silent = true,
+    },
   },
   v = {
     -- delete comments
