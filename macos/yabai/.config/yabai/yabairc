@@ -127,12 +127,14 @@ yabai -m rule --add title="scratchpad" manage=off
 yabai -m rule --add app="^D-Chat$" manage=off 
 yabai -m rule --add app="^WeChat$" manage=off 
 yabai -m rule --add app="^NetEaseMusic$" manage=off 
+yabai -m rule --add app="^NeteaseMusic$" manage=off 
 yabai -m rule --add app="^Zotero$" opacity=1.0
 yabai -m rule --add app="^Zotero$" title="^Translate Panel$" manage=off
 yabai -m rule --add app="^IINA$" manage=off
 yabai -m rule --add app="^QQ$" manage=off
 yabai -m rule --add app="^Preview$" manage=off
 yabai -m rule --add app="^Microsoft Outlook$" opacity=1.0
+yabai -m rule --add app="^Google Chrome$" opacity=1.0
 
 # specific space settings
 # yabai -m config --space mail  layout stack
