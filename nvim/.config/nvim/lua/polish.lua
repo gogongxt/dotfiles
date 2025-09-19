@@ -56,6 +56,17 @@ mappings.set_mappings {
       noremap = true,
       silent = true,
     },
+    ["<c-g>"] = {
+      function()
+        local full_path = vim.fn.expand "%:p"
+        local total_lines = vim.fn.line "$"
+        local current_line = vim.fn.line "."
+        local percent = math.modf((current_line / total_lines) * 100)
+        vim.notify(string.format('"%s" %d lines --%d%%--', full_path, total_lines, percent), vim.log.levels.INFO)
+      end,
+      noremap = true,
+      silent = true,
+    },
   },
   v = {
     -- delete comments
