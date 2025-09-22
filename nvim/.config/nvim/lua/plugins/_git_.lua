@@ -1,26 +1,5 @@
 -- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
-vim.g.gitblame_message_when_not_committed = "" -- set null when nothing commit
-
--- local k_opts = { noremap = true, silent = true }
-local keymap = vim.keymap.set
--- keymap({ "n" }, "<Leader>gj", "<cmd>lua require('gitsigns').nav_hunk('prev')<cr>", { desc = "Hunk next" })
--- keymap({ "n" }, "<Leader>gk", "<cmd>lua require('gitsigns').nav_hunk('prev')<cr>", { desc = "Hunk prev" })
--- keymap({ "n"}, "<Leader>gB", {name="123"}, { desc = "Git Blame" })
-
--- ["<Leader>gB"] = { name = "Git Blame" },
--- ["<Leader>gBw"] = { "<cmd>BlameToggle window<cr>", desc = "Blame window", noremap = true, silent = true },
--- ["<Leader>gBv"] = { "<cmd>BlameToggle virtual<cr>", desc = "Blame virtual", noremap = true, silent = true },
--- local wk = require "which-key"
--- wk.register({
---   ["<leader>gB"] = {
---     name = "+git-blame", -- 子菜单名称（可选）
---     b = { "<cmd>BlameToggle window<cr>", "Blame Window" }, -- <leader>gBb
---     a = { "<cmd>BlameToggle virtual<cr>", "Blame Virtual" }, -- <leader>gBa
---     -- 可以继续添加更多子键
---   },
--- }, { mode = "n" })
--- vim.keymap.set("n", "<leader>gB", "<Nop>", { desc = "Git Blame Menu" })  -- 占位，不执行操作
 local mappings = require "mappings"
 mappings.set_mappings {
   n = {
@@ -73,9 +52,52 @@ return {
       -- your configuration comes here
       -- for example
       enabled = true, -- if you want to enable the plugin
-      message_template = " [<date>] [<author>]:<summary>   <<sha>>", -- template for the blame message, check the Message template section for more options
+      message_template = " [<date>] [<author>]:<summary>  <<sha>>", -- template for the blame message, check the Message template section for more options
       date_format = "%Y-%m-%d %H:%M:%S", -- template for the date, check Date format section for more options
       virtual_text_column = 1, -- virtual text start column, check Start virtual text at column section for more options
     },
+    config = function(_, opts)
+      require("gitblame").setup(opts)
+      vim.g.gitblame_message_when_not_committed = "" -- set null when nothing commit
+    end,
+  },
+  {
+
+    "sindrets/diffview.nvim",
+    config = function()
+      -- Lua
+      require("diffview").setup {
+        view = {
+          -- Configure the layout and behavior of different types of views.
+          -- Available layouts:
+          --  'diff1_plain'
+          --    |'diff2_horizontal'
+          --    |'diff2_vertical'
+          --    |'diff3_horizontal'
+          --    |'diff3_vertical'
+          --    |'diff3_mixed'
+          --    |'diff4_mixed'
+          -- For more info, see |diffview-config-view.x.layout|.
+          default = {
+            -- Config for changed files, and staged files in diff views.
+            layout = "diff2_horizontal",
+            disable_diagnostics = false, -- Temporarily disable diagnostics for diff buffers while in the view.
+            winbar_info = true, -- See |diffview-config-view.x.winbar_info|
+          },
+          merge_tool = {
+            -- Config for conflicted files in diff views during a merge or rebase.
+            layout = "diff3_mixed",
+            disable_diagnostics = true, -- Temporarily disable diagnostics for diff buffers while in the view.
+            winbar_info = true, -- See |diffview-config-view.x.winbar_info|
+          },
+          file_history = {
+            -- Config for changed files in file history views.
+            layout = "diff2_horizontal",
+            disable_diagnostics = false, -- Temporarily disable diagnostics for diff buffers while in the view.
+            winbar_info = true, -- See |diffview-config-view.x.winbar_info|
+          },
+        },
+      }
+    end,
   },
 }

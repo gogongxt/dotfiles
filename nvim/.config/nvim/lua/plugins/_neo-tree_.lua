@@ -41,6 +41,24 @@ if enable_smart_autofollow then
         -- print "跳过：空路径或不可读文件"
         return
       end
+
+      local is_diffview_buffer = false
+      local current_tab = vim.api.nvim_get_current_tabpage()
+      local wins = vim.api.nvim_tabpage_list_wins(current_tab)
+      for _, win in ipairs(wins) do
+        local buf = vim.api.nvim_win_get_buf(win)
+        local ft = vim.api.nvim_buf_get_option(buf, "filetype")
+        local name = vim.api.nvim_buf_get_name(buf)
+        if ft == "DiffviewFiles" or name:match "^Diffview" or name:match "diffview://" then
+          is_diffview_buffer = true
+          break
+        end
+      end
+      if is_diffview_buffer then
+        -- print "跳过：Diffview 相关的 buffer"
+        return
+      end
+
       -- 2. 检查 Neo-tree 是否真的打开（延迟检查以确保窗口状态已更新）
       vim.defer_fn(function()
         -- 重新检查所有窗口，确保 Neo-tree 确实存在
