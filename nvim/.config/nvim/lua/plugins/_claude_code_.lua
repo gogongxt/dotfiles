@@ -3,8 +3,23 @@
 return {
   "coder/claudecode.nvim",
   dependencies = { "folke/snacks.nvim" },
+  -- -- TODO: auto insert disable
+  -- dir = "~/tmp/claudecode.nvim",
   opts = {
     terminal_cmd = "ccr code",
+    focus_after_send = true, -- When true, successful sends will focus the Claude terminal if already connected
+    track_selection = true,
+
+    -- Terminal Configuration
+    terminal = {
+      split_side = "right", -- "left" or "right"
+      split_width_percentage = 0.40,
+      provider = "snacks", -- "auto", "snacks", "native", "external", "none", or custom provider table
+      auto_close = true,
+      snacks_win_opts = {
+        -- auto_insert = false,
+      }, -- Opts to pass to `Snacks.terminal.open()` - see Floating Window section below
+    },
   },
   config = true,
   keys = {
