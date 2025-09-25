@@ -1,6 +1,6 @@
 -- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
--- NOTE: gxt_kt: 以下toggle_terminal函数都参考自lvim源码：
+-- NOTE: gogongxt: 以下toggle_terminal函数都参考自lvim源码：
 -- https://github.com/LunarVim/LunarVim/blob/master/lua/lvim/core/terminal.lua
 
 local M = {}
