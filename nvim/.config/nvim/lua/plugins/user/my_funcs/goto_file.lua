@@ -1,8 +1,13 @@
 local M = {}
 
 -- 解析一行或多行文本中的路径/行/列
-local function parse_line(text, cwd, home)
+M.parse_line = function(text, cwd, home)
   local patterns = {
+    -- 特例优先安排
+    -- 给ipython使用，匹配 "File /path/to/file:line, in" 格式
+    -- File /nfs/ofs-llm-ssd/user/gogongxt/Projects/nano-sglang/nanosglang/model_executor/model_runner.py:250, in __init__
+    "File%s+(/[^:%s]*):(%d+),",
+
     -- 优先级 1: 匹配绝对路径、以~开头或以$HOME开头的路径
     -- $HOME 模式
     "(%$HOME/[^:%s]*):(%d+):(%d+)",
@@ -12,6 +17,10 @@ local function parse_line(text, cwd, home)
     "([~][^:%s]*):(%d+):(%d+)",
     "([~][^:%s]*):(%d+)",
     "([~][^:%s]*)",
+    -- / 绝对路径模式 (只匹配以 / 开头的完整路径)
+    "^([/][^:%s]*):(%d+):(%d+)",
+    "^([/][^:%s]*):(%d+)",
+    "^([/][^:%s]*)",
     -- 优先级 2: 匹配带多级目录的相对路径 (例如: src/main.rs, Projects/benchmark/...)
     "([%w%._%-]+/[^:%s]*):(%d+):(%d+)",
     "([%w%._%-]+/[^:%s]*):(%d+)",
@@ -20,15 +29,15 @@ local function parse_line(text, cwd, home)
     "([%w%._%-]+%.%w+):(%d+):(%d+)",
     "([%w%._%-]+%.%w+):(%d+)",
     "([%w%._%-]+%.%w+)",
-    -- 优先级 4: / 绝对路径模式
-    "([/][^:%s]*):(%d+):(%d+)",
-    "([/][^:%s]*):(%d+)",
-    "([/][^:%s]*)",
   }
   local file_path, line_num, col_num
   for _, pattern in ipairs(patterns) do
     file_path, line_num, col_num = text:match(pattern)
-    if file_path then break end
+    if file_path then
+      -- print("Matched pattern: " .. pattern)
+      -- print("Captured file_path: " .. file_path)
+      break
+    end
   end
   -- print(string.format("parse %s:%s:%s", file_path, tostring(line_num), tostring(col_num)))
   if not file_path then return nil end
@@ -54,7 +63,7 @@ M.extract_file_info = function(input)
   local cwd = vim.fn.getcwd()
 
   local function try_parse(text)
-    local file, line_num, col_num = parse_line(text, cwd, home)
+    local file, line_num, col_num = M.parse_line(text, cwd, home)
     -- print(string.format("parse %s:%s:%s", tostring(file), tostring(line_num), tostring(col_num)))
     if file and vim.loop.fs_stat(file) then return file, line_num, col_num end
     return nil
