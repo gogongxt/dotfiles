@@ -23,6 +23,7 @@ return {
       nls.builtins.formatting.black,
       -- nls.builtins.formatting.isort,
       nls.builtins.formatting.isort.with { extra_args = { "--profile", "black" } },
+      nls.builtins.formatting.shfmt.with { extra_args = { "-ci", "-i", "4" } },
     })
   end,
 }

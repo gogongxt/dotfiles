@@ -12,15 +12,15 @@ return {
   opts = {
     -- Configuration table of features provided by AstroLSP
     features = {
-      codelens = true, -- enable/disable codelens refresh on start
-      inlay_hints = true, -- enable/disable inlay hints on start
+      codelens = true,        -- enable/disable codelens refresh on start
+      inlay_hints = true,     -- enable/disable inlay hints on start
       semantic_tokens = true, -- enable/disable semantic token highlighting
     },
     -- customize lsp formatting options
     formatting = {
       -- control auto formatting on save
       format_on_save = {
-        enabled = false, -- enable or disable format on save globally
+        enabled = false,    -- enable or disable format on save globally
         allow_filetypes = { -- enable format on save for specified filetypes only
           -- "go",
         },
@@ -41,6 +41,7 @@ return {
     servers = {
       -- use your own clangd in $PATH
       "clangd",
+      -- "basedpyright",
       -- "pyright"
     },
     -- customize language server configuration options passed to `lspconfig`
@@ -63,11 +64,11 @@ return {
             analysis = {
               autoSearchPaths = true,
               -- diagnosticMode = "workspace",
-              typeCheckingMode = "off", -- here's me trying stuff
+              typeCheckingMode = "off",           -- here's me trying stuff
               useLibraryCodeForTypes = true,
               reportMissingModuleSource = "none", -- here's me trying stuff
-              reportMissingImports = "none", -- here's me trying stuff
-              reportUndefinedVariable = "none", -- here's me trying stuff, syntax errors are still reported on diagnostics
+              reportMissingImports = "none",      -- here's me trying stuff
+              reportUndefinedVariable = "none",   -- here's me trying stuff, syntax errors are still reported on diagnostics
             },
           },
         },
@@ -77,14 +78,14 @@ return {
         settings = {
           basedpyright = {
             analysis = {
-              -- autoSearchPaths = true,
+              autoSearchPaths = true,
               -- diagnosticMode = "workspace",
               typeCheckingMode = "off", -- here's me trying stuff
               useLibraryCodeForTypes = true,
               diagnosticSeverityOverrides = {
                 reportMissingModuleSource = "none", -- here's me trying stuff
-                reportMissingImports = "none", -- here's me trying stuff
-                reportUndefinedVariable = "none", -- here's me trying stuff, syntax errors are still reported on diagnostics
+                reportMissingImports = "none",      -- here's me trying stuff
+                reportUndefinedVariable = "none",   -- here's me trying stuff, syntax errors are still reported on diagnostics
               },
             },
           },
