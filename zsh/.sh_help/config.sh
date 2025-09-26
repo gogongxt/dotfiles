@@ -69,8 +69,9 @@ command -v python &>/dev/null || alias python="python3"
 command -v yazi &>/dev/null && alias r="yazi" || alias r="ranger"
 command -v fastfetch &>/dev/null && alias neofetch="fastfetch"
 command -v lolcat &>/dev/null && alias fastfetch="fastfetch | lolcat"
-command -v rsync &>/dev/null && alias mycp="rsync -avz --progress"
-command -v rclone &>/dev/null && alias mycp_parallel="rclone copy --create-empty-src-dirs --progress --copy-links"
+alias mycp="rsync -avz --progress"
+alias mycp_parallel="rclone copy --create-empty-src-dirs --progress --copy-links"
+alias mywget="aria2c -x 16 -s 16"
 command -v bat &>/dev/null && alias cat="bat --style=plain"
 command -v eza &>/dev/null && {
   unset LS_COLORS
