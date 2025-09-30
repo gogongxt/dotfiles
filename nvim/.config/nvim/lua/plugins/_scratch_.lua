@@ -11,7 +11,7 @@ return {
       use_telescope = false,
       -- fzf-lua is recommanded, since it will order the files by modification datetime desc. (require rg)
       file_picker = "snacks",
-      filetypes = { "txt", "md", "yaml", "lua", "js", "sh", "ts", "cpp", "cc", "c", "py" }, -- you can simply put filetype here
+      filetypes = { "txt", "md", "log", "yaml", "lua", "js", "sh", "ts", "cpp", "cc", "c", "py" }, -- you can simply put filetype here
       filetype_details = { -- or, you can have more control here
         -- ["yaml"] = {},
         -- go = {
