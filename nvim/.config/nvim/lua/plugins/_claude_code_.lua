@@ -6,7 +6,8 @@ return {
   -- -- TODO: auto insert disable
   -- dir = "~/tmp/claudecode.nvim",
   opts = {
-    terminal_cmd = "ccr code",
+    -- terminal_cmd = "ccr code",
+    terminal_cmd = "claude",
     focus_after_send = true, -- When true, successful sends will focus the Claude terminal if already connected
     track_selection = true,
 
