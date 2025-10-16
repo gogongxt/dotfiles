@@ -24,7 +24,7 @@ tmux_choose_window() {
 }
 tmux() {
     case "$1" in
-        rm|kill)
+        rm | kill)
             shift
             command tmux kill-session -t "$@"
             ;;
@@ -47,11 +47,14 @@ tmux() {
                 echo -e "\033[31mError: File '$filename' already exists. Please change save file name.\033[0m"
                 return 1
             fi
-            command tmux capture-pane -p -S - > "$filename" && echo -e "\033[32mContent saved to $filename\033[0m"
+            command tmux capture-pane -p -S - >"$filename" && echo -e "\033[32mContent saved to $filename\033[0m"
             ;;
         *)
             if [[ $# -eq 0 ]]; then
-                command tmux -u
+                TMUX_WORKING_DIR="$(pwd)"
+                command tmux -u new-session -c "$HOME" \; \
+                    set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
+                    send-keys "cd '$TMUX_WORKING_DIR' && /usr/bin/clear" Enter
                 return
             fi
             local session_name="$1"
@@ -61,9 +64,13 @@ tmux() {
                     command tmux switch-client -t "$session_name"
                 else
                     if [[ -n "$start_directory" ]]; then
-                        command tmux new-session -s "$session_name" -c "$start_directory"
+                        TMUX_WORKING_DIR="${start_directory}" 
+                        command tmux -u new-session -s "$session_name" -c "$HOME" \; \
+                            send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
                     else
-                        command tmux new-session -s "$session_name"
+                        TMUX_WORKING_DIR="$(pwd)"
+                        command tmux -u new-session -s "$session_name" -c "$HOME" \; \
+                            send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
                     fi
                 fi
             else
@@ -73,9 +80,20 @@ tmux() {
                 else
                     # If attach fails, the session doesn't exist, so create it.
                     if [[ -n "$start_directory" ]]; then
-                        command tmux -u new-session -s "$session_name" -c "$start_directory"
+                        # command tmux new-session -s "$session_name" -c "$HOME" \; \
+                        #     set-environment TMUX_WORKING_DIR "${start_directory}" \; \
+                        #     send-keys "cd ${start_directory} && /usr/bin/clear" Enter
+                        TMUX_WORKING_DIR="${start_directory}"
+                        command tmux -u new-session -s "$session_name" -c "$HOME" \; \
+                            send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
                     else
-                        command tmux -u new-session -s "$session_name"
+                        # command tmux -u new-session -s "$session_name" -c "$HOME" # use $HOME will speed up tmux operation
+                        # command tmux -u new-session -s "$session_name" -c "$HOME" \; \
+                        #     set-environment TMUX_WORKING_DIR "$(pwd)" \; \
+                        #     send-keys "cd $(pwd) && /usr/bin/clear" Enter
+                        TMUX_WORKING_DIR="$(pwd)"
+                        command tmux -u new-session -s "$session_name" -c "$HOME" \; \
+                            send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
                     fi
                 fi
             fi
@@ -98,7 +116,7 @@ _tmux_completion_bash() {
     fi
 
     case "${words[1]}" in
-        rm|kill)
+        rm | kill)
             # rm/kill 命令需要会话名作为参数
             COMPREPLY=($(compgen -W "${sessions}" -- "${cur}"))
             ;;
@@ -135,7 +153,7 @@ _tmux_completion_zsh() {
         second_arg)
             # 当补全第二个参数时，根据第一个参数的内容决定补全项
             case "$words[2]" in
-                rm|kill)
+                rm | kill)
                     _describe 'session to kill' sessions
                     ;;
             esac
