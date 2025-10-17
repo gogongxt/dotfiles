@@ -66,10 +66,12 @@ tmux() {
                     if [[ -n "$start_directory" ]]; then
                         TMUX_WORKING_DIR="${start_directory}" 
                         command tmux -u new-session -s "$session_name" -c "$HOME" \; \
+                            set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
                             send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
                     else
                         TMUX_WORKING_DIR="$(pwd)"
                         command tmux -u new-session -s "$session_name" -c "$HOME" \; \
+                            set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
                             send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
                     fi
                 fi
@@ -85,6 +87,7 @@ tmux() {
                         #     send-keys "cd ${start_directory} && /usr/bin/clear" Enter
                         TMUX_WORKING_DIR="${start_directory}"
                         command tmux -u new-session -s "$session_name" -c "$HOME" \; \
+                            set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
                             send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
                     else
                         # command tmux -u new-session -s "$session_name" -c "$HOME" # use $HOME will speed up tmux operation
@@ -93,6 +96,7 @@ tmux() {
                         #     send-keys "cd $(pwd) && /usr/bin/clear" Enter
                         TMUX_WORKING_DIR="$(pwd)"
                         command tmux -u new-session -s "$session_name" -c "$HOME" \; \
+                            set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
                             send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
                     fi
                 fi
