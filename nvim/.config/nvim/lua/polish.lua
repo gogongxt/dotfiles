@@ -22,6 +22,16 @@ vim.api.nvim_create_autocmd("ColorScheme", {
   desc = "Override diff colors for Catppuccin",
 })
 
+local function toggle_render()
+  if vim.bo.filetype == "markdown" then
+    vim.cmd "RenderMarkdown toggle"
+  elseif vim.bo.filetype == "csv" then
+    vim.cmd "CsvViewToggle display_mode=border"
+  else
+    vim.cmd "Neogen"
+  end
+end
+
 local mappings = require "mappings"
 mappings.set_mappings {
   n = {
@@ -32,16 +42,12 @@ mappings.set_mappings {
       noremap = true,
       silent = true,
     },
+    ["<C-/>"] = {
+      toggle_render,
+      desc = "Toggle Render",
+    },
     ["<C-_>"] = {
-      function()
-        if vim.bo.filetype == "markdown" then
-          vim.cmd "RenderMarkdown toggle"
-        elseif vim.bo.filetype == "csv" then
-          vim.cmd "CsvViewToggle display_mode=border"
-        else
-          vim.cmd "Neogen"
-        end
-      end,
+      toggle_render,
       desc = "Toggle Render",
     },
     ["gn"] = {
