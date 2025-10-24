@@ -68,7 +68,7 @@ keymap = [
 	{ on = "-",         run = "link",                        desc = "Symlink the absolute path of yanked files" },
 	{ on = "_",         run = "link --relative",             desc = "Symlink the relative path of yanked files" },
 	{ on = "<C-->",     run = "hardlink",                    desc = "Hardlink yanked files" },
-	{ on = "Y",         run = "unyank",                      desc = "Cancel the yank status" },
+	{ on = "Y",         run = "plugin copy-path",              desc = "Copy path/filename/extension with interactive selection" },
 	{ on = "X",         run = "unyank",                      desc = "Cancel the yank status" },
 	{ on = "d",         run = "remove",                      desc = "Trash selected files" },
 	{ on = "D",         run = "remove --permanently",        desc = "Permanently delete selected files" },

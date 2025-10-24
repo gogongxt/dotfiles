@@ -48,6 +48,11 @@ use = "gogongxt/smart-tab"
 rev = "b549375"
 hash = "268eecfdcb159461834c5d27072990b"
 
+[[plugin.deps]]
+use = "gogongxt/copy-path"
+rev = "latest"
+hash = ""
+
 [[flavor.deps]]
 use = "yazi-rs/flavors:catppuccin-macchiato"
 rev = "d04a298"
