@@ -123,6 +123,7 @@ def get_server_details(config_file, server_name):
                 "ssh_user": found_server["ssh_user"],
                 # 可选字段：使用 .get() 并提供默认值
                 "port": str(found_server.get("port", 22)),
+                "add": found_server.get("add", ""),
                 # 从安全的 auth_details 字典中获取可选信息
                 "username": auth_details.get("username"),  # 如果没有，返回 None
                 "password": auth_details.get("password"),  # 如果没有，返回 None
@@ -164,7 +165,7 @@ def sigwinch_handler(signum, frame):
 def connect_to_server(server_details):
     global child
     try:
-        cmd = f"ssh -p {server_details['port']} {server_details['ssh_user']}@{server_details['host']}"
+        cmd = f"ssh {server_details['add']} -p {server_details['port']} {server_details['ssh_user']}@{server_details['host']}"
         env = os.environ.copy()
         env["TERM"] = "xterm-256color"
 

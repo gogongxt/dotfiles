@@ -119,6 +119,7 @@ def get_server_details(config_file, server_name, pwd_manager: EnhancedPasswordMa
             "host": found_server["host"],
             "ssh_user": found_server["ssh_user"],
             "port": str(found_server.get("port", 22)),
+            "add": found_server.get("add", ""),
             "username": auth_details.get("username"),
             "password": auth_details.get("password"),
             "username_prompt": auth_details.get("username_prompt", "Username: "),
@@ -166,7 +167,7 @@ def sigwinch_handler(signum, frame):
 def connect_to_server(server_details):
     global child
     try:
-        cmd = f"ssh -p {server_details['port']} {server_details['ssh_user']}@{server_details['host']}"
+        cmd = f"ssh {server_details['add']} -p {server_details['port']} {server_details['ssh_user']}@{server_details['host']}"
         env = os.environ.copy()
         env["TERM"] = "xterm-256color"
 
