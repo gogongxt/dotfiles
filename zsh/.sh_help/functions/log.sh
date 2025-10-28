@@ -19,6 +19,12 @@ mylog() {
 		time "$@" 2>&1
 		echo "================================"
 		echo "Exit code: $?"
-	} | tee "$logfile"
+	} | {
+		if command -v ansi2txt &>/dev/null; then
+			tee >(ansi2txt >"$logfile")
+		else
+			tee "$logfile"
+		fi
+	}
 	echo "Log saved: $logfile"
 }
