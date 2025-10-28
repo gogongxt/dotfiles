@@ -14,6 +14,7 @@ mylog() {
 		echo "Command: $@"
 		echo "Directory: $(pwd)"
 		echo "User: $(whoami)"
+		echo "Log saved: $logfile"
 		echo "================================"
 		time "$@" 2>&1
 		echo "================================"
