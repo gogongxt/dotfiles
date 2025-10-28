@@ -72,3 +72,6 @@ proxy() {
 }
 #🔼🔼🔼
 
+# pip install package use http proxy rather than other source
+# export PIP_PROXY="-i https://pypi.org/simple/ --proxy http://127.0.0.1:7890"
+alias pip_proxy='pip --proxy http://127.0.0.1:7890 -i https://pypi.org/simple/'
