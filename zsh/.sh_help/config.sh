@@ -10,14 +10,15 @@ export PATH="$HOME/.cargo/bin":$PATH
 #🔽🔽🔽
 #git
 alias g="gitui"
+alias serie="serie -p kitty"
+alias gg="serie"
+alias gs="git status"
 alias gl="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%ci) %C(green)%cn %C(reset)%s'  --all --graph --abbrev-commit -5"
 alias gll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%ci) %C(green)%cn %C(reset)%s'  --all --graph --abbrev-commit -10"
 alias glll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%ci) %C(green)%cn %C(reset)%s'  --all --graph --abbrev-commit -20"
 alias gllll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%ci) %C(green)%cn %C(reset)%s'  --all --graph --abbrev-commit"
 alias gam='git add . && echo "exec git add all" && git commit -m '
 alias gcm='git commit --amend'
-alias serie="serie -p kitty"
-alias gg="serie"
 function gsp() {
   local stashed_something=0
   # 检查工作区和暂存区是否有未提交的更改, git diff-index --quiet HEAD -- 会在有更改时返回1，没有更改时返回0
