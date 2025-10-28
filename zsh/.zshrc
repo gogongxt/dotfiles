@@ -108,8 +108,14 @@ export ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 if [ -f $HOME/.arch.sh ]; then
   source $HOME/.arch.sh
 fi
+if [ -f $HOME/.arch2.sh ]; then
+  source $HOME/.arch2.sh
+fi
 if [ -f $HOME/.user.sh ]; then
   source $HOME/.user.sh
+fi
+if [ -f $HOME/.user2.sh ]; then
+  source $HOME/.user2.sh
 fi
 #🔼🔼🔼
 
