@@ -134,7 +134,7 @@ unset fzf_ignore
 
 #🔽🔽🔽
 # docker display
-xhost + &>/dev/null
+command -v xhost &>/dev/null && xhost + &>/dev/null
 # docker proxy 
 # Ref: https://github.com/DaoCloud/public-image-mirror
 # usage: sudo docker pull $DOCKER_PROXY/lmsysorg/sglang:blackwell
