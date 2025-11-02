@@ -1,14 +1,14 @@
 import socket
-import subprocess
 import threading
+import time
 import webbrowser
 
 
 def browser_listener():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("localhost", 7778))
+        s.bind(("localhost", 7770))
         s.listen()
-        print("Listening for browser open commands on port 7778...")
+        print("Listening for browser open commands on port 7770...")
 
         while True:
             conn, _ = s.accept()
@@ -26,6 +26,6 @@ if __name__ == "__main__":
 
     try:
         while True:
-            pass
+            time.sleep(1)
     except KeyboardInterrupt:
         print("\nListener stopped")
