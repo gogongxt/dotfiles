@@ -9,6 +9,86 @@ mappings.set_mappings {
   v = {},
 }
 
+--[[
+===================== 📘 使用说明 =====================
+SSH连接示例：
+  ssh -R 7770:localhost:7770 -L 7771:127.0.0.1:7771 $USER@$IP -p $PORT
+  端口映射说明：
+    -R 7770:localhost:7770   ：远程端口7770 映射到本地7770，用于 Neovim 发送预览URL。
+    -L 7771:127.0.0.1:7771   ：本地端口7771 映射到远程7771，用于浏览器访问预览页面。
+
+🌍 环境变量设置：
+  NVIM_MKDP_PORT=7771        # Markdown 预览服务器端口
+  NVIM_MKDP_URL_PORT=7770    # 预览URL传输端口（同时用于 gx 打开链接）
+
+🔗 功能说明：
+  - Markdown 预览：由 markdown-preview.nvim 启动，URL 通过本地 socket 发送
+  - gx 映射：光标处 URL 会被发送到本地监听的浏览器脚本 (同上端口)
+======================================================
+--]]
+if os.getenv "SSH_CONNECTION" ~= nil then
+  local mkdp_port = os.getenv "NVIM_MKDP_PORT" or "7771"
+  local mkdp_url_port = os.getenv "NVIM_MKDP_URL_PORT" or "7770"
+  vim.g.mkdp_open_ip = "127.0.0.1"
+  vim.g.mkdp_port = mkdp_port
+  vim.g.mkdp_url_port = mkdp_url_port
+  vim.g.mkdp_open_to_the_world = 1
+  vim.g.mkdp_echo_preview_url = 1
+  vim.g.mkdp_auto_close = 0
+
+  -- 定义通用函数：发送URL到指定本地端口
+  vim.api.nvim_exec(
+    string.format(
+      [[
+    function! SendUrlToLocalhost(url, port)
+      let l:url = substitute(a:url, '0\.0\.0\.0', 'localhost', 'g')
+      let l:cmd = ''
+      if executable('nc')
+        let l:cmd = "echo '" . l:url . "' | nc localhost " . a:port . " &"
+      elseif executable('python3')
+        let l:cmd = "python3 -c \"import socket; s=socket.socket(); s.connect(('localhost'," . a:port . ")); s.send(b'" . l:url . "'); s.close()\" &"
+      else
+        lua vim.notify("❌ No suitable tool found (nc or python3 required)", vim.log.levels.ERROR)
+        return
+      endif
+      call system(l:cmd)
+    endfunction
+  ]],
+      false
+    ),
+    false
+  )
+
+  -- markdown-preview 的 URL 发送逻辑
+  vim.cmd(string.format(
+    [[
+    let g:mkdp_browserfunc = 'OpenMarkdownPreview'
+    function! OpenMarkdownPreview(url)
+      call SendUrlToLocalhost(a:url, %s)
+      lua vim.notify("🪄 Opening preview: " .. vim.fn.expand("<afile>"), vim.log.levels.INFO)
+    endfunction
+  ]],
+    mkdp_url_port
+  ))
+
+  -- gx 映射（发送当前URL到相同端口）
+  vim.cmd(string.format(
+    [[
+    function! OpenLinkWithLocalBrowser()
+      let l:url = expand('<cfile>')
+      if l:url !~? '^https\?://'
+        lua vim.notify("⚠️ Not a valid URL under cursor", vim.log.levels.WARN)
+        return
+      endif
+      call SendUrlToLocalhost(l:url, %s)
+      lua vim.notify("🔗 Sent to local browser: " .. vim.fn.expand('<cfile>'), vim.log.levels.INFO)
+    endfunction
+    nnoremap gx :call OpenLinkWithLocalBrowser()<CR>
+  ]],
+    mkdp_url_port
+  ))
+end
+
 return {
   {
     -- 可以再浏览器中预览markdown文件
