@@ -239,3 +239,54 @@ pycd() {
   fi
 }
 #🔼🔼🔼
+
+# ======================================================                                                    
+#  Lazy Load Conda for Faster Shell Startup                                                                 
+# ======================================================                                                    
+#🔽🔽🔽
+function conda() {
+  # 确定 conda 安装路径
+  local conda_path
+  if [ -n "$CONDA_PATH" ]; then
+    conda_path="$CONDA_PATH"
+  elif [ -d "$HOME/miniconda3" ]; then
+    conda_path="$HOME/miniconda3"
+  else
+    echo "Error: Neither CONDA_PATH is set nor $HOME/miniconda3 exists." >&2
+    return 1
+  fi
+  # 检查 conda_path 是否存在且是有效目录
+  if [ ! -d "$conda_path" ]; then
+    echo "Error: Conda path '$conda_path' is not a valid directory." >&2
+    return 1
+  fi
+  # 检查 conda 二进制文件是否存在
+  local conda_bin="$conda_path/bin/conda"
+  if [ ! -f "$conda_bin" ]; then
+    echo "Error: Conda binary not found at '$conda_bin'. Please check your conda installation." >&2
+    return 1
+  fi
+  # 移除这个临时的 conda 函数定义，以便后续直接调用真正的 conda 命令
+  unset -f conda
+  # --- Conda 初始化核心逻辑 ---
+  # 这部分逻辑直接取自 'conda init'，确保与官方行为一致
+  local conda_bin="$conda_path/bin/conda"
+  __conda_setup="$('$conda_bin' 'shell.zsh' 'hook' 2>/dev/null)"
+  if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+  else
+    local conda_sh_path="$conda_path/etc/profile.d/conda.sh"
+    if [ -f "$conda_sh_path" ]; then
+      . "$conda_sh_path"
+    else
+      export PATH="$conda_path/bin:$PATH"
+    fi
+  fi
+  unset __conda_setup
+  # --- Conda 初始化结束 ---
+  # 现在 Conda 已经初始化完毕，执行你最初想要运行的命令
+  # "$@" 会将所有传递给此函数的参数原封不动地传递给真正的 conda 命令
+  # 例如，你输入 "conda activate base"，"$@" 就是 "activate base"
+  conda "$@"
+}
+#🔼🔼🔼
