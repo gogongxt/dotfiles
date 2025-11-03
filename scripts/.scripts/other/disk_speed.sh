@@ -6,6 +6,18 @@
 
 set -e
 
+# 检测操作系统
+detect_os() {
+    case "$(uname -s)" in
+        Darwin*) OS="macos" ;;
+        Linux*) OS="linux" ;;
+        *) OS="unknown" ;;
+    esac
+}
+
+# 初始化操作系统检测
+detect_os
+
 # 默认参数
 DIR="."
 THREADS=4
@@ -43,31 +55,31 @@ EOF
 # 参数解析
 while [[ $# -gt 0 ]]; do
     case $1 in
-    -d | --dir)
-        DIR="$2"
-        shift 2
-        ;;
-    -t | --threads)
-        THREADS="$2"
-        shift 2
-        ;;
-    -b | --block-size)
-        BLOCK_SIZE="$2"
-        shift 2
-        ;;
-    -c | --count)
-        COUNT="$2"
-        shift 2
-        ;;
-    -m | --mode)
-        MODE="$2"
-        shift 2
-        ;;
-    -h | --help) usage ;;
-    *)
-        echo "未知参数: $1"
-        usage
-        ;;
+        -d | --dir)
+            DIR="$2"
+            shift 2
+            ;;
+        -t | --threads)
+            THREADS="$2"
+            shift 2
+            ;;
+        -b | --block-size)
+            BLOCK_SIZE="$2"
+            shift 2
+            ;;
+        -c | --count)
+            COUNT="$2"
+            shift 2
+            ;;
+        -m | --mode)
+            MODE="$2"
+            shift 2
+            ;;
+        -h | --help) usage ;;
+        *)
+            echo "未知参数: $1"
+            usage
+            ;;
     esac
 done
 
@@ -80,6 +92,7 @@ fi
 # 输出基本信息
 echo "====================="
 echo "磁盘性能测试"
+echo "操作系统: $OS"
 echo "测试目录: $DIR"
 echo "线程数: $THREADS"
 echo "块大小: $BLOCK_SIZE"
@@ -92,33 +105,65 @@ to_mb() {
     local num=$1
     local unit=$2
     case $unit in
-    GB/s) awk "BEGIN {print $num * 1024}" ;;
-    MB/s) awk "BEGIN {print $num}" ;;
-    KB/s) awk "BEGIN {print $num / 1024}" ;;
-    B/s) awk "BEGIN {print $num / 1048576}" ;;
-    *) echo 0 ;;
+        GB/s) awk "BEGIN {print $num * 1024}" ;;
+        MB/s) awk "BEGIN {print $num}" ;;
+        KB/s) awk "BEGIN {print $num / 1024}" ;;
+        B/s) awk "BEGIN {print $num / 1048576}" ;;
+        *) echo 0 ;;
     esac
 }
 
 # 函数：执行 dd 并抓取速度，统一返回 MB/s 数值
 run_dd_write() {
     local file="$1"
-    local speed
-    speed=$(dd if=/dev/zero of="$file" bs="$BLOCK_SIZE" count="$COUNT" oflag=direct 2>&1 | grep -o '[0-9.]* [GMK]*B/s')
-    local num=$(echo "$speed" | awk '{print $1}')
-    local unit=$(echo "$speed" | awk '{print $2}')
-    local mb=$(to_mb "$num" "$unit")
-    printf "%.1f\n" "$mb"
+    local dd_output
+    local speed=0
+    # dd 参数
+    local dd_params="oflag=direct"
+    dd_output=$(dd if=/dev/zero of="$file" bs="$BLOCK_SIZE" count="$COUNT" $dd_params 2>&1)
+    speed=$(parse_dd_speed "$dd_output")
+    printf "%.1f\n" "$speed"
 }
 
 run_dd_read() {
     local file="$1"
-    local speed
-    speed=$(dd if="$file" of=/dev/null bs="$BLOCK_SIZE" count="$COUNT" iflag=direct 2>&1 | grep -o '[0-9.]* [GMK]*B/s')
-    local num=$(echo "$speed" | awk '{print $1}')
-    local unit=$(echo "$speed" | awk '{print $2}')
-    local mb=$(to_mb "$num" "$unit")
-    printf "%.1f\n" "$mb"
+    local dd_output
+    local speed=0
+    # dd 参数
+    local dd_params="iflag=direct"
+    dd_output=$(dd if="$file" of=/dev/null bs="$BLOCK_SIZE" count="$COUNT" $dd_params 2>&1)
+    speed=$(parse_dd_speed "$dd_output")
+    printf "%.1f\n" "$speed"
+}
+
+# 统一的 dd 速度解析函数
+parse_dd_speed() {
+    local dd_output="$1"
+    local speed=0
+    if [[ "$OS" == "macos" ]]; then
+        # macOS 格式: bytes transferred in X secs (Y bytes/sec)
+        local bytes_per_sec=$(echo "$dd_output" | grep -o '([0-9.]* bytes/sec)' | grep -o '[0-9.]*')
+        if [ -n "$bytes_per_sec" ] && [[ "$bytes_per_sec" =~ ^[0-9]+\.?[0-9]*$ ]]; then
+            speed=$(awk "BEGIN {printf \"%.1f\", $bytes_per_sec / 1048576}")
+        fi
+    elif [[ "$OS" == "linux" ]]; then
+        # Linux 格式: 尝试匹配 MB/s, GB/s 等
+        local speed_str=$(echo "$dd_output" | grep -o '[0-9.]* [GMK]*B/s')
+        if [ -n "$speed_str" ]; then
+            local num=$(echo "$speed_str" | awk '{print $1}')
+            local unit=$(echo "$speed_str" | awk '{print $2}')
+            speed=$(to_mb "$num" "$unit")
+        fi
+    else
+        # 未知系统，尝试通用解析
+        local speed_str=$(echo "$dd_output" | grep -o '[0-9.]* [GMK]*B/s')
+        if [ -n "$speed_str" ]; then
+            local num=$(echo "$speed_str" | awk '{print $1}')
+            local unit=$(echo "$speed_str" | awk '{print $2}')
+            speed=$(to_mb "$num" "$unit")
+        fi
+    fi
+    echo "$speed"
 }
 
 # 并发创建测试文件（用于读取测试）
@@ -126,10 +171,18 @@ create_test_files() {
     echo "并发创建 $THREADS 个测试文件中..."
     local start_time=$(date +%s)
 
+    # 根据 OS 选择合适的 dd 参数
+    local dd_params="oflag=direct"
+    if [[ "$OS" == "macos" ]]; then
+        dd_params="oflag=direct"
+    elif [[ "$OS" == "linux" ]]; then
+        dd_params="oflag=direct status=none"
+    fi
+
     for i in $(seq 1 "$THREADS"); do
         local file="$DIR/dd_test_file_$i"
         if [ ! -f "$file" ]; then
-            dd if=/dev/zero of="$file" bs="$BLOCK_SIZE" count="$COUNT" oflag=direct status=none &
+            dd if=/dev/zero of="$file" bs="$BLOCK_SIZE" count="$COUNT" $dd_params 2>/dev/null &
         else
             echo "文件已存在: $file"
         fi
@@ -210,7 +263,14 @@ single_thread_test() {
     if [[ "$MODE" == "read" || "$MODE" == "both" ]]; then
         if [ ! -f "$file" ]; then
             echo "创建单线程测试文件: $file"
-            dd if=/dev/zero of="$file" bs="$BLOCK_SIZE" count="$COUNT" oflag=direct status=none
+            # 根据 OS 选择合适的 dd 参数
+            local dd_params="oflag=direct"
+            if [[ "$OS" == "macos" ]]; then
+                dd_params="oflag=direct"
+            elif [[ "$OS" == "linux" ]]; then
+                dd_params="oflag=direct status=none"
+            fi
+            dd if=/dev/zero of="$file" bs="$BLOCK_SIZE" count="$COUNT" $dd_params 2>/dev/null
         fi
     fi
 
