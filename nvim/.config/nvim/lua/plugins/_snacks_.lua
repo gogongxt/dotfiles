@@ -30,17 +30,17 @@ return {
       mappings = {
         n = {
           -- ["<Leader>fs"] = { function() require("snacks").picker.smart() end, desc = "Find buffers/recent/files" },
-          ["<Leader>fs"] = { function() require("snacks").picker.grep { regex = true } end, desc = "Find string" },
+          ["<Leader>fs"] = { function() require("snacks").picker.grep { regex = false } end, desc = "Find string" },
           ["<Leader>fS"] = {
-            function() require("snacks").picker.grep { regex = true, hidden = true, ignored = true } end,
+            function() require("snacks").picker.grep { regex = false, hidden = true, ignored = true } end,
             desc = "Find string in all files",
           },
           ["<Leader>fw"] = {
-            function() require("snacks").picker.grep_word { regex = true, live = true } end,
+            function() require("snacks").picker.grep_word { regex = false, live = true } end,
             desc = "Find words",
           },
           ["<Leader>fW"] = {
-            function() require("snacks").picker.grep_word { regex = true, live = true, hidden = true, ignored = true } end,
+            function() require("snacks").picker.grep_word { regex = false, live = true, hidden = true, ignored = true } end,
             desc = "Find words in all files",
           },
           ["<Leader>fr"] = { function() require("snacks").picker.recent() end, desc = "Find recent files" },
@@ -80,11 +80,11 @@ return {
         },
         v = {
           ["<Leader>fw"] = {
-            function() require("snacks").picker.grep_word { regex = true, live = true } end,
+            function() require("snacks").picker.grep_word { regex = false, live = true } end,
             desc = "Find words",
           },
           ["<Leader>fW"] = {
-            function() require("snacks").picker.grep_word { regex = true, live = true, hidden = true, ignored = true } end,
+            function() require("snacks").picker.grep_word { regex = false, live = true, hidden = true, ignored = true } end,
             desc = "Find words in all files",
           },
         },
@@ -96,6 +96,9 @@ return {
     "folke/snacks.nvim",
     opts = {
       picker = {
+        toggles = {
+          regex = { icon = "R", value = true }, -- R键表示启用正则表达式
+        },
         win = {
           input = {
             keys = {
