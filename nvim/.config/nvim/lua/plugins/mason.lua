@@ -44,6 +44,9 @@ return {
 
         -- rust
         "rust-analyzer",
+
+        -- js
+        "vtsls",
       },
     },
   },
