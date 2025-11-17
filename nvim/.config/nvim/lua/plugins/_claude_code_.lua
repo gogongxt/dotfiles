@@ -32,7 +32,7 @@ local function setup_toggleterm_provider()
         env = env_table,
         display_name = "Claude Code",
         close_on_exit = config and config.auto_close ~= false, -- Default to true unless explicitly false
-        auto_scroll = true,
+        auto_scroll = false,
         hidden = false, -- Make it discoverable by normal toggleterm commands
         on_open = function(term)
           -- Set up terminal-specific keymaps if needed
