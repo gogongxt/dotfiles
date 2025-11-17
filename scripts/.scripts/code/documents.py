@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-import os
 import argparse
-import time
-import mimetypes
 import fnmatch
+import mimetypes
+import os
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import List, Optional, Tuple, Callable
+from typing import Callable, List, Optional, Tuple
 
 # Try to import rich for progress bar, fall back to a dummy implementation
 try:
     from rich.progress import (
+        BarColumn,
         Progress,
         SpinnerColumn,
-        BarColumn,
         TextColumn,
         TimeElapsedColumn,
     )
@@ -70,6 +70,22 @@ TEXT_MIMETYPES = [
     "application/x-sh",
     "text/",
 ]
+
+
+def _format_size(size_bytes: int) -> str:
+    """Format file size in human readable format."""
+    if size_bytes == 0:
+        return "0 B"
+    units = ["B", "KB", "MB", "GB", "TB"]
+    unit_index = 0
+    size = float(size_bytes)
+    while size >= 1024 and unit_index < len(units) - 1:
+        size /= 1024
+        unit_index += 1
+    if unit_index == 0:
+        return f"{int(size)} {units[unit_index]}"
+    else:
+        return f"{size:.1f} {units[unit_index]}"
 
 
 class FileProcessor:
@@ -284,7 +300,11 @@ def combine_files(
     if to_clipboard:
         if pyperclip:
             pyperclip.copy(final_output)
+            content_size = len(final_output)
             print(f"\n✅ Copied content of {len(processed_files)} files to clipboard.")
+            print(
+                f"📊 Output size: {_format_size(content_size)} ({len(final_output.splitlines()):,} lines)"
+            )
         else:
             print(
                 "\n❌ Pyperclip not found. Please install it (`pip install pyperclip`) to use this feature."
@@ -292,12 +312,15 @@ def combine_files(
     elif output_file:
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(final_output)
+        file_size = output_file.stat().st_size
+        line_count = len(final_output.splitlines())
         print(
             f"\n✅ Successfully combined {len(processed_files)} files into: {output_file}"
         )
+        print(f"📊 File size: {_format_size(file_size)} ({line_count:,} lines)")
 
     end_time = time.time()
-    print(f"Processed in {end_time - start_time:.2f} seconds.")
+    print(f"⏱️  Processed in {end_time - start_time:.2f} seconds.")
 
 
 def main():
