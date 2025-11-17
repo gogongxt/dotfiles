@@ -103,6 +103,8 @@ function _G.set_terminal_keymaps()
   -- vim.keymap.set('t', 'jj', [[<C-\><C-n>]], opts) // inconvenient in ranger
   -- vim.keymap.set('t', 'jk', [[<C-\><C-n>]], opts) // inconvenient in ranger
   -- vim.keymap.set("t", "<C-w>", [[<C-\><C-n><C-w>]], opts)
+  -- Map Ctrl+/ to ESC
+  vim.keymap.set("t", "<C-_>", "<Esc>", { noremap = true, silent = true, buffer = 0 })
   if pcall(require, "smart-splits") then
     -- for smart-splits
     vim.keymap.set("t", "<C-h>", [[<cmd>lua require('smart-splits').move_cursor_left()<cr>]], opts)
