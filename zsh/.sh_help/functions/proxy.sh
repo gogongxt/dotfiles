@@ -55,11 +55,30 @@ proxy() {
     case "$1" in
         on)
             shift
-            proxy_on $@
+            echo "========================================"
+            proxy_on "$@"
+            echo "========================================"
+            proxy_status
             ;;
         off)
             shift
+            echo "========================================"
             proxy_off
+            echo "========================================"
+            proxy_status
+            ;;
+        toggle)
+            shift
+            echo "========================================"
+            if [ -z ${http_proxy+x} ] && [ -z ${https_proxy+x} ]; then
+                echo "Currently no proxy, turning proxy on..."
+                proxy_on "$@"
+            else
+                echo "Currently proxy is on, turning proxy off..."
+                proxy_off
+            fi
+            echo "========================================"
+            proxy_status
             ;;
         status)
             shift
@@ -70,6 +89,7 @@ proxy() {
             ;;
     esac
 }
+alias pt="proxy toggle"
 #🔼🔼🔼
 
 # pip install package use http proxy rather than other source
