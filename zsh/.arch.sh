@@ -68,7 +68,9 @@ ubuntu() {
     #🔽🔽🔽
     # nvm lazy load
     # pre load install binary
-    export NVM_DIR="$HOME/.nvm"
+    if [ -z "$NVM_DIR" ]; then
+        export NVM_DIR="$HOME/.nvm"
+    fi
     if [ -d "$NVM_DIR" ]; then
         LATEST_NODE_PATH=$(ls -dv "$NVM_DIR"/versions/node/* 2>/dev/null | sort -V | tail -n1)
         if [ -n "$LATEST_NODE_PATH" ]; then
