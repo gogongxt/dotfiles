@@ -41,6 +41,10 @@ macos() {
 
     # support trash-cli trash-put
     export PATH="/opt/homebrew/opt/trash-cli/bin:$PATH"
+
+    if [ -f ~/.venv/base/bin/activate ]; then
+        source ~/.venv/base/bin/activate
+    fi
 }
 
 archlinux() {
