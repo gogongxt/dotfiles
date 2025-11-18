@@ -97,6 +97,32 @@ return {
       picker = {
         toggles = {
           regex = { icon = "R", value = true }, -- R键表示启用正则表达式
+          exclude_icon = { icon = "E", value = true }, -- R键表示启用正则表达式
+        },
+        actions = {
+          toggle_exclude = function(picker)
+            -- 在picker源码grep中是这样处理exclude的
+            -- for _, e in ipairs(opts.exclude or {}) do
+            --   vim.list_extend(args, { "-g", "!" .. e })
+            -- end
+            if not picker._exclude then
+              picker._exclude = true
+              picker.opts.exclude = picker.opts.exclude or {}
+              table.insert(picker.opts.exclude, "3rdparty/**")
+              table.insert(picker.opts.exclude, "**test**")
+              table.insert(picker.opts.exclude, "benchmark/**")
+              table.insert(picker.opts.exclude, "examples/**")
+              picker.opts.exclude_icon = true
+              vim.notify("Add exclude ( 3rdparty/, **test**, benchmark/, examples/ )", vim.log.levels.INFO)
+            else
+              picker._exclude = false
+              picker.opts.exclude = {}
+              picker.opts.exclude_icon = false
+              vim.notify("Show all files", vim.log.levels.INFO)
+            end
+            picker.list:set_target()
+            picker:find()
+          end,
         },
         win = {
           input = {
@@ -113,6 +139,7 @@ return {
               ["<c-\\>"] = { "edit_vsplit", mode = { "i", "n" } },
               ["-"] = { "edit_split", mode = { "n" } },
               ["<C-_>"] = { "edit_split", mode = { "i", "n" } },
+              ["<a-e>"] = { "toggle_exclude", mode = { "i", "n" } },
               -- ["<c-->"] = { "edit_split", mode = { "i", "n" } }, -- cannot map ctrl--
             },
           },
