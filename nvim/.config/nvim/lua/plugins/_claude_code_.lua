@@ -169,7 +169,7 @@ local function setup_toggleterm_provider()
 end
 
 return {
-  "coder/claudecode.nvim",
+  "gogongxt/claudecode.nvim",
   dependencies = { "akinsho/toggleterm.nvim" },
   opts = {
     -- terminal_cmd = "ccr code",
