@@ -168,12 +168,20 @@ local function setup_toggleterm_provider()
   }
 end
 
+local claude_specstory
+if vim.fn.executable "specstory" == 1 then
+  claude_specstory = "specstory run claude --no-cloud-sync"
+else
+  claude_specstory = "claude"
+end
+
 return {
   "gogongxt/claudecode.nvim",
   dependencies = { "akinsho/toggleterm.nvim" },
   opts = {
     -- terminal_cmd = "ccr code",
-    terminal_cmd = "claude",
+    -- terminal_cmd = "claude",
+    terminal_cmd = claude_specstory,
     focus_after_send = true, -- When true, successful sends will focus the Claude terminal if already connected
     track_selection = true,
 

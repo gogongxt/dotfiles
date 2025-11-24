@@ -154,6 +154,8 @@ alias myssh='python3 ~/.scripts/ssh/myssh_password.py'
 alias myssh_plain='python3 ~/.scripts/ssh/myssh_plain_password.py'
 alias password='python3 ~/.scripts/ssh/password.py'
 alias documents='python3 ~/.scripts/code/documents.py'
+alias specstory_clean='python3 ~/.scripts/code/specstory_clean.py'
+command -v specstory &>/dev/null && alias claude="specstory run claude --no-cloud-sync"
 #🔼🔼🔼
 
 # enable cmake generate compile json file
