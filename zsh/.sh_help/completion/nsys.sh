@@ -10,7 +10,7 @@ _nsys_completion_bash() {
     local cur prev words cword
     _get_comp_words_by_ref -n : cur prev words cword
 
-    local nsys_commands="profile sessions stop stats analyze launch report --help --version"
+    local nsys_commands="profile sessions start stop stats analyze launch report --help --version"
     local command="${words[1]}"
 
     if [ "$cword" -eq 1 ]; then
@@ -35,6 +35,25 @@ _nsys_completion_bash() {
         ;;
     stats | analyze | report)
         _filedir -f
+        ;;
+    start)
+        if [[ "$prev" == "--session" || "$prev" == "--session=" ]]; then
+            local running_sessions
+            running_sessions=$(nsys sessions list 2>/dev/null | awk '/^[[:space:]]*[0-9]/ { $1=$2=$3=$4=""; sub(/^[[:space:]]+/, ""); print }')
+            if [[ -n "$running_sessions" ]]; then
+                mapfile -t COMPREPLY < <(compgen -W "${running_sessions}" -- "$cur")
+            fi
+            return 0
+        fi
+        if [[ "$prev" == "--output" || "$prev" == "--output=" ]]; then
+            _filedir
+            return 0
+        fi
+        if [[ "--session" == "$cur"* ]]; then
+            COMPREPLY=(--session)
+        elif [[ "--output" == "$cur"* ]]; then
+            COMPREPLY=(--output)
+        fi
         ;;
     stop)
         if [[ "$prev" == "--session" || "$prev" == "--session=" ]]; then
@@ -61,6 +80,7 @@ _nsys_completion_zsh() {
     subcommands=(
         'profile:Start profiling'
         'sessions:Session management'
+        'start:Start profiling session'
         'stop:Stop profiling session'
         'stats:Generate stats from result'
         'analyze:Open report'
@@ -92,13 +112,20 @@ _nsys_completion_zsh() {
         sessions)
             _values 'sessions command' list export
             ;;
+        start)
+            local -a sessions
+            sessions=($(nsys sessions list 2>/dev/null | awk '/^[[:space:]]*[0-9]/ { $1=$2=$3=$4=""; sub(/^[[:space:]]+/, ""); print }'))
+            _arguments \
+                '--session[Specify session]:session name:(${sessions})' \
+                '--output[Specify output file]:output file:_files'
+            ;;
         stop)
             local -a sessions
             sessions=($(nsys sessions list 2>/dev/null | awk '/^[[:space:]]*[0-9]/ { $1=$2=$3=$4=""; sub(/^[[:space:]]+/, ""); print }'))
             _arguments \
                 '--session[Specify session to stop]:session name:(${sessions})'
             ;;
-        stats|analyze|report)
+        stats | analyze | report)
             _files
             ;;
         esac
