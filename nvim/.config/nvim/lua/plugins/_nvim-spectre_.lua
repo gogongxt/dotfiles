@@ -41,7 +41,8 @@ return {
       is_block_ui_break = true,
       color_devicons = true,
       open_cmd = "vnew",
-      live_update = false, -- auto execute search again when you write to any file in vim
+      live_update = true, -- auto execute search again when you write to any file in vim
+      lnum_for_results = true, -- show line number for search/replace results
       -- if set follow then cannot use zo/zc to set fold
       -- line_sep_start = "┌-----------------------------------------",
       -- result_padding = "¦  ",
@@ -53,7 +54,7 @@ return {
       },
       mapping = {
         ["send_to_qf"] = {
-          map = "F",
+          map = "<c-q>",
           cmd = "<cmd>lua require('spectre.actions').send_to_qf()<CR>",
           desc = "send all item to quickfix",
         },
@@ -61,11 +62,6 @@ return {
           map = "C",
           cmd = "<cmd>lua require('spectre.actions').replace_cmd()<CR>",
           desc = "input replace vim command",
-        },
-        ["show_option_menu"] = {
-          map = "M",
-          cmd = "<cmd>lua require('spectre').show_options()<CR>",
-          desc = "show option",
         },
         ["run_current_replace"] = {
           map = "r",
@@ -83,24 +79,22 @@ return {
           desc = "change result view mode",
         },
         ["toggle_live_update"] = {
-          map = "U",
+          map = "<A-r>",
           cmd = "<cmd>lua require('spectre').toggle_live_update()<CR>",
           desc = "update change when vim write file.",
         },
         ["toggle_ignore_case"] = {
-          -- map = "I",
           map = "<a-i>",
           cmd = "<cmd>lua require('spectre').change_options('ignore-case')<CR>",
           desc = "toggle ignore case",
         },
         ["toggle_ignore_hidden"] = {
-          -- map = "H",
           map = "<a-h>",
           cmd = "<cmd>lua require('spectre').change_options('hidden')<CR>",
           desc = "toggle search hidden",
         },
         ["resume_last_search"] = {
-          map = "L",
+          map = "<c-o>",
           cmd = "<cmd>lua require('spectre').resume_last_search()<CR>",
           desc = "resume last search before close",
         },
