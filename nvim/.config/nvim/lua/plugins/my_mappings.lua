@@ -42,6 +42,35 @@ for i = 1, 9 do
   end, { desc = i <= 1 and "Go to tab " .. i or "Go to or create tab " .. i })
 end
 
+local function move_buf_to_tab(n)
+  local cur_buf = vim.api.nvim_get_current_buf()
+  local tabs = vim.api.nvim_list_tabpages()
+  local tab_count = #tabs
+  -- 第一步：在当前窗口用一个空 buffer 替换掉要移动的 buffer
+  -- 防止 hide/close 导致 E444 “关闭最后窗口”
+  vim.cmd "enew" -- 当前 window 切到一个新的空 buffer (scratch buffer)
+  -- 第二步：如果目标 tab 存在，直接切过去
+  if n <= tab_count then
+    vim.api.nvim_set_current_tabpage(tabs[n])
+    vim.cmd("buffer " .. cur_buf)
+    return
+  end
+  -- 第三步：目标 tab 不存在，创建一个新的 tab 再移动过去
+  vim.cmd "tabnew"
+  local new_tabs = vim.api.nvim_list_tabpages()
+  local new_tab = new_tabs[#new_tabs]
+  vim.api.nvim_set_current_tabpage(new_tab)
+  vim.cmd("buffer " .. cur_buf)
+end
+for i = 1, 9 do
+  vim.keymap.set(
+    "n",
+    "<leader>bm" .. i,
+    function() move_buf_to_tab(i) end,
+    { desc = "Move current buffer to tab " .. i }
+  )
+end
+
 return {
   {
     "AstroNvim/astrocore",
