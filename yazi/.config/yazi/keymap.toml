@@ -137,7 +137,8 @@ keymap = [
 	{ on = [ "g", "T" ],       run = "cd /tmp",             desc = "Go tmp" },
 	{ on = [ "g", "c" ],       run = "cd ~/.config",     desc = "Go ~/.config" },
 	{ on = [ "g", "d" ],       run = "cd ~/Downloads",   desc = "Go ~/Downloads" },
-	{ on = [ "g", "<Space>" ], run = "cd --interactive", desc = "Jump interactively" },
+	{ on = [ "g", "<Space>" ],  run = "back",            desc = "Go to initial directory" },
+	{ on = [ "g", "<Enter>" ], run = "cd --interactive", desc = "Jump interactively" },
 	{ on = [ "g", "l" ],       run = "follow",           desc = "Follow hovered symlink" },
 
 	# Tabs
