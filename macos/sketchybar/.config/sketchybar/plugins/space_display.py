@@ -3,10 +3,27 @@
 import subprocess
 import json
 import sys
+import os
 from typing import List, Dict, Any, Optional
 
 exclude_title = ["scratchpad"]
 exclude_app = ["WeChat", "D-Chat", "ripdrag"]
+
+def get_display_grouping_factor() -> int:
+    """Get the number of spaces per display based on current monitor count.
+
+    Returns:
+        int: 10 if single monitor, 5 if multiple monitors.
+    """
+    try:
+        display_count_json = subprocess.check_output([
+            "/opt/homebrew/bin/yabai", "-m", "query", "--displays"
+        ]).decode('utf-8')
+        displays = json.loads(display_count_json)
+        display_count = len(displays)
+        return 10 if display_count == 1 else 5
+    except (subprocess.CalledProcessError, json.JSONDecodeError):
+        return 5  # fallback to 5 if query fails
 
 def get_current_space() -> int:
     """Get the currently focused space index using yabai.
@@ -97,12 +114,12 @@ def add_window_items(space_id: int, windows: List[Dict[str, Any]], selected: boo
     """
     # print("windows",windows)
     window_ids = []
+    k = get_display_grouping_factor()
+    display_id = int((int(space_id)-1)/k)+1
+
     for index, win in enumerate(windows):
         item_id = f"win.{int(space_id)}.{win['id']}"
         window_ids.append(item_id)
-
-        
-        display_id = int((int(space_id)-1)/5)+1
         yabai_change_space = f"bash -c 'yabai -m space --focus {int(space_id)}'"
         cmd = [
             "/opt/homebrew/bin/sketchybar",
@@ -143,7 +160,8 @@ def create_window_group(space_id: int, window_ids: List[str], selected: bool) ->
     except subprocess.CalledProcessError:
         pass
     
-    display_id = int((int(space_id)-1)/5)+1
+    k = get_display_grouping_factor()
+    display_id = int((int(space_id)-1)/k)+1
     if bracket_items:
         cmd = [
             "/opt/homebrew/bin/sketchybar",

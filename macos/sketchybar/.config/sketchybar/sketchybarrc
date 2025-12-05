@@ -41,7 +41,13 @@ sketchybar --default "${default[@]}"
 # for i in 5 4 3 2 1 6 7 8 9
 # SPACE_ICONS=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "15")
 N=15
-K=5
+# 动态设置每屏显示的块数：单显示器显示10块，多显示器显示5块
+DISPLAY_COUNT=$(yabai -m query --displays | jq length)
+if [ "$DISPLAY_COUNT" -eq 1 ]; then
+    K=10
+else
+    K=5
+fi
 # --- 主逻辑 ---
 # 循环创建 N 个 space
 for i in $(seq 1 $N)
