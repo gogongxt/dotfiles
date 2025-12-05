@@ -47,8 +47,8 @@ return {
     config = function()
       -- check the "./lua/bookmarks/default-config.lua" file for all the options
       local opts = {
-        -- db_dir = nil, -- if nil, fallback to default `stdpath("data")`
-        db_dir = vim.fn.stdpath "cache" .. "/bookkmarks.nvim", -- if nil, fallback to default `stdpath("data")`
+        db_dir = nil, -- if nil, default path is project_path..".nvim/bookmarks.sqlite.db"
+        -- db_dir = vim.fn.stdpath "cache" .. "/bookkmarks.nvim", -- if nil, fallback to default `stdpath("data")`
         picker = {
           -- type = "telescope", -- or "telescope" (default)
           type = "snacks", -- or "telescope" (default)
