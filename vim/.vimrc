@@ -96,30 +96,31 @@ nnoremap <leader>e :Lexplore<CR>
 set clipboard=unnamed,unnamedplus
 " 自动检测环境并配置 OSC52 剪贴板
 if !empty($SSH_CONNECTION) || !empty($SSH_CLIENT)
-  " 定义 OSC52 剪贴板提供者
-  function! s:OSC52Copy(lines, regtype)
-    let data = join(a:lines, "\n")
-    let b64 = system('base64 -w 0', data)
+  function! s:AutoCopyToSystem(event)
+    if a:event.operator ==# 'y'
+      let text = join(a:event.regcontents, "\n")
+      if !empty(text)
+        call s:SendOSC52(text)
+        "echom "Auto-copied to system clipboard via OSC52"
+      endif
+    endif
+  endfunction
+  " 发送 OSC52 序列的核心函数
+  function! s:SendOSC52(text)
+    let b64 = system('base64 -w 0', a:text)
     let b64 = substitute(b64, '\n$', '', '')
-    silent execute "!printf '\033]52;c;".b64."\a'"
-    return 0
+    " 关闭 more 选项并使用 redraw 避免屏幕干扰
+    let save_more = &more
+    set nomore
+    silent execute '!printf "\033]52;c;' . b64 . '\a"'
+    let &more = save_more
+    redraw!
   endfunction
-  function! s:OSC52Paste()
-    return [split(getreg('"'), "\n"), getregtype('"')]
-  endfunction
-  let g:clipboard = {
-        \   'name': 'osc52',
-        \   'copy': {
-        \      '+': function('s:OSC52Copy'),
-        \      '*': function('s:OSC52Copy'),
-        \    },
-        \   'paste': {
-        \      '+': function('s:OSC52Paste'),
-        \      '*': function('s:OSC52Paste'),
-        \    },
-        \ }
-  " 确保剪贴板操作使用 OSC52
-  set clipboard=unnamedplus
+  " 自动复制 yanked 内容到系统剪贴板
+  augroup OSC52AutoCopy
+    autocmd!
+    autocmd TextYankPost * call s:AutoCopyToSystem(v:event)
+  augroup END
 endif
 " 自动同步删除的内容到剪贴板
 "autocmd TextYankPost * if v:event.operator ==# 'd' | call setreg('+', v:event.regcontents) | endif
