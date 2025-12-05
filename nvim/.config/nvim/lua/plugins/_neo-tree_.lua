@@ -140,6 +140,7 @@ return {
         ["d"] = "trash", -- Use 'trash' command below, instead of 'delete' command.
         ["D"] = "delete", -- keep 'delete' command, for no-trash dir like iCloud.
         ["u"] = "restore_trash", -- Select from 'trash-list' -> 'trash-restore'
+        ["m"] = false,
       },
       fuzzy_finder_mappings = { -- define keymaps for filter popup window in fuzzy_finder_mode
         ["<C-J>"] = "move_cursor_down",
