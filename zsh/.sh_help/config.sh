@@ -94,7 +94,7 @@ alias c="/usr/bin/clear"
 alias b="btop"
 alias h="htop"
 alias nv="watch -d -n 1 nvidia-smi"
-vim() {
+myvim() {
   local my_vim
   if command -v nvim >/dev/null 2>&1; then
     my_vim="nvim"
@@ -110,9 +110,8 @@ vim() {
     eval "$my_vim ."
   fi
 }
-v() {
-  vim "$@"
-}
+alias v="myvim"
+alias vim="myvim"
 #🔼🔼🔼
 
 #🔽🔽🔽
