@@ -38,25 +38,6 @@ sketchybar --default "${default[@]}"
 # https://felixkratz.github.io/SketchyBar/config/components#space----associate-mission-control-spaces-with-an-item
 # to indicate active and available mission control spaces.
 
-# SPACE_ICONS=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10")
-# for i in "${!SPACE_ICONS[@]}"
-# do
-#   sid="$(($i+1))"
-#   space=(
-#     space="$sid"
-#     icon="${SPACE_ICONS[i]}"
-#     icon.padding_left=7
-#     icon.padding_right=7
-#     background.color=0x40ffffff
-#     background.corner_radius=5
-#     background.height=25
-#     label.drawing=off
-#     script="$PLUGIN_DIR/space.sh"
-#     click_script="yabai -m space --focus $sid"
-#   )
-#   sketchybar --add space space."$sid" left --set space."$sid" "${space[@]}"
-# done
-
 # for i in 5 4 3 2 1 6 7 8 9
 # SPACE_ICONS=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "15")
 N=15
@@ -98,85 +79,6 @@ do
             padding_right=2.5
 done
 
-
-# # --- 参数配置 ---
-# # N: 你想要创建的 space 图标总数
-# # K: 每个显示器包含的 space 数量
-# N=10
-# K=5
-# # --- 主逻辑 ---
-# # 循环创建 N 个 space
-# for i in $(seq 1 $N)
-# do
-#     echo $i
-#     # --- 核心分组逻辑 ---
-#     # 1. 计算当前 space 'i' 属于哪个组 (组索引从 0 开始)
-#     #    例如 i=1..5, K=5 => GROUP_INDEX=0
-#     #    例如 i=6..10, K=5 => GROUP_INDEX=1
-#     GROUP_INDEX=$(( (i - 1) / K ))
-#     # 2. 根据组索引计算该组的起始和结束 space 编号
-#     START_SPACE=$(( GROUP_INDEX * K + 1 ))
-#     END_SPACE=$(((GROUP_INDEX + 1) * K ))
-#     # 3. 使用 seq 命令生成一个由空格分隔的 space 列表字符串
-#     #    例如，对于组 0，它会生成 "1 2 3 4 5"
-#     #    对于组 1，它会生成 "6 7 8 9 10"
-#     ASSOCIATED_SPACES=$(seq -s "," $(($START_SPACE-1)) $(($END_SPACE)) | sed 's/,$//')
-#     #
-#     #
-#     ITEM_ID="space.${i}"
-#     POS=center
-#     sketchybar --add item $ITEM_ID $POS \
-#         --set $ITEM_ID space=$i \
-#         icon=$i \
-#         space=[$ASSOCIATED_SPACES] \
-#         space=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17] \
-#         display=$(( GROUP_INDEX + 1 )) \
-#         icon.font="Hack Nerd Font:Bold:17.0" \
-#         icon.color="0x80ffffff" \
-#         background.height=30 \
-#         padding_left=5 \
-#         padding_right=0 \
-#         icon.padding_left=0 \
-#         icon.padding_right=5 \
-#         label.padding_left=0 \
-#         label.padding_right=0 \
-#         label.font="sketchybar-app-font:Regular:14.0" \
-#         label.font.size=20 \
-#         script="python3 $CONFIG_DIR/plugins/space_display.py $i False"  \
-#         click_script="yabai -m space --focus $i" \
-#         background.corner_radius=10
-#     sketchybar --add item space.${i}.spacer $POS \
-#         --set space.${i}.spacer \
-#             padding_left=2.5 \
-#             padding_right=2.5
-#     echo $ASSOCIATED_SPACES
-# done
-
-
-# for i in 10 9 8 7 6 5 4 3 2 1
-# do
-#     ITEM_ID="space.${i}"
-#     sketchybar --add space $ITEM_ID q \
-#         --set $ITEM_ID space=$i \
-#         --set $ITEM_ID icon=$i \
-#         --set $ITEM_ID icon.font="Hack Nerd Font:Bold:17.0" \
-#         --set $ITEM_ID background.height=30 \
-#         --set $ITEM_ID padding_left=5 \
-#         --set $ITEM_ID padding_right=0 \
-#         --set $ITEM_ID icon.padding_left=0 \
-#         --set $ITEM_ID icon.padding_right=5 \
-#         --set $ITEM_ID label.padding_left=0 \
-#         --set $ITEM_ID label.padding_right=0 \
-#         --set $ITEM_ID label.font="sketchybar-app-font:Regular:14.0" \
-#         --set $ITEM_ID label.font.size=20 \
-#         --set $ITEM_ID script="$CONFIG_DIR/spaces.js" \
-#         --set $ITEM_ID click_script="yabai -m space --focus $i" \
-#         --set $ITEM_ID background.corner_radius=10
-#     sketchybar --add item space.${i}.spacer q \  # 这里改为固定的"q"
-#         --set space.${i}.spacer \
-#             padding_left=2.5 \
-#             padding_right=2.5
-# done
 
 ##### Adding Left Items #####
 # We add some regular items to the left side of the bar, where
