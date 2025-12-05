@@ -177,6 +177,7 @@ end
 
 return {
   "gogongxt/claudecode.nvim",
+  commit = "7bd8944edab45261ae2d4119a5f4f2225cb6ec96",
   dependencies = { "akinsho/toggleterm.nvim" },
   opts = {
     -- terminal_cmd = "ccr code",
