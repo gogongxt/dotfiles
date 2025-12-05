@@ -17,3 +17,5 @@ luarc.json
 *.*-E
 
 .specstory
+
+.nvim/
