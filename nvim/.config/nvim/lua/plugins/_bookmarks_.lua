@@ -47,11 +47,18 @@ return {
     config = function()
       -- check the "./lua/bookmarks/default-config.lua" file for all the options
       local opts = {
-        db_dir = nil, -- if nil, default path is project_path..".nvim/bookmarks.sqlite.db"
-        -- db_dir = vim.fn.stdpath "cache" .. "/bookkmarks.nvim", -- if nil, fallback to default `stdpath("data")`
         picker = {
           -- type = "telescope", -- or "telescope" (default)
           type = "snacks", -- or "telescope" (default)
+        },
+        signs = {
+          -- Sign mark icon and color in the gutter
+          mark = {
+            icon = "󰃁",
+            color = "red",
+            line_bg = "#572626",
+          },
+          desc_format = function(bookmark) return bookmark.name end,
         },
       }
       require("bookmarks").setup(opts) -- you must call setup to init sqlite db
@@ -74,6 +81,8 @@ return {
       { "mp", "<cmd>BookmarksGotoPrev<cr>", mode = { "n", "v" } },
       { "mP", "<cmd>BookmarksGotoPrevInList<cr>", mode = { "n", "v" } },
       { "ml", "<cmd>BookmarksGoto<cr>", mode = { "n", "v" } },
+      { "mL", "<cmd>BookmarksLists<cr>", mode = { "n", "v" } },
+      { "mN", "<cmd>BookmarksNewList<cr>", mode = { "n", "v" } },
       { "mo", "<cmd>BookmarksTree<cr>", mode = { "n", "v" } },
       { "m?", "<cmd>BookmarksCommands<cr>", mode = { "n", "v" } },
     },
