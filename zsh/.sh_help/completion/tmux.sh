@@ -24,6 +24,10 @@ tmux_choose_window() {
 }
 tmux() {
     case "$1" in
+        --)
+            shift
+            command tmux "$@"
+            ;;
         rm | kill)
             shift
             command tmux kill-session -t "$@"
@@ -31,6 +35,37 @@ tmux() {
         ls)
             shift
             command tmux ls
+            ;;
+        cd)
+            shift
+            if [ $# -eq 0 ]; then
+                # echo "current TMUX_WORKING_DIR=$TMUX_WORKING_DIR"
+                command tmux show-environment TMUX_WORKING_DIR
+            else
+                # 必须且只能 1 个参数
+                if [ $# -ne 1 ]; then
+                    echo "Error: only one path argument is allowed" >&2
+                    return 1
+                fi
+                input_path="$1"
+                # 判断路径是否存在
+                if [ ! -e "$input_path" ]; then
+                    echo "Error: path '$input_path' does not exist" >&2
+                    return 1
+                fi
+                # ---- 将相对路径转换为绝对路径 ----
+                if [ -d "$input_path" ]; then
+                    # 目录：cd 后 pwd
+                    abs_path="$(cd "$input_path" && pwd)"
+                else
+                    # 文件：进入父目录再拼接文件名
+                    abs_path="$(cd "$(dirname "$input_path")" && pwd)/$(basename "$input_path")"
+                fi
+                # ---------------------------------
+                export TMUX_WORKING_DIR="$abs_path"
+                command tmux set-environment TMUX_WORKING_DIR "$abs_path"
+                command tmux show-environment TMUX_WORKING_DIR
+            fi
             ;;
         sw)
             shift
@@ -110,7 +145,7 @@ _tmux_completion_bash() {
     local cur prev words cword
     _get_comp_words_by_ref -n : cur prev words cword
 
-    local subcommands="ls rm kill sw reboot save"
+    local subcommands="ls rm kill sw reboot save cd --"
     local sessions=$(command tmux ls -F '#S' 2>/dev/null)
 
     if [ "$cword" -eq 1 ]; then
@@ -123,6 +158,16 @@ _tmux_completion_bash() {
         rm | kill)
             # rm/kill 命令需要会话名作为参数
             COMPREPLY=($(compgen -W "${sessions}" -- "${cur}"))
+            ;;
+        cd)
+            # cd 命令补全目录
+            compopt -o nospace
+            COMPREPLY=($(compgen -d -- "${cur}"))
+            ;;
+        --)
+            # -- 命令补全所有 tmux 子命令
+            local tmux_cmds=$(command tmux list-commands 2>/dev/null | awk '{print $1}')
+            COMPREPLY=($(compgen -W "${tmux_cmds}" -- "${cur}"))
             ;;
     esac
 }
@@ -139,6 +184,8 @@ _tmux_completion_zsh() {
         'sw:Switch window'
         'reboot:Kill and restart tmux server'
         'save:Save pane content to a file'
+        'cd:Set TMUX_WORKING_DIR environment'
+        '--:Pass through arguments to tmux command'
     )
     # 动态获取会话列表
     # 使用 -F '#S' 可以只输出会话名称，更稳定
@@ -159,6 +206,16 @@ _tmux_completion_zsh() {
             case "$words[2]" in
                 rm | kill)
                     _describe 'session to kill' sessions
+                    ;;
+                cd)
+                    # cd 命令补全目录
+                    _path_files -/
+                    ;;
+                --)
+                    # -- 命令补全所有 tmux 子命令
+                    local -a tmux_cmds
+                    tmux_cmds=($(command tmux list-commands 2>/dev/null | awk '{print $1}'))
+                    _describe 'tmux command' tmux_cmds
                     ;;
             esac
             ;;
