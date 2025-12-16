@@ -79,6 +79,9 @@ export SAVEHIST=10000
 setopt hist_expire_dups_first # delete duplicates first when HISTFILE size exceeds HISTSIZE
 setopt hist_ignore_dups       # ignore duplicated commands history list
 
+# disable compfix
+export ZSH_DISABLE_COMPFIX=true
+
 # Which plugins would you like to load?
 # Standard plugins can be found in $ZSH/plugins/
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
