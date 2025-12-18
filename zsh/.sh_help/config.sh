@@ -118,16 +118,20 @@ alias vim="myvim"
 # fzf
 fzf_ignore=".wine,.git,.idea,.vscode,node_modules,build"
 export FZF_DEFAULT_COMMAND="fd --hidden --follow --exclude={${fzf_ignore}} "
-export FZF_DEFAULT_OPTS="--height 80% --layout=reverse --preview 'echo {} | ~/.config/fzf/fzf_preview.py' --preview-window=down --border \
+export FZF_DEFAULT_OPTS="--height 80% --layout=reverse --preview 'echo {} | ~/.sh_help/functions/fzf_preview.py' --preview-window=down --border \
   --bind ctrl-d:page-down,ctrl-u:page-up \
   "
+export FZF_CTRL_R_OPTS="
+  --preview 'echo {}'
+  --preview-window=down:wrap
+"
 # _fzf_compgen_path() {
 #   fd --hidden --follow --exclude={${fzf_ignore}}
 # }
 # _fzf_compgen_dir() {
 #   fd --type d --hidden --exclude={${fzf_ignore}}
 # }
-# optimizer fzf for zsh
+# optimizer fzf for zsh or bash
 command -v fzf &>/dev/null && source <(fzf --${CURRENT_SHELL})
 unset fzf_ignore
 #🔼🔼🔼
