@@ -60,6 +60,7 @@ yabai -m rule --add title="^About This Mac$" manage=off
 yabai -m rule --add app="^Cisco Secure Client$" manage=off
 yabai -m rule --add app="^TencentMeeting$" manage=off opacity=1.0
 yabai -m rule --add app="^Clash for Windows$" manage=off
+yabai -m rule --add app="^Clash Verge$" manage=off
 yabai -m rule --add app="^Raycast$" manage=off
 yabai -m rule --add app="^iDock$" manage=off
 
