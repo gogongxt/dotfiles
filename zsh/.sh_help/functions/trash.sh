@@ -23,9 +23,39 @@ trash-delete() {
 	local BOLD='\033[1m'
 	local NC='\033[0m' # No Color
 
+	# 显示帮助信息
+	show_help() {
+		echo -e "${CYAN}trash-delete${NC} - Permanently delete items from trash using a file list"
+		echo ""
+		echo -e "${BOLD}Usage:${NC}"
+		echo "  trash-delete <filename>"
+		echo "  trash-delete -h|--help"
+		echo ""
+		echo -e "${BOLD}Description:${NC}"
+		echo "  Reads a file containing trash-list output and permanently removes"
+		echo "  the specified items from the trash using trash-rm."
+		echo ""
+		echo -e "${BOLD}How to use:${NC}"
+		echo "  1. List trash contents and filter:"
+		echo "     ${YELLOW}trash-ls | grep pattern > tmp_trash_remove.txt${NC}"
+		echo "  2. Edit the file to keep only lines you want to delete"
+		echo "  3. Run:"
+		echo "     ${YELLOW}trash-delete tmp_trash_remove.txt${NC}"
+		echo ""
+		echo -e "${BOLD}Options:${NC}"
+		echo "  -h, --help    Show this help message"
+	}
+
+	# 检查帮助参数
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		show_help
+		return 0
+	fi
+
 	# 检查是否提供了参数
 	if [ $# -ne 1 ]; then
 		echo -e "${RED}Usage: trash-delete <filename>${NC}"
+		echo -e "Use ${CYAN}-h${NC} or ${CYAN}--help${NC} for more information."
 		return 1
 	fi
 
