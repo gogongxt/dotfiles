@@ -1,4 +1,5 @@
 macos() {
+    export HOMEBREW_NO_AUTO_UPDATE=1 # disable brew autoupdate when install package
     export PATH="/opt/homebrew/bin:$PATH"
     alias updatedb="/usr/libexec/locate.update"
     alias docker_start="open /Applications/Docker.app"
