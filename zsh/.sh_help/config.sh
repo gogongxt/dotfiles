@@ -119,11 +119,21 @@ alias vim="myvim"
 fzf_ignore=".wine,.git,.idea,.vscode,node_modules,build"
 export FZF_DEFAULT_COMMAND="fd --hidden --follow --exclude={${fzf_ignore}} "
 export FZF_DEFAULT_OPTS="--height 80% --layout=reverse --preview 'echo {} | ~/.sh_help/functions/fzf_preview.py' --preview-window=down --border \
-  --bind ctrl-d:page-down,ctrl-u:page-up \
-  "
+  --bind ctrl-d:page-down,ctrl-u:page-up
+  --color=bg+:#555555
+"
 export FZF_CTRL_R_OPTS="
   --preview 'echo {}'
   --preview-window=down:wrap
+"
+# for zoxide
+export _ZO_FZF_OPTS="
+  $FZF_DEFAULT_OPTS
+  --header='   =:increment   -:decrement   C-x:delete'
+  --bind '=:reload(zoxide edit increment {2..})'
+  --bind '-:reload(zoxide edit decrement {2..})'
+  --bind 'ctrl-x:reload(zoxide edit delete {2..})'
+  --preview 'ls -aC --color=always {2}'
 "
 # _fzf_compgen_path() {
 #   fd --hidden --follow --exclude={${fzf_ignore}}
