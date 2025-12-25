@@ -68,6 +68,21 @@ mylog() {
         cmd=("$@")
     fi
 
+    if [[ -e "$logfile" ]]; then
+        printf '\033[33mLog file already exists:\033[0m %s\033[0m\n' "$logfile"
+        printf '\033[33mOverwrite?\033[0m \033[32m[y]\033[0m/\033[31m[N]\033[0m: '
+        read -r answer
+        case "$answer" in
+        [yY] | [yY][eE][sS])
+            printf '\033[32m→ Overwriting\033[0m\n'
+            ;;
+        *)
+            printf '\033[31m→ Aborted.\033[0m\n'
+            return 1
+            ;;
+        esac
+    fi
+
     # 设置 trap 以捕获 Ctrl+C，确保打印日志位置
     trap 'printf "\n\033[32mLog saved: %s\033[0m\n" "$logfile"; return 130' INT
 
