@@ -137,8 +137,8 @@ return {
         L = "next_source",
         ["<c-\\>"] = "open_vsplit",
         ["<c-_>"] = "open_split",
-        ["d"] = "trash", -- Use 'trash' command below, instead of 'delete' command.
-        ["D"] = "delete", -- keep 'delete' command, for no-trash dir like iCloud.
+        ["d"] = "trash",         -- Use 'trash' command below, instead of 'delete' command.
+        ["D"] = "delete",        -- keep 'delete' command, for no-trash dir like iCloud.
         ["u"] = "restore_trash", -- Select from 'trash-list' -> 'trash-restore'
         ["m"] = false,
       },
@@ -157,14 +157,14 @@ return {
       local msg = string.format("Are you sure you want to trash '%s'?", name)
       inputs.confirm(msg, function(confirmed)
         if not confirmed then return end
-        pcall(function()
-          vim.fn.system { "trash", path }
-          if vim.v.shell_error ~= 0 then
-            msg = "trash command failed."
-            vim.notify(msg, vim.log.levels.ERROR, { title = "neo-tree" })
-          end
-        end)
-        manager.refresh(state.name)
+        local success, err = pcall(function() vim.fn.system { "trash", path } end)
+        if not success or vim.v.shell_error ~= 0 then
+          local error_msg = "trash command failed."
+          if not success then error_msg = "trash command failed: " .. tostring(err) end
+          vim.notify(error_msg, vim.log.levels.ERROR, { title = "neo-tree" })
+        else
+          manager.refresh(state.name)
+        end
       end)
     end
 
@@ -176,13 +176,12 @@ return {
       inputs.confirm(msg, function(confirmed)
         if not confirmed then return end
         for _, node in ipairs(selected_nodes) do
-          pcall(function()
-            vim.fn.system { "trash", node.path }
-            if vim.v.shell_error ~= 0 then
-              msg = "trash command failed."
-              vim.notify(msg, vim.log.levels.ERROR, { title = "neo-tree" })
-            end
-          end)
+          local success, err = pcall(function() vim.fn.system { "trash", node.path } end)
+          if not success or vim.v.shell_error ~= 0 then
+            local error_msg = "trash command failed for: " .. node.path
+            if not success then error_msg = "trash command failed for " .. node.path .. ": " .. tostring(err) end
+            vim.notify(error_msg, vim.log.levels.ERROR, { title = "neo-tree" })
+          end
         end
         manager.refresh(state.name)
       end)
