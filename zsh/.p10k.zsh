@@ -36,7 +36,7 @@
     vi_mode                 # vi mode (you don't need this if you've enabled prompt_char)
     dir                     # current directory
     vcs                     # git status
-    # time                    # current time
+    time                    # current time
     # anaconda
     # status
     # =========================[ Line #2 ]=========================
@@ -51,7 +51,7 @@
   typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(
     # =========================[ Line #1 ]=========================
     status                  # exit code of the last command
-    time
+    # time
     command_execution_time  # duration of the last command
     background_jobs         # presence of background jobs
     direnv                  # direnv status (https://direnv.net/)
