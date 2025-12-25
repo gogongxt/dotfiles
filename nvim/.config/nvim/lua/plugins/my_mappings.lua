@@ -111,7 +111,7 @@ return {
 
           -- run cmd
           ["<Leader>R"] = {
-            "V<cmd>lua require('plugins.user.my_funcs.execute_and_print_cmd').execute_and_print_cmd()<cr>",
+            "<cmd>lua require('plugins.user.my_funcs.execute_and_print_cmd').execute_and_print_cmd()<cr>",
             desc = "Run cmd",
             noremap = true,
             silent = true,
@@ -143,13 +143,6 @@ return {
         v = {
           -- This will not change the clipboard content in V mode
           ["p"] = { '"_dP', desc = "", noremap = true, silent = true },
-
-          ["<Leader>R"] = {
-            "<cmd>lua require('plugins.user.my_funcs.execute_and_print_cmd').execute_and_print_cmd()<cr>",
-            desc = "Run cmd",
-            noremap = true,
-            silent = true,
-          },
 
           -- go to file
           ["gf"] = {
