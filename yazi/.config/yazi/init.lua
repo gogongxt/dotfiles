@@ -34,6 +34,9 @@ require("git"):setup()
 -- yazi starship plugin
 require("starship"):setup()
 
+-- yazi linemode show lines plugin
+require("lines-linemode"):setup()
+
 -- NOTE: show user and host name in the header line
 -- Header:children_add(function()
 -- 	if ya.target_family() ~= "unix" then

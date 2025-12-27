@@ -97,6 +97,7 @@ keymap = [
 	{ on = [ "m", "b" ], run = "linemode btime",       desc = "Linemode: btime" },
 	{ on = [ "m", "m" ], run = "linemode mtime",       desc = "Linemode: mtime" },
 	{ on = [ "m", "o" ], run = "linemode owner",       desc = "Linemode: owner" },
+	{ on = [ "m", "l" ], run = "linemode lines",       desc = "Linemode: lines" },
 	{ on = [ "m", "n" ], run = "linemode none",        desc = "Linemode: none" },
 
 	# Copy
