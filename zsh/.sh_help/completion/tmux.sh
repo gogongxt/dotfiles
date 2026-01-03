@@ -85,6 +85,11 @@ tmux() {
             command tmux capture-pane -p -S - >"$filename" && echo -e "\033[32mContent saved to $filename\033[0m"
             ;;
         *)
+            # 如果参数以 - 开头，直接执行原生 tmux 命令
+            if [[ "$1" == -* ]]; then
+                command tmux "$@"
+                return
+            fi
             if [[ $# -eq 0 ]]; then
                 TMUX_WORKING_DIR="$(pwd)"
                 command tmux -u new-session -c "$HOME" \; \
@@ -99,7 +104,7 @@ tmux() {
                     command tmux switch-client -t "$session_name"
                 else
                     if [[ -n "$start_directory" ]]; then
-                        TMUX_WORKING_DIR="${start_directory}" 
+                        TMUX_WORKING_DIR="${start_directory}"
                         command tmux -u new-session -s "$session_name" -c "$HOME" \; \
                             set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
                             send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
