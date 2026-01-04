@@ -48,7 +48,7 @@ function zsh_vimode_paste() {
 }
 
 # 优化后的单个字符删除函数
-my_zvm_vi_delete_char() {
+_my_zvm_vi_delete_char() {
     # 保存原始内容
     local original_buffer=$BUFFER
     local original_cursor=$CURSOR
@@ -72,46 +72,46 @@ my_zvm_vi_delete_char() {
 
 # zsh-vi-mode plugin enable copy cmd to system clipboard in vi mode
 # ref: https://github.com/jeffreytse/zsh-vi-mode/issues/19
-my_zvm_vi_yank() {
+_my_zvm_vi_yank() {
     zvm_vi_yank
-    echo "$CUTBUFFER" | zsh_vimode_copy 
+    echo "$CUTBUFFER" | zsh_vimode_copy
 }
-my_zvm_vi_delete() {
+_my_zvm_vi_delete() {
     zvm_vi_delete
-    echo "$CUTBUFFER" | zsh_vimode_copy 
+    echo "$CUTBUFFER" | zsh_vimode_copy
 }
-my_zvm_vi_change() {
+_my_zvm_vi_change() {
     zvm_vi_change
-    echo "$CUTBUFFER" | zsh_vimode_copy 
+    echo "$CUTBUFFER" | zsh_vimode_copy
 }
-my_zvm_vi_change_eol() {
+_my_zvm_vi_change_eol() {
     zvm_vi_change_eol
-    echo "$CUTBUFFER" | zsh_vimode_copy 
+    echo "$CUTBUFFER" | zsh_vimode_copy
 }
-my_zvm_vi_substitute() {
+_my_zvm_vi_substitute() {
     zvm_vi_substitute
-    echo "$CUTBUFFER" | zsh_vimode_copy 
+    echo "$CUTBUFFER" | zsh_vimode_copy
 }
-my_zvm_vi_substitute_whole_line() {
+_my_zvm_vi_substitute_whole_line() {
     zvm_vi_substitute_whole_line
     echo "$CUTBUFFER" | zsh_vimode_copy
 }
-my_zvm_vi_put_after() {
+_my_zvm_vi_put_after() {
     CUTBUFFER=$(zsh_vimode_paste)
     zvm_vi_put_after
     zvm_highlight clear # zvm_vi_put_after introduces weird highlighting
 }
-my_zvm_vi_replace_selection() {
+_my_zvm_vi_replace_selection() {
     CUTBUFFER=$(zsh_vimode_paste)
     zvm_vi_replace_selection
 }
-my_zvm_vi_put_before() {
+_my_zvm_vi_put_before() {
     CUTBUFFER=$(zsh_vimode_paste)
     zvm_vi_put_before
     zvm_highlight clear # zvm_vi_put_before introduces weird highlighting
 }
 # Add these functions for D and Y commands
-my_zvm_vi_delete_to_eol() {
+_my_zvm_vi_delete_to_eol() {
     # Save the text from cursor to end of line
     CUTBUFFER="${BUFFER:$CURSOR}"
     # Copy to clipboard
@@ -137,7 +137,7 @@ function _flash_selection() {
     CURSOR=$original_cursor
     zle redisplay
 }
-my_zvm_vi_yank_to_eol() {
+_my_zvm_vi_yank_to_eol() {
     # Yank text from cursor to end of line
     CUTBUFFER="${BUFFER:$CURSOR}"
     # Copy to clipboard
@@ -147,31 +147,31 @@ my_zvm_vi_yank_to_eol() {
 
 # Then add these bindings in the zvm_after_lazy_keybindings function
 zvm_after_lazy_keybindings() {
-    zvm_define_widget my_zvm_vi_yank
-    zvm_define_widget my_zvm_vi_delete
-    zvm_define_widget my_zvm_vi_change
-    zvm_define_widget my_zvm_vi_change_eol
-    zvm_define_widget my_zvm_vi_put_after
-    zvm_define_widget my_zvm_vi_put_before
-    zvm_define_widget my_zvm_vi_substitute
-    zvm_define_widget my_zvm_vi_substitute_whole_line
-    zvm_define_widget my_zvm_vi_replace_selection
-    zvm_define_widget my_zvm_vi_delete_char
-    zvm_define_widget my_zvm_vi_delete_to_eol  # Add this
-    zvm_define_widget my_zvm_vi_yank_to_eol    # Add this
+    zvm_define_widget _my_zvm_vi_yank
+    zvm_define_widget _my_zvm_vi_delete
+    zvm_define_widget _my_zvm_vi_change
+    zvm_define_widget _my_zvm_vi_change_eol
+    zvm_define_widget _my_zvm_vi_put_after
+    zvm_define_widget _my_zvm_vi_put_before
+    zvm_define_widget _my_zvm_vi_substitute
+    zvm_define_widget _my_zvm_vi_substitute_whole_line
+    zvm_define_widget _my_zvm_vi_replace_selection
+    zvm_define_widget _my_zvm_vi_delete_char
+    zvm_define_widget _my_zvm_vi_delete_to_eol  # Add this
+    zvm_define_widget _my_zvm_vi_yank_to_eol    # Add this
 
-    zvm_bindkey vicmd 'C' my_zvm_vi_change_eol
-    zvm_bindkey vicmd 'D' my_zvm_vi_delete_to_eol  # Add this
-    zvm_bindkey vicmd 'P' my_zvm_vi_put_before
-    zvm_bindkey vicmd 'S' my_zvm_vi_substitute_whole_line
-    zvm_bindkey vicmd 'Y' my_zvm_vi_yank_to_eol    # Add this
-    zvm_bindkey vicmd 'p' my_zvm_vi_put_after
-    zvm_bindkey vicmd 'x' my_zvm_vi_delete_char 
+    zvm_bindkey vicmd 'C' _my_zvm_vi_change_eol
+    zvm_bindkey vicmd 'D' _my_zvm_vi_delete_to_eol  # Add this
+    zvm_bindkey vicmd 'P' _my_zvm_vi_put_before
+    zvm_bindkey vicmd 'S' _my_zvm_vi_substitute_whole_line
+    zvm_bindkey vicmd 'Y' _my_zvm_vi_yank_to_eol    # Add this
+    zvm_bindkey vicmd 'p' _my_zvm_vi_put_after
+    zvm_bindkey vicmd 'x' _my_zvm_vi_delete_char
 
-    zvm_bindkey visual 'p' my_zvm_vi_replace_selection
-    zvm_bindkey visual 'c' my_zvm_vi_change
-    zvm_bindkey visual 'd' my_zvm_vi_delete
-    zvm_bindkey visual 's' my_zvm_vi_substitute
-    zvm_bindkey visual 'x' my_zvm_vi_delete
-    zvm_bindkey visual 'y' my_zvm_vi_yank
+    zvm_bindkey visual 'p' _my_zvm_vi_replace_selection
+    zvm_bindkey visual 'c' _my_zvm_vi_change
+    zvm_bindkey visual 'd' _my_zvm_vi_delete
+    zvm_bindkey visual 's' _my_zvm_vi_substitute
+    zvm_bindkey visual 'x' _my_zvm_vi_delete
+    zvm_bindkey visual 'y' _my_zvm_vi_yank
 }
