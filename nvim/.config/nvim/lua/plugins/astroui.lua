@@ -2,6 +2,53 @@
 
 -- themes: https://vimcolorschemes.com/
 
+-- Custom foldtext function with syntax highlighting
+-- Source: https://www.reddit.com/r/neovim/comments/1fzn1zt/custom_fold_text_function_with_treesitter_syntax/
+local function fold_virt_text(result, start_text, lnum)
+  local text = ""
+  local hl
+  for i = 1, #start_text do
+    local char = start_text:sub(i, i)
+    local captured_highlights = vim.treesitter.get_captures_at_pos(0, lnum, i - 1)
+    local outmost_highlight = captured_highlights[#captured_highlights]
+    if outmost_highlight then
+      local new_hl = "@" .. outmost_highlight.capture
+      if new_hl ~= hl then
+        -- as soon as new hl appears, push substring with current hl to table
+        table.insert(result, { text, hl })
+        text = ""
+        hl = nil
+      end
+      text = text .. char
+      hl = new_hl
+    else
+      text = text .. char
+    end
+  end
+  table.insert(result, { text, hl })
+end
+
+function _G.custom_foldtext()
+  -- 定义自定义高亮组
+  vim.api.nvim_set_hl(0, "CustomFoldText", { fg = "#000000", bg = "#66D9EF" })
+
+  local start_text = vim.fn.getline(vim.v.foldstart):gsub("\t", string.rep(" ", vim.o.tabstop))
+  local nline = vim.v.foldend - vim.v.foldstart
+  local result = {}
+  fold_virt_text(result, start_text, vim.v.foldstart - 1)
+  table.insert(result, { "  " .. nline .. " ", "CustomFoldText" })
+
+  -- 计算当前文本宽度，添加空白字符填满整行（避免右侧出现填充点）
+  local current_width = 0
+  for _, chunk in ipairs(result) do
+    current_width = current_width + vim.fn.strdisplaywidth(chunk[1])
+  end
+  local win_width = vim.fn.winwidth(0)
+  if current_width < win_width then table.insert(result, { string.rep(" ", win_width - current_width), "Folded" }) end
+
+  return result
+end
+
 return {
   {
     "AstroNvim/astroui",
@@ -207,5 +254,42 @@ return {
         }, -- Overwrite highlights with your own
       }
     end,
+  },
+  {
+    "AstroNvim/astrocore",
+    opts = {
+      autocmds = {
+        set_custom_foldtext = {
+          {
+            event = { "VimEnter", "FileType" },
+            pattern = "*",
+            callback = function()
+              -- 只在支持 treesitter 的文件类型中设置自定义 foldtext
+              if vim.o.foldtext == "" and pcall(vim.treesitter.get_parser) then
+                vim.opt_local.foldtext = "v:lua.custom_foldtext()"
+                -- 移除折叠后的填充字符
+                vim.opt_local.fillchars:append { fold = " " }
+                -- 如果支持 foldfillchars（Neovim 0.10+）
+                if vim.fn.exists "&foldfillchars" == 1 then
+                  vim.opt_local.foldfillchars = { open = " ", close = " ", fold = " " }
+                end
+              end
+            end,
+            desc = "Set custom foldtext function with syntax highlighting",
+          },
+        },
+      },
+      options = {
+        opt = {
+          -- 移除折叠后的填充字符
+          fillchars = {
+            fold = " ",
+            foldopen = "",
+            foldclose = "",
+            foldsep = " ",
+          },
+        },
+      },
+    },
   },
 }
