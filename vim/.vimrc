@@ -164,36 +164,25 @@ function! BufferList()
   for b in range(1, bufnr('$'))
     if buflisted(b) && getbufvar(b, '&filetype') !=# 'netrw'
       let name = bufname(b)
-      if name == ''
+      if empty(name)
         let name = '[No Name]'
       else
-        let name = fnamemodify(name, ':t') " 只显示文件名
+        let name = fnamemodify(name, ':t')
       endif
-      
       if getbufvar(b, '&modified')
-        let name = name . '[+]'
+        let name .= '[+]'
       endif
-      
-      " 改进的高亮处理
       if b == bufnr('%')
         let name = '%#CurrentBuffer# ' . name . ' %*'
       else
         let name = ' ' . name . ' '
       endif
-      
       call add(res, name)
     endif
   endfor
-  return join(res, '|') " 使用更紧凑的分隔符
+  return join(res, '|')
 endfunction
-" 先清除可能存在的旧高亮组
-silent! highlight clear CurrentBuffer
-" 重新定义高亮组
-highlight CurrentBuffer term=bold cterm=bold ctermfg=black ctermbg=green gui=bold guifg=black guibg=LightGreen
 set showtabline=2
-set tabline=
-set tabline+=%{BufferList()}
-set tabline+=%=          " 右对齐
-set tabline+=%y\ %l/%L   " 文件类型和行号信息
+set tabline=%!BufferList()
 nnoremap <silent> H :bprevious<CR>
 nnoremap <silent> L :bnext<CR>
