@@ -15,6 +15,13 @@ return {
           -- buffer_active_bg = "#cccccc",
           buffer_active_fg = "#F8C555",
         },
+        components = {
+          tabline_file_info = {
+            file_icon = {
+              hl = false, -- 禁用icon的自动颜色，让它和文件名使用相同颜色
+            },
+          },
+        },
       },
       -- AstroUI allows you to easily modify highlight groups easily for any and all colorschemes
       highlights = {
