@@ -9,6 +9,13 @@ return {
     opts = {
       -- change colorscheme
       colorscheme = "catppuccin",
+      status = {
+        colors = {
+          -- buffer_bg = "#000000",
+          -- buffer_active_bg = "#cccccc",
+          buffer_active_fg = "#F8C555",
+        },
+      },
       -- AstroUI allows you to easily modify highlight groups easily for any and all colorschemes
       highlights = {
         -- init = { -- this table overrides highlights in all themes
