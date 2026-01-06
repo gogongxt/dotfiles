@@ -149,3 +149,26 @@ print("hello") -> [ print("hello") ] # 整行添加 yss[
 | \[ / \] | 去往上/下一个已经选中的位置                                |
 
 选择完成后就可以`i/I/a/A/c`进入插入模式了
+
+# 把vim放入后台，回到之前的shell
+
+> 总共两种方法，第一种更快更好用，并且nvim/vim通用
+
+## 放入jobs后台
+
+按`ctrl+z`把vim挂到后台，回会到打开vim的shell
+
+终端里可以看到提示：`[1]+  Stopped     vim file.txt`
+
+输入命令`fg`就可以回到之前的vim
+
+别的命令：
+
+- `jobs` 查看当前后台所有vim
+- `fg %1` 进入指定的vim，这里的数字就是挂起时[]的数字，默认累加
+
+## 使用!shell进入子shell，只支持vim
+
+在vim中输入`:shell`或者`:!bash`，`:!zsh` 都会进入子shell
+
+在子shell里可以操作，回到vim只需要`exit`或者`ctrl-d`
