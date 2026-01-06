@@ -4,12 +4,13 @@
 
 -- Custom foldtext function with syntax highlighting
 -- Source: https://www.reddit.com/r/neovim/comments/1fzn1zt/custom_fold_text_function_with_treesitter_syntax/
-local function fold_virt_text(result, start_text, lnum)
+local function fold_virt_text(result, start_text, lnum, offset)
+  offset = offset or 0
   local text = ""
   local hl
   for i = 1, #start_text do
     local char = start_text:sub(i, i)
-    local captured_highlights = vim.treesitter.get_captures_at_pos(0, lnum, i - 1)
+    local captured_highlights = vim.treesitter.get_captures_at_pos(0, lnum, offset + i - 1)
     local outmost_highlight = captured_highlights[#captured_highlights]
     if outmost_highlight then
       local new_hl = "@" .. outmost_highlight.capture
@@ -29,23 +30,48 @@ local function fold_virt_text(result, start_text, lnum)
 end
 
 function _G.custom_foldtext()
-  -- 定义自定义高亮组
-  vim.api.nvim_set_hl(0, "CustomFoldText", { fg = "#000000", bg = "#66D9EF" })
-
+  -- 定义 icon+行号 的自定义高亮组（斜体）
+  vim.api.nvim_set_hl(0, "CustomFoldText", { fg = "#000000", bg = "#66D9EF", italic = true })
   local start_text = vim.fn.getline(vim.v.foldstart):gsub("\t", string.rep(" ", vim.o.tabstop))
   local nline = vim.v.foldend - vim.v.foldstart
   local result = {}
   fold_virt_text(result, start_text, vim.v.foldstart - 1)
-  table.insert(result, { "  " .. nline .. " ", "CustomFoldText" })
-
-  -- 计算当前文本宽度，添加空白字符填满整行（避免右侧出现填充点）
+  table.insert(result, { "  " .. nline .. " ", "CustomFoldText" })
+  -- 检查折叠结束行是否包含闭合符号
+  -- 常见的闭合符号：end, fi, done, esac, }, ], ), >, ", ', `
+  local patterns = {
+    "end[f]?", -- end, endif (vim, lua, ruby, etc.)
+    "fi", -- if 结束
+    "done", -- do/for/while 结束
+    "esac", -- case 结束 (shell)
+    "[f]unc[tion]?", -- function/endfunction (vim, etc.)
+    "endclass", -- class 结束
+    "endstruct", -- struct 结束
+    "[%])}]+[,;]?", -- }, ], ) 后跟可选的逗号或分号
+    "['\"`]", -- 引号
+    "</[%w%-]*>", -- HTML/XML 标签结束
+  }
+  local endline = vim.fn.getline(vim.v.foldend)
+  for _, pattern in ipairs(patterns) do
+    if vim.trim(endline):find(pattern) == 1 then
+      -- 添加结束行的内容（带语法高亮）
+      -- 需要计算前导空白作为 offset，以便正确获取语法高亮
+      local offset = #(endline:match "^(%s+)" or "")
+      local trimmed_endline = vim.trim(endline)
+      fold_virt_text(result, trimmed_endline, vim.v.foldend - 1, offset)
+      break
+    end
+  end
+  -- 计算当前文本宽度，添加点号填充到行尾
   local current_width = 0
   for _, chunk in ipairs(result) do
     current_width = current_width + vim.fn.strdisplaywidth(chunk[1])
   end
   local win_width = vim.fn.winwidth(0)
-  if current_width < win_width then table.insert(result, { string.rep(" ", win_width - current_width), "Folded" }) end
-
+  if current_width < win_width then
+    local fill_text = string.rep(".", win_width - current_width)
+    table.insert(result, { fill_text, "Folded" })
+  end
   return result
 end
 
