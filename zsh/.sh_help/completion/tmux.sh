@@ -1,8 +1,7 @@
 #🔽🔽🔽
 # TMUX config
 # if set this , home and end in tmux will be strange, need remap home and end in tmux.
-export TERM=xterm-256color
-export TMUX_EXEC=$(which tmux) # remember tmux executable path
+# export TERM=xterm-256color
 tmux_choose_window() {
     # 检查是否在 tmux 中
     if [[ -z "$TMUX" ]]; then
@@ -16,10 +15,10 @@ tmux_choose_window() {
         first_session=$(echo "$sessions" | head -n 1 | cut -d: -f1)
         echo $first_session
         # 附加到会话并执行 choose-window
-        $TMUX_EXEC attach -t "$first_session" \; choose-window
+        command tmux attach -t "$first_session" \; choose-window
     else
         # 已经在 tmux 中，直接执行 choose-window
-        $TMUX_EXEC choose-window
+        command tmux choose-window
     fi
 }
 tmux() {
