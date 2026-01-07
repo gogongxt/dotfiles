@@ -1,4 +1,6 @@
 (
+    // see all keybind in file https://github.com/gitui-org/gitui/blob/master/src/keys/key_list.rs
+
     open_help: Some(( code: F(1), modifiers: "")),
 
     move_left: Some(( code: Char('h'), modifiers: "")),
@@ -22,6 +24,10 @@
     stashing_toggle_index: Some(( code: Char('m'), modifiers: "")),
 
     stash_open: Some(( code: Char('l'), modifiers: "")),
+
+    file_find: Some(( code: Char('f'), modifiers: "ALT")),
+    branch_find: Some(( code: Char('f'), modifiers: "ALT")),
+    log_find: Some(( code: Char('f'), modifiers: "ALT")),
 
     exit_popup: Some(( code: Char('q'), modifiers: "CONTROL")),
 )
