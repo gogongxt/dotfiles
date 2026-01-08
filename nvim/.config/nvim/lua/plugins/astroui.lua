@@ -84,18 +84,19 @@ return {
       colorscheme = "catppuccin",
       status = {
         attributes = {
-          -- buffer_active = { bold = false },
+          buffer_active = { bold = false, italic = false },
         },
         colors = {
           -- buffer_bg = "#000000",
-          -- buffer_active_bg = "#cccccc",
-          buffer_active_fg = "#e5c890",
+          buffer_fg = "#a5adce",
+          buffer_active_bg = "#a6d189",
+          buffer_active_fg = "#000000",
         },
         components = {
           tabline_file_info = {
-            file_icon = {
-              hl = false, -- 禁用icon的自动颜色，让它和文件名使用相同颜色
-            },
+            file_icon = false,
+            close_button = false, -- 隐藏关闭按钮(x号)
+            padding = { left = 1, right = 1 },
           },
         },
       },
