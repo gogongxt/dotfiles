@@ -42,8 +42,7 @@ def extract_logs(input_path, output_path, start, end):
         for line in fin:
             pbar.update(len(line))  # 更新进度
 
-            clean_line = strip_ansi(line)
-            match = TIME_PATTERN.search(clean_line)
+            match = TIME_PATTERN.search(line)
             if not match:
                 continue
 
@@ -53,8 +52,10 @@ def extract_logs(input_path, output_path, start, end):
                 continue
 
             if start <= t <= end:
+                clean_line = strip_ansi(line)  # 只有在时间范围内才去除颜色控制符
                 fout.write(clean_line)
                 count += 1
+                pbar.set_postfix({"extracted": count})  # 动态显示已提取条数
 
     print(f"\n✅ 提取完成，共写入 {count} 行日志到：{output_path}")
 
