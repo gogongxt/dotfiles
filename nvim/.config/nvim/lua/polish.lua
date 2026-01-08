@@ -122,6 +122,12 @@ local mappings = require "mappings"
 mappings.set_mappings {
   n = {
     -- delete comments
+    ["<leader>Q"] = {
+      ":tabclose<cr>",
+      desc = "Close Tab",
+      noremap = true,
+      silent = true,
+    },
     ["<leader>ld"] = {
       "<cmd>lua require('plugins.user.my_funcs.delete_comments').delete_comments()<cr>",
       desc = "Delete Comments",
@@ -209,7 +215,7 @@ vim.opt.jumpoptions = "stack"
 vim.o.shellcmdflag = "-c"
 
 -- minimal number of screen lines
-vim.o.scrolloff = 5     -- keep above and below the cursor.
+vim.o.scrolloff = 5 -- keep above and below the cursor.
 vim.o.sidescrolloff = 8 -- keep left and right of the cursor.
 
 -- NOTE: gxt: Astronvim Feature_or_Bug?
