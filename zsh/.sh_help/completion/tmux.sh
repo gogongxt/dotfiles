@@ -22,6 +22,7 @@ tmux_choose_window() {
     fi
 }
 tmux() {
+    local TERM=xterm-256color
     case "$1" in
         --)
             shift
