@@ -104,12 +104,12 @@ tmux() {
                 else
                     if [[ -n "$start_directory" ]]; then
                         TMUX_WORKING_DIR="${start_directory}"
-                        env TERM=xterm-256color "$(command -v tmux)"  tmux -u new-session -s "$session_name" -c "$HOME" \; \
+                        env TERM=xterm-256color "$(command -v tmux)" -u new-session -s "$session_name" -c "$HOME" \; \
                             set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
                             send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
                     else
                         TMUX_WORKING_DIR="$(pwd)"
-                        env TERM=xterm-256color "$(command -v tmux)"  tmux -u new-session -s "$session_name" -c "$HOME" \; \
+                        env TERM=xterm-256color "$(command -v tmux)" -u new-session -s "$session_name" -c "$HOME" \; \
                             set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
                             send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
                     fi
@@ -125,7 +125,7 @@ tmux() {
                         #     set-environment TMUX_WORKING_DIR "${start_directory}" \; \
                         #     send-keys "cd ${start_directory} && /usr/bin/clear" Enter
                         TMUX_WORKING_DIR="${start_directory}"
-                        env TERM=xterm-256color "$(command -v tmux)" tmux -u new-session -s "$session_name" -c "$HOME" \; \
+                        env TERM=xterm-256color "$(command -v tmux)" -u new-session -s "$session_name" -c "$HOME" \; \
                             set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
                             send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
                     else
@@ -134,7 +134,7 @@ tmux() {
                         #     set-environment TMUX_WORKING_DIR "$(pwd)" \; \
                         #     send-keys "cd $(pwd) && /usr/bin/clear" Enter
                         TMUX_WORKING_DIR="$(pwd)"
-                        env TERM=xterm-256color "$(command -v tmux)" tmux -u new-session -s "$session_name" -c "$HOME" \; \
+                        env TERM=xterm-256color "$(command -v tmux)" -u new-session -s "$session_name" -c "$HOME" \; \
                             set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
                             send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
                     fi
