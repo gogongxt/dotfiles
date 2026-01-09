@@ -64,6 +64,14 @@ if [ "$CUR_SHELL" = "bash" ]; then
   fi
 fi
 
+# important to prevent strange kitty show problem
+# The correct term is :
+#   - xterm-256color in normal terminal
+#   - tmux-256color in tmux terminal
+if [[ "$TERM" == "xterm-kitty" ]]; then
+  export TERM=xterm-256color
+fi
+
 CUR_DIR="$(get_current_dir)"
 
 source "$CUR_DIR/config.sh"
