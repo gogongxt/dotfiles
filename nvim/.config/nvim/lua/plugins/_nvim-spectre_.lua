@@ -35,7 +35,8 @@ mappings.set_mappings {
 return {
   -- 增强搜索和替换
   "windwp/nvim-spectre",
-  evnt = "VeryLazy",
+  event = "VeryLazy",
+  build = "bash build.sh",
   config = function()
     require("spectre").setup {
       is_block_ui_break = true,
@@ -56,6 +57,9 @@ return {
         find = {
           cmd = "rg",
           options = { "ignore-case", "link" },
+        },
+        replace = {
+          cmd = "oxi",
         },
       },
       find_engine = {
