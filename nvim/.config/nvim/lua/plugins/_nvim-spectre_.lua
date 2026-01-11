@@ -52,6 +52,45 @@ return {
         search = "TodoBgTODO",
         replace = "TodoBgTEST",
       },
+      default = {
+        find = {
+          cmd = "rg",
+          options = { "ignore-case", "link" },
+        },
+      },
+      find_engine = {
+        -- rg is map with finder_cmd
+        ["rg"] = {
+          cmd = "rg",
+          -- default args
+          args = {
+            "--color=never",
+            "--no-heading",
+            "--with-filename",
+            "--line-number",
+            "--column",
+          },
+          options = {
+            ["ignore-case"] = {
+              value = "--ignore-case",
+              icon = "[I]",
+              desc = "ignore case",
+            },
+            ["hidden"] = {
+              value = "--hidden",
+              desc = "hidden file",
+              icon = "[H]",
+            },
+            ["link"] = {
+              value = "--follow",
+              desc = "link file",
+              icon = "[L]",
+            },
+            -- you can put any rg search option you want here it can toggle with
+            -- show_option function
+          },
+        },
+      },
       mapping = {
         ["send_to_qf"] = {
           map = "<c-q>",
@@ -92,6 +131,11 @@ return {
           map = "<a-h>",
           cmd = "<cmd>lua require('spectre').change_options('hidden')<CR>",
           desc = "toggle search hidden",
+        },
+        ["toggle_ignore_link"] = {
+          map = "<a-l>",
+          cmd = "<cmd>lua require('spectre').change_options('link')<CR>",
+          desc = "toggle search link",
         },
         ["resume_last_search"] = {
           map = "<c-o>",
