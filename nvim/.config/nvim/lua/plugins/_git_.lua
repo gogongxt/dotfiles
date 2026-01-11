@@ -27,11 +27,14 @@ mappings.set_mappings {
     ["<Leader>gBv"] = { "<cmd>BlameToggle virtual<cr>", desc = "Blame virtual" },
     ["<Leader>gd"] = { "<cmd>lua require('gitsigns').diffthis()<cr>", desc = "Git Giff" }, -- see diff unstaged
     ["<Leader>gD"] = { function() require("gitsigns").diffthis "~" end, desc = "Git Giff(staged)" }, -- see diff all include unstaged and staged
-    ["<Leader>gg"] = { "<cmd>lua require('plugins.user.my_funcs').git_gitui_toggle()<cr>", desc = "gitui" },
+    ["<A-g>"] = { "<cmd>lua require('plugins.user.my_funcs').git_gitui_toggle()<cr>", desc = "gitui" },
     ["<Leader>gP"] = { "<cmd>lua require('gitsigns').preview_hunk()<cr>", desc = "Hunk Preview Hover" },
     ["<Leader>gi"] = { "<cmd>lua require('gitsigns').blame_line()<cr>", desc = "Line Info" },
     ["<Leader>gq"] = { "<cmd>lua require('gitsigns').setqflist()<cr>", desc = "Git Quickfix" },
     ["<Leader>gQ"] = { "<cmd>lua require('gitsigns').setqflist('all')<cr>", desc = "Git Quickfix(all files)" },
+  },
+  t = {
+    ["<A-g>"] = { "<cmd>lua require('plugins.user.my_funcs').git_gitui_toggle()<cr>", desc = "gitui" },
   },
 }
 
