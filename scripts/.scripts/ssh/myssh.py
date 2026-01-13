@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 
-import os
-import sys
-import pexpect
-import yaml
 import argparse
+import base64
+import fcntl
+import logging
+import os
+import re
 import shutil
 import signal
-import fcntl
-import termios
 import struct
-from pathlib import Path
-import logging
 import subprocess
+import sys
+import termios
+from pathlib import Path
+
+import pexpect
+import yaml
 
 # --- 从 password.py 模块导入需要的类 ---
 from password import EnhancedPasswordManager
@@ -27,13 +30,50 @@ logging.basicConfig(
     level=logging.DEBUG,
     format=f"{YELLOW}%(filename)s{CYAN}:%(lineno)d{RESET} - %(message)s",
 )
-# logging.basicConfig(
-#     level=logging.DEBUG,
-#     filename='debug.log',      # 日志文件名
-#     filemode='w',              # 每次运行都覆盖旧日志
-#     format='%(asctime)s - %(levelname)s - %(message)s'
-# )
 logger = logging.getLogger(__name__)
+
+
+def is_encrypted_password(password_str):
+    """
+    检测密码是否为加密格式。
+
+    加密密码特征：
+    1. 使用 base64.urlsafe_b64encode() 编码
+    2. 包含 IV(16字节) + 加密数据(至少16字节) = 至少32字节
+    3. Base64 编码后长度 >= 44 字符 (32 * 4/3，向上取整到4的倍数)
+    4. 只包含 Base64 字符 (a-zA-Z0-9_-) 和可能的填充 (=)
+    5. 通常以 = 或 == 结尾（Base64 填充）
+
+    Args:
+        password_str: 要检测的密码字符串
+
+    Returns:
+        bool: 如果是加密密码返回 True，否则返回 False
+    """
+    if not password_str or not isinstance(password_str, str):
+        return False
+
+    # 检查长度：加密密码通常至少 44 个字符
+    if len(password_str) < 44:
+        return False
+
+    # 检查是否为有效的 Base64 字符（包括 URL-safe 的 - 和 _）
+    # 同时允许末尾有 = 填充
+    base64_pattern = r"^[A-Za-z0-9_-]+={0,2}$"
+    if not re.match(base64_pattern, password_str):
+        return False
+
+    # 尝试 Base64 解码验证
+    try:
+        decoded = base64.urlsafe_b64decode(password_str)
+        # 解码后长度应该至少是 32 字节 (16字节IV + 至少16字节加密数据)
+        # 并且是 16 的倍数（AES 块大小）
+        if len(decoded) >= 32 and len(decoded) % 16 == 0:
+            return True
+    except Exception:
+        return False
+
+    return False
 
 
 def install_required_tools():
@@ -97,7 +137,17 @@ def select_server(config_file):
         sys.exit(1)
 
 
-def get_server_details(config_file, server_name, pwd_manager: EnhancedPasswordManager):
+def get_server_details(config_file, server_name):
+    """
+    获取服务器详情，智能识别并解密加密密码。
+
+    Args:
+        config_file: 配置文件路径
+        server_name: 服务器名称
+
+    Returns:
+        dict: 包含服务器连接信息的字典，密码已解密（如果是加密密码）
+    """
     try:
         script_dir = Path(__file__).parent.resolve()
         config_path = script_dir / config_file
@@ -106,7 +156,7 @@ def get_server_details(config_file, server_name, pwd_manager: EnhancedPasswordMa
             config = yaml.safe_load(f)
 
         found_server = None
-        for server in config.get("servers", []):  # 安全地获取 servers 列表
+        for server in config.get("servers", []):
             if server.get("name") == server_name:
                 found_server = server
                 break
@@ -126,17 +176,28 @@ def get_server_details(config_file, server_name, pwd_manager: EnhancedPasswordMa
             "password_prompt": auth_details.get("password_prompt", "Password: "),
         }
 
-        # --- 使用传入的 pwd_manager 进行解密 ---
+        # --- 智能检测并解密密码 ---
         encrypted_pass = details.get("password")
-        if encrypted_pass:
+        if encrypted_pass and is_encrypted_password(encrypted_pass):
             print("检测到加密密码，需要输入主密码进行解密...")
             try:
+                # 初始化密码管理器
+                key_file = script_dir / "encrypted_key.bin"
+                salt_file = script_dir / "salt.bin"
+
+                pwd_manager = EnhancedPasswordManager(
+                    key_file=str(key_file), salt_file=str(salt_file)
+                )
+
                 decrypted_pass = pwd_manager.decrypt_to_real_password(encrypted_pass)
                 details["password"] = decrypted_pass
                 print("密码解密成功。")
             except Exception as e:
                 print(f"密码解密失败: {e}", file=sys.stderr)
                 sys.exit(1)
+        elif encrypted_pass:
+            # 明文密码，直接使用
+            logger.debug("使用明文密码")
 
         return details
     except KeyError as e:
@@ -208,29 +269,29 @@ def connect_to_server(server_details):
             elif index == 2:  # SSH host verification
                 child.sendline("yes")
             elif index in (3, 4):  # successful login patterns
-                # print("\n--- Login successful. Entering interactive mode. ---", file=sys.stderr)
+                # print("\\n--- Login successful. Entering interactive mode. ---", file=sys.stderr)
                 child.logfile_read = None
                 child.interact()
                 break
             elif index == 5:  # Permission denied
-                # print("\nAuthentication failed: Permission denied", file=sys.stderr)
+                # print("\\nAuthentication failed: Permission denied", file=sys.stderr)
                 sys.exit(1)
 
             # --- 新增的逻辑：处理动态口令 ---
             elif index == 6:  # Matched "Dkey shield code:"
-                # print("\n\n--- PLEASE ENTER YOUR DYNAMIC CODE AND PRESS ENTER ---", file=sys.stderr)
+                # print("\\n\\n--- PLEASE ENTER YOUR DYNAMIC CODE AND PRESS ENTER ---", file=sys.stderr)
 
                 # 暂时关闭日志，避免用户输入时出现奇怪的回显
                 child.logfile_read = None
 
-                # 进入交互模式，但设置“回车”为退出字符
+                # 进入交互模式，但设置"回车"为退出字符
                 child.interact(escape_character="\r")
 
                 # 用户按下回车后，interact返回，我们立即把回车本身发送给服务器
                 # (interact 在退出时不会发送那个退出字符)
-                child.sendline("")  # 或者 child.send('\r')
+                child.sendline("")  # 或者 child.send('\\r')
 
-                # print("--- Code sent. Resuming automation... ---\n", file=sys.stderr)
+                # print("--- Code sent. Resuming automation... ---\\n", file=sys.stderr)
 
                 # 重新开启日志，以便看到后续的自动化过程
                 child.logfile_read = sys.stdout
@@ -242,20 +303,20 @@ def connect_to_server(server_details):
             elif index == 7:  # Special cases like "Luban LES Password:"
                 child.sendline(str(server_details["password"]))
             elif index == 8:  # Special cases like "Option>:"
-                # print("\n--- Special prompt detected. Handing over to user. ---", file=sys.stderr)
+                # print("\\n--- Special prompt detected. Handing over to user. ---", file=sys.stderr)
                 child.logfile_read = None
                 child.interact()
                 break
             elif index == 9:  # Timeout
-                # print("\nConnection timed out", file=sys.stderr)
+                # print("\\nConnection timed out", file=sys.stderr)
                 sys.exit(1)
             elif index == 10:  # EOF
-                # print("\nConnection closed (EOF)", file=sys.stderr)
+                # print("\\nConnection closed (EOF)", file=sys.stderr)
                 break
 
     # ... except and finally blocks ...
     except Exception as e:
-        print(f"\nAn error occurred: {e}", file=sys.stderr)
+        print(f"\\nAn error occurred: {e}", file=sys.stderr)
     finally:
         signal.signal(signal.SIGWINCH, signal.SIG_DFL)
         if child and child.isalive():
@@ -264,30 +325,36 @@ def connect_to_server(server_details):
 
 
 def main():
+    """主函数，解析参数并启动连接。"""
     install_required_tools()
 
     parser = argparse.ArgumentParser(description="集成了密码安全管理的SSH连接工具")
     parser.add_argument(
-        "--config", default="servers_password.yaml", help="服务器YAML配置文件路径"
+        "server",
+        nargs="?",
+        default=None,
+        help="要直接连接的服务器名称 (在YAML文件中定义)",
+    )
+    parser.add_argument(
+        "--config",
+        default="servers.yaml",
+        help="服务器YAML配置文件路径",
     )
     args = parser.parse_args()
 
-    # --- 初始化密码管理器 ---
-    # 路径将与 ssh_login.py 脚本在同一目录
-    script_dir = Path(__file__).parent.resolve()
-    key_file = script_dir / "encrypted_key.bin"
-    salt_file = script_dir / "salt.bin"
+    config_file = args.config
+    server_name = args.server
 
-    try:
-        pwd_manager = EnhancedPasswordManager(
-            key_file=str(key_file), salt_file=str(salt_file)
-        )
-    except Exception as e:
-        print(f"初始化密码管理器失败: {e}", file=sys.stderr)
-        sys.exit(1)
+    if server_name:
+        print(f"参数指定服务器: {server_name}")
+    else:
+        server_name = select_server(config_file)
+        if not server_name:
+            print("未选择任何服务器，程序退出。")
+            sys.exit(0)
 
-    server_name = select_server(args.config)
-    server_details = get_server_details(args.config, server_name, pwd_manager)
+    print(f"正在获取 '{server_name}' 的详细信息...")
+    server_details = get_server_details(config_file, server_name)
     connect_to_server(server_details)
 
 
