@@ -68,7 +68,7 @@ fi
 # The correct term is :
 #   - xterm-256color in normal terminal
 #   - tmux-256color in tmux terminal
-if [[ "$TERM" == "xterm-kitty" ]]; then
+if [[ -n "$TERM" && "$TERM" != "tmux-256color" ]]; then
   export TERM=xterm-256color
 fi
 
