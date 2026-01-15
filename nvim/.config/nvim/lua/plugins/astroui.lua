@@ -31,7 +31,7 @@ end
 
 function _G.custom_foldtext()
   -- 定义 icon+行号 的自定义高亮组（斜体）
-  vim.api.nvim_set_hl(0, "CustomFoldText", { fg = "#000000", bg = "#66D9EF", italic = true })
+  vim.api.nvim_set_hl(0, "CustomFoldText", { fg = "#000000", bg = "#66D9EF", italic = false })
   local start_text = vim.fn.getline(vim.v.foldstart):gsub("\t", string.rep(" ", vim.o.tabstop))
   local nline = vim.v.foldend - vim.v.foldstart
   local result = {}

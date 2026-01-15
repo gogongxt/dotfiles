@@ -237,6 +237,3 @@ vim.on_key(nil, vim.api.nvim_get_namespaces()["auto_hlsearch"])
 -- Set nofixeol and nofixendofline options
 vim.opt.fixeol = false
 vim.opt.fixendofline = false
-
--- 支持%跳转"<>"
-vim.opt.matchpairs:append "<:>"
