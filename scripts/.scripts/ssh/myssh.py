@@ -139,14 +139,14 @@ def select_server(config_file):
 
 def get_server_details(config_file, server_name):
     """
-    获取服务器详情，智能识别并解密加密密码。
+    获取服务器详情，智能识别并解密加密字段。
 
     Args:
         config_file: 配置文件路径
         server_name: 服务器名称
 
     Returns:
-        dict: 包含服务器连接信息的字典，密码已解密（如果是加密密码）
+        dict: 包含服务器连接信息的字典，所有加密字段已解密
     """
     try:
         script_dir = Path(__file__).parent.resolve()
@@ -164,40 +164,42 @@ def get_server_details(config_file, server_name):
         if not found_server:
             raise ValueError(f"Server '{server_name}' not found in config")
 
-        auth_details = found_server.get("auth", {})
+        # 获取认证提示列表（auth 字段直接是列表）
+        prompts = found_server.get("auth", [])
+
+        # 智能检测并解密加密字段
+        processed_prompts = []
+        if prompts:
+            pwd_manager = None
+            for item in prompts:
+                prompt = item.get("prompt", "")
+                response = item.get("response", "")
+
+                # 自动检测并解密加密字段
+                if response and is_encrypted_password(response):
+                    if pwd_manager is None:
+                        logger.debug("检测到加密字段，需要输入主密码进行解密...")
+                        key_file = script_dir / "encrypted_key.bin"
+                        salt_file = script_dir / "salt.bin"
+                        pwd_manager = EnhancedPasswordManager(
+                            key_file=str(key_file), salt_file=str(salt_file)
+                        )
+                    try:
+                        response = pwd_manager.decrypt_to_real_password(response)
+                        print(f"字段解密成功: {prompt}")
+                    except Exception as e:
+                        print(f"字段解密失败 ({prompt}): {e}", file=sys.stderr)
+                        sys.exit(1)
+
+                processed_prompts.append({"prompt": prompt, "response": response})
+
         details = {
             "host": found_server["host"],
             "ssh_user": found_server["ssh_user"],
             "port": str(found_server.get("port", 22)),
             "add": found_server.get("add", ""),
-            "username": auth_details.get("username"),
-            "password": auth_details.get("password"),
-            "username_prompt": auth_details.get("username_prompt", "Username: "),
-            "password_prompt": auth_details.get("password_prompt", "Password: "),
+            "auth_prompts": processed_prompts,
         }
-
-        # --- 智能检测并解密密码 ---
-        encrypted_pass = details.get("password")
-        if encrypted_pass and is_encrypted_password(encrypted_pass):
-            print("检测到加密密码，需要输入主密码进行解密...")
-            try:
-                # 初始化密码管理器
-                key_file = script_dir / "encrypted_key.bin"
-                salt_file = script_dir / "salt.bin"
-
-                pwd_manager = EnhancedPasswordManager(
-                    key_file=str(key_file), salt_file=str(salt_file)
-                )
-
-                decrypted_pass = pwd_manager.decrypt_to_real_password(encrypted_pass)
-                details["password"] = decrypted_pass
-                print("密码解密成功。")
-            except Exception as e:
-                print(f"密码解密失败: {e}", file=sys.stderr)
-                sys.exit(1)
-        elif encrypted_pass:
-            # 明文密码，直接使用
-            logger.debug("使用明文密码")
 
         return details
     except KeyError as e:
@@ -226,6 +228,12 @@ def sigwinch_handler(signum, frame):
 
 
 def connect_to_server(server_details):
+    """
+    连接到服务器，支持动态认证提示列表。
+
+    Args:
+        server_details: 包含服务器连接信息的字典，包括 auth_prompts 列表
+    """
     global child
     try:
         cmd = f"ssh {server_details['add']} -p {server_details['port']} {server_details['ssh_user']}@{server_details['host']}"
@@ -240,81 +248,77 @@ def connect_to_server(server_details):
 
         child.logfile_read = sys.stdout
 
+        # 获取认证提示列表
+        auth_prompts = server_details.get("auth_prompts", [])
+
         while True:
-            # 在 expect 列表中，确保 "Dkey shield code:" 存在
-            index = child.expect(
+            # 构建 expect 列表：
+            # 1. 所有配置的认证提示
+            # 2. 固定的系统提示（SSH 验证、登录成功、错误等）
+            # 3. 特殊交互提示（动态口令等）
+            expect_patterns = [p["prompt"] for p in auth_prompts]
+            base_index = len(expect_patterns)  # 记录认证提示的数量
+
+            # 添加固定模式
+            expect_patterns.extend(
                 [
-                    server_details["username_prompt"],  # 0
-                    "(?i)" + server_details["password_prompt"],  # 1
-                    "Are you sure you want to continue connecting.*",  # 2
-                    "(Last login:|[$#>%\\]]\\s*$)",  # 3
-                    "Ubuntu comes with ABSOLUTELY NO WARRANTY.*",  # 4
-                    "Permission denied",  # 5
-                    "Dkey shield code:",  # 6
-                    "Luban LES Password:",  # 7
-                    "Option>:",  # 8
-                    pexpect.TIMEOUT,  # 9
-                    pexpect.EOF,  # 10
-                ],
-                timeout=60,  # 动态口令可能需要更长的等待时间
+                    "Are you sure you want to continue connecting.*",  # base_index + 0: SSH host verification
+                    "(Last login:|[$#>%\\]]\\s*$)",  # base_index + 1: successful login
+                    "Ubuntu comes with ABSOLUTELY NO WARRANTY.*",  # base_index + 2: successful login
+                    "Permission denied",  # base_index + 3: auth failed
+                    "Dkey shield code:",  # base_index + 4: dynamic code
+                    "Option>:",  # base_index + 5: special prompt
+                    pexpect.TIMEOUT,  # base_index + 6
+                    pexpect.EOF,  # base_index + 7
+                ]
             )
 
-            # (可选) 打印调试信息
-            # print(f"DEBUG: Matched pattern index = {index}", file=sys.stderr)
+            index = child.expect(expect_patterns, timeout=60)
 
-            if index == 0:  # username prompt
-                child.sendline(str(server_details["username"]))
-            elif index == 1:  # password prompt
-                child.sendline(str(server_details["password"]))
-            elif index == 2:  # SSH host verification
+            # 处理认证提示（动态部分）
+            if index < base_index:
+                # 匹配到某个配置的认证提示
+                child.sendline(str(auth_prompts[index]["response"]))
+
+            # 处理固定的系统提示
+            elif index == base_index + 0:  # SSH host verification
                 child.sendline("yes")
-            elif index in (3, 4):  # successful login patterns
-                # print("\\n--- Login successful. Entering interactive mode. ---", file=sys.stderr)
+
+            elif index in (base_index + 1, base_index + 2):  # successful login
                 child.logfile_read = None
                 child.interact()
                 break
-            elif index == 5:  # Permission denied
-                # print("\\nAuthentication failed: Permission denied", file=sys.stderr)
+
+            elif index == base_index + 3:  # Permission denied
                 sys.exit(1)
 
-            # --- 新增的逻辑：处理动态口令 ---
-            elif index == 6:  # Matched "Dkey shield code:"
-                # print("\\n\\n--- PLEASE ENTER YOUR DYNAMIC CODE AND PRESS ENTER ---", file=sys.stderr)
-
+            elif index == base_index + 4:  # Dkey shield code (动态口令)
                 # 暂时关闭日志，避免用户输入时出现奇怪的回显
                 child.logfile_read = None
 
-                # 进入交互模式，但设置"回车"为退出字符
+                # 进入交互模式，设置"回车"为退出字符
                 child.interact(escape_character="\r")
 
-                # 用户按下回车后，interact返回，我们立即把回车本身发送给服务器
-                # (interact 在退出时不会发送那个退出字符)
-                child.sendline("")  # 或者 child.send('\\r')
+                # 用户按下回车后，发送回车给服务器
+                child.sendline("")
 
-                # print("--- Code sent. Resuming automation... ---\\n", file=sys.stderr)
-
-                # 重新开启日志，以便看到后续的自动化过程
+                # 重新开启日志
                 child.logfile_read = sys.stdout
 
-                # 继续下一次循环，等待服务器的新提示（比如 username_prompt）
+                # 继续下一次循环，等待下一个提示
                 continue
-            # --- 新逻辑结束 ---
 
-            elif index == 7:  # Special cases like "Luban LES Password:"
-                child.sendline(str(server_details["password"]))
-            elif index == 8:  # Special cases like "Option>:"
-                # print("\\n--- Special prompt detected. Handing over to user. ---", file=sys.stderr)
+            elif index == base_index + 5:  # Special prompt like "Option>:"
                 child.logfile_read = None
                 child.interact()
                 break
-            elif index == 9:  # Timeout
-                # print("\\nConnection timed out", file=sys.stderr)
+
+            elif index == base_index + 6:  # Timeout
                 sys.exit(1)
-            elif index == 10:  # EOF
-                # print("\\nConnection closed (EOF)", file=sys.stderr)
+
+            elif index == base_index + 7:  # EOF
                 break
 
-    # ... except and finally blocks ...
     except Exception as e:
         print(f"\\nAn error occurred: {e}", file=sys.stderr)
     finally:
