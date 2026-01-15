@@ -145,6 +145,9 @@ return {
           },
         },
       },
+      scroll = {
+        enabled = true,
+      },
       notifier = {
         enabled = false,
       },
