@@ -3,6 +3,30 @@
 local mappings = require "mappings"
 mappings.set_mappings {
   n = {
+    ["<Leader>gS"] = {
+      function()
+        local gitsigns = require "gitsigns"
+        local buf = vim.api.nvim_get_current_buf()
+        local file = vim.api.nvim_buf_get_name(buf)
+        -- Check if file is untracked
+        if file ~= "" then
+          local result = vim.fn.systemlist("git status --porcelain " .. vim.fn.shellescape(file))
+          if result and #result > 0 then
+            local line = result[1]
+            -- If untracked (starts with ??), add the file
+            if line:match "^%?%?" then
+              vim.fn.system("git add " .. vim.fn.shellescape(file))
+              gitsigns.refresh()
+              -- print("Added: " .. vim.fn.fnamemodify(file, ":t"))
+              return
+            end
+          end
+        end
+        -- Otherwise, stage the buffer normally
+        gitsigns.stage_buffer()
+      end,
+      desc = "Stage Git buffer (add if untracked)",
+    },
     ["<Leader>gj"] = {
       "<cmd>lua require('gitsigns').nav_hunk('next')<cr>",
       desc = "Hunk Next",
