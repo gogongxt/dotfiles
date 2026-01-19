@@ -309,6 +309,7 @@ def connect_to_server(server_details):
                 continue
 
             elif index == base_index + 5:  # Special prompt like "Option>:"
+                child.sendline("3")
                 child.logfile_read = None
                 child.interact()
                 break
