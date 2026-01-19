@@ -251,74 +251,78 @@ def connect_to_server(server_details):
         # 获取认证提示列表
         auth_prompts = server_details.get("auth_prompts", [])
 
+        # 定义系统提示模式及其处理函数
+        def handle_ssh_host_verification():
+            child.sendline("yes")
+
+        def handle_successful_login():
+            child.logfile_read = None
+            child.interact()
+            return "break"
+
+        def handle_permission_denied():
+            sys.exit(1)
+
+        def handle_dynamic_code():
+            # 暂时关闭日志，避免用户输入时出现奇怪的回显
+            child.logfile_read = None
+            # 进入交互模式，设置"回车"为退出字符
+            child.interact(escape_character="\r")
+            # 用户按下回车后，发送回车给服务器
+            child.sendline("")
+            # 重新开启日志
+            child.logfile_read = sys.stdout
+            # 继续下一次循环，等待下一个提示
+            return "continue"
+
+        def handle_timeout():
+            sys.exit(1)
+
+        def handle_eof():
+            return "break"
+
+        # 系统模式列表：(模式, 处理函数)
+        system_patterns = [
+            (
+                "Are you sure you want to continue connecting.*",
+                handle_ssh_host_verification,
+            ),
+            ("(Last login:|[$#>%\\]]\\s*$)", handle_successful_login),
+            ("Ubuntu comes with ABSOLUTELY NO WARRANTY.*", handle_successful_login),
+            ("Permission denied", handle_permission_denied),
+            ("Dkey shield code:", handle_dynamic_code),
+            (pexpect.TIMEOUT, handle_timeout),
+            (pexpect.EOF, handle_eof),
+        ]
+
         while True:
             # 构建 expect 列表：
             # 1. 所有配置的认证提示
             # 2. 固定的系统提示（SSH 验证、登录成功、错误等）
             # 3. 特殊交互提示（动态口令等）
             expect_patterns = [p["prompt"] for p in auth_prompts]
-            base_index = len(expect_patterns)  # 记录认证提示的数量
+            auth_count = len(expect_patterns)  # 记录认证提示的数量
 
-            # 添加固定模式
-            expect_patterns.extend(
-                [
-                    "Are you sure you want to continue connecting.*",  # base_index + 0: SSH host verification
-                    "(Last login:|[$#>%\\]]\\s*$)",  # base_index + 1: successful login
-                    "Ubuntu comes with ABSOLUTELY NO WARRANTY.*",  # base_index + 2: successful login
-                    "Permission denied",  # base_index + 3: auth failed
-                    "Dkey shield code:",  # base_index + 4: dynamic code
-                    "Option>:",  # base_index + 5: special prompt
-                    pexpect.TIMEOUT,  # base_index + 6
-                    pexpect.EOF,  # base_index + 7
-                ]
-            )
+            # 添加系统模式
+            for pattern, _ in system_patterns:
+                expect_patterns.append(pattern)
 
             index = child.expect(expect_patterns, timeout=60)
 
             # 处理认证提示（动态部分）
-            if index < base_index:
+            if index < auth_count:
                 # 匹配到某个配置的认证提示
                 child.sendline(str(auth_prompts[index]["response"]))
 
-            # 处理固定的系统提示
-            elif index == base_index + 0:  # SSH host verification
-                child.sendline("yes")
-
-            elif index in (base_index + 1, base_index + 2):  # successful login
-                child.logfile_read = None
-                child.interact()
-                break
-
-            elif index == base_index + 3:  # Permission denied
-                sys.exit(1)
-
-            elif index == base_index + 4:  # Dkey shield code (动态口令)
-                # 暂时关闭日志，避免用户输入时出现奇怪的回显
-                child.logfile_read = None
-
-                # 进入交互模式，设置"回车"为退出字符
-                child.interact(escape_character="\r")
-
-                # 用户按下回车后，发送回车给服务器
-                child.sendline("")
-
-                # 重新开启日志
-                child.logfile_read = sys.stdout
-
-                # 继续下一次循环，等待下一个提示
-                continue
-
-            elif index == base_index + 5:  # Special prompt like "Option>:"
-                child.sendline("3")
-                child.logfile_read = None
-                child.interact()
-                break
-
-            elif index == base_index + 6:  # Timeout
-                sys.exit(1)
-
-            elif index == base_index + 7:  # EOF
-                break
+            # 处理系统提示
+            else:
+                system_index = index - auth_count
+                pattern, handler = system_patterns[system_index]
+                result = handler()
+                if result == "break":
+                    break
+                elif result == "continue":
+                    continue
 
     except Exception as e:
         print(f"\\nAn error occurred: {e}", file=sys.stderr)
