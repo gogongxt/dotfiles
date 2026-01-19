@@ -186,3 +186,13 @@ set showtabline=2
 set tabline=%!BufferList()
 nnoremap <silent> H :bprevious<CR>
 nnoremap <silent> L :bnext<CR>
+
+"============================================================================
+" ==          search highlight color (keep at end to override colorschemes) ==
+"============================================================================
+" 搜索高亮：黄色背景配黑色文字，提高可读性
+highlight! clear Search
+highlight! clear IncSearch
+highlight! link CurSearch IncSearch
+highlight Search guibg=Yellow guifg=Black ctermbg=226 ctermfg=Black
+highlight IncSearch guibg=Yellow guifg=Black ctermbg=226 ctermfg=Black
