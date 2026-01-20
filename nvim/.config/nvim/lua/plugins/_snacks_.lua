@@ -97,7 +97,8 @@ return {
       picker = {
         toggles = {
           regex = { icon = "R", value = true }, -- R键表示启用正则表达式
-          exclude_icon = { icon = "E", value = true }, -- R键表示启用正则表达式
+          exclude_icon = { icon = "E", value = true }, -- E键表示启用exclude
+          exclude_docs_icon = { icon = "D", value = true }, -- D键表示启用文档排除
         },
         actions = {
           toggle_exclude = function(picker)
@@ -123,6 +124,26 @@ return {
             picker.list:set_target()
             picker:find()
           end,
+          toggle_docs = function(picker)
+            if not picker._exclude_docs then
+              picker._exclude_docs = true
+              picker.opts.exclude = picker.opts.exclude or {}
+              table.insert(picker.opts.exclude, "doc/**")
+              table.insert(picker.opts.exclude, "docs/**")
+              table.insert(picker.opts.exclude, "**/*.md")
+              table.insert(picker.opts.exclude, "**/*.txt")
+              table.insert(picker.opts.exclude, "**/*.rst")
+              picker.opts.exclude_docs_icon = true
+              vim.notify("Exclude docs ( doc/, docs/, *.md, *.txt, *.rst )", vim.log.levels.INFO)
+            else
+              picker._exclude_docs = false
+              picker.opts.exclude = {}
+              picker.opts.exclude_docs_icon = false
+              vim.notify("Include docs files", vim.log.levels.INFO)
+            end
+            picker.list:set_target()
+            picker:find()
+          end,
         },
         win = {
           input = {
@@ -140,6 +161,7 @@ return {
               ["-"] = { "edit_split", mode = { "n" } },
               ["<C-_>"] = { "edit_split", mode = { "i", "n" } },
               ["<a-e>"] = { "toggle_exclude", mode = { "i", "n" } },
+              ["<a-d>"] = { "toggle_docs", mode = { "i", "n" } },
               -- ["<c-->"] = { "edit_split", mode = { "i", "n" } }, -- cannot map ctrl--
             },
           },
