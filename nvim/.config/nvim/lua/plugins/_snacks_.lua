@@ -97,8 +97,8 @@ return {
       picker = {
         toggles = {
           regex = { icon = "R", value = true }, -- R键表示启用正则表达式
-          exclude_icon = { icon = "E", value = true }, -- E键表示启用exclude
-          exclude_docs_icon = { icon = "D", value = true }, -- D键表示启用文档排除
+          exclude_icon = { icon = "!Exc", value = true }, -- E键表示启用exclude
+          exclude_docs_icon = { icon = "!Docs", value = true }, -- D键表示启用文档排除
         },
         actions = {
           toggle_exclude = function(picker)
