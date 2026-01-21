@@ -12,11 +12,11 @@
       },
       {
         "language": "cpp",
-        "path": "./cpp.json"
+        "path": "./cpp.lua"
       },
       {
         "language": "markdown",
-        "path": "./markdown.json"
+        "path": "./markdown.lua"
       }
     ]
   }
