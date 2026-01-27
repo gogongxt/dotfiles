@@ -94,4 +94,10 @@ alias pt="proxy toggle"
 
 # pip install package use http proxy rather than other source
 # export PIP_PROXY="-i https://pypi.org/simple/ --proxy http://127.0.0.1:7890"
-alias pip_proxy='pip --proxy http://127.0.0.1:7890 -i https://pypi.org/simple/'
+# alias pip_proxy='pip --proxy http://127.0.0.1:7890 -i https://pypi.org/simple/'
+alias pip_proxy_7890="http_proxy=127.0.0.1:7890 https_proxy=127.0.0.1:7890 PIP_INDEX_URL=https://pypi.org/simple pip"
+alias pip_proxy_10099="http_proxy=10.77.22.11:10099 https_proxy=10.77.22.11:10099 PIP_INDEX_URL=https://pypi.org/simple pip"
+alias pip_proxy=pip_proxy_10099
+alias pip_tsinghua="http_proxy= https_proxy= PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple pip"
+alias pip_aliyun="http_proxy= https_proxy= PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple pip"
+alias pip_tencent="http_proxy= https_proxy= PIP_INDEX_URL=https://mirrors.cloud.tencent.com/pypi/simple pip"
