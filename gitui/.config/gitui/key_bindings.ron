@@ -25,9 +25,9 @@
 
     stash_open: Some(( code: Char('l'), modifiers: "")),
 
-    file_find: Some(( code: Char('f'), modifiers: "ALT")),
-    branch_find: Some(( code: Char('f'), modifiers: "ALT")),
-    log_find: Some(( code: Char('f'), modifiers: "ALT")),
+    file_find: Some(( code: Char('/'), modifiers: "")),
+    branch_find: Some(( code: Char('/'), modifiers: "")),
+    log_find: Some(( code: Char('/'), modifiers: "")),
 
     exit_popup: Some(( code: Char('q'), modifiers: "CONTROL")),
 )
