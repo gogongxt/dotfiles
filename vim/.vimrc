@@ -188,6 +188,12 @@ nnoremap <silent> H :bprevious<CR>
 nnoremap <silent> L :bnext<CR>
 
 "============================================================================
+" ==          visual mode highlight color           ==
+"============================================================================
+" Visual模式高亮：深蓝色背景配白色文字，确保选中内容可见
+highlight Visual guibg=LightMagenta ctermbg=LightMagenta guifg=Black ctermfg=Black
+
+"============================================================================
 " ==          search highlight color (keep at end to override colorschemes) ==
 "============================================================================
 " 搜索高亮：黄色背景配黑色文字，提高可读性
