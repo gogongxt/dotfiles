@@ -51,14 +51,16 @@ mylog() {
             printf '\033[31mError:\033[0m Third argument must be "--"\n' >&2
             return 1
         }
-        # 扩展文件路径（支持 ~ 和相对路径）
-        logfile="${2:a}"
-        # 如果是相对路径，相对于当前目录
-        [[ "$2" != /* ]] && [[ "$2" != ~* ]] && logfile="$(pwd)/$2"
+        # 展开 ~ 和 $VAR（允许 eval，输入可信）
+        eval "logfile=\"$2\""
+        # 转绝对路径（不要求存在）
+        if [[ "$logfile" != /* ]]; then
+            logfile="$PWD/$logfile"
+        fi
         # 创建日志文件所在的目录
-        local log_path_dir
-        log_path_dir="$(dirname "$logfile")"
-        [[ "$log_path_dir" != "." ]] && mkdir -p "$log_path_dir"
+        local log_dir
+        log_dir="$(dirname "$logfile")"
+        [[ "$log_dir" != "." ]] && mkdir -p "$log_dir"
         cmd=("${@:4}") # 从第4个参数开始是命令
     else
         # 默认模式：自动生成文件名
@@ -73,13 +75,13 @@ mylog() {
         printf '\033[33mOverwrite?\033[0m \033[32m[y]\033[0m/\033[31m[N]\033[0m: '
         read -r answer
         case "$answer" in
-        [yY] | [yY][eE][sS])
-            printf '\033[32m→ Overwriting\033[0m\n'
-            ;;
-        *)
-            printf '\033[31m→ Aborted.\033[0m\n'
-            return 1
-            ;;
+            [yY] | [yY][eE][sS])
+                printf '\033[32m→ Overwriting\033[0m\n'
+                ;;
+            *)
+                printf '\033[31m→ Aborted.\033[0m\n'
+                return 1
+                ;;
         esac
     fi
 
