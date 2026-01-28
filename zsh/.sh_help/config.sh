@@ -62,7 +62,27 @@ function gsp() {
 #🔼🔼🔼
 
 #🔽🔽🔽
-export EDITOR=$(bash -c 'if command -v nvim >/dev/null 2>&1; then echo "nvim"; elif command -v lvim >/dev/null 2>&1; then echo "lvim"; else echo "vim"; fi')
+if command -v nvim >/dev/null 2>&1; then
+  if [ -z "$NVIM_APPNAME" ] && [ ! -d "$HOME/.config/nvim" ] && [ -f "$HOME/.vimrc" ]; then
+    MY_VIM_CMD="nvim -u ~/.vimrc"
+  else
+    MY_VIM_CMD="nvim"
+  fi
+elif command -v vim >/dev/null 2>&1; then
+  MY_VIM_CMD="vim"
+else
+  MY_VIM_CMD="vi"
+fi
+myvim() {
+  if [ $# -gt 0 ]; then
+    eval "$MY_VIM_CMD \"\$@\""
+  else
+    eval "$MY_VIM_CMD ."
+  fi
+}
+alias v="myvim"
+alias vim="myvim"
+export EDITOR="$MY_VIM_CMD"
 # export EDITOR='nvim'
 #🔼🔼🔼
 
@@ -98,24 +118,6 @@ alias c="/usr/bin/clear"
 alias b="btop"
 alias h="htop"
 alias nv="watch -d -n 1 nvidia-smi"
-myvim() {
-  local my_vim
-  if command -v nvim >/dev/null 2>&1; then
-    my_vim="nvim"
-    if [ -z "$NVIM_APPNAME" ] && [ ! -d "$HOME/.config/nvim" ] && [ -f "$HOME/.vimrc" ]; then
-        my_vim="nvim -u ~/.vimrc"
-    fi
-  else
-    my_vim="vim"
-  fi
-  if [ $# -gt 0 ]; then
-    eval "$my_vim \"\$@\""
-  else
-    eval "$my_vim ."
-  fi
-}
-alias v="myvim"
-alias vim="myvim"
 #🔼🔼🔼
 
 #🔽🔽🔽
