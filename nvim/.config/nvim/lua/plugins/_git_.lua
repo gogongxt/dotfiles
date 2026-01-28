@@ -6,6 +6,7 @@ mappings.set_mappings {
     ["<Leader>gS"] = {
       function()
         local gitsigns = require "gitsigns"
+        local cache = require("gitsigns.cache").cache
         local buf = vim.api.nvim_get_current_buf()
         local file = vim.api.nvim_buf_get_name(buf)
         -- Check if file is untracked
@@ -22,10 +23,17 @@ mappings.set_mappings {
             end
           end
         end
-        -- Otherwise, stage the buffer normally
-        gitsigns.stage_buffer()
+        -- Check if there are unstaged hunks
+        local bcache = cache[buf]
+        local has_unstaged = bcache and bcache.hunks and #bcache.hunks > 0
+        -- If has unstaged hunks, stage all; otherwise unstage all
+        if has_unstaged then
+          gitsigns.stage_buffer()
+        else
+          gitsigns.reset_buffer_index()
+        end
       end,
-      desc = "Stage Git buffer (add if untracked)",
+      desc = "Toggle stage/unstage buffer",
     },
     ["<Leader>gj"] = {
       "<cmd>lua require('gitsigns').nav_hunk('next')<cr>",
@@ -89,7 +97,6 @@ return {
     end,
   },
   {
-
     "sindrets/diffview.nvim",
     config = function()
       -- Lua
@@ -125,6 +132,18 @@ return {
           },
         },
       }
+    end,
+  },
+  {
+    "lewis6991/gitsigns.nvim",
+    opts = function(_, opts)
+      local original_on_attach = opts.on_attach
+      opts.on_attach = function(bufnr)
+        -- run default on_attach function
+        if original_on_attach then original_on_attach(bufnr) end
+        -- continue with customizations such as deleting mappings
+        vim.keymap.del("n", "<Leader>gS", { buffer = bufnr })
+      end
     end,
   },
 }
