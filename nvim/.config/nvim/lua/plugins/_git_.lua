@@ -57,8 +57,8 @@ mappings.set_mappings {
     },
     ["<Leader>gBw"] = { "<cmd>BlameToggle window<cr>", desc = "Blame window" },
     ["<Leader>gBv"] = { "<cmd>BlameToggle virtual<cr>", desc = "Blame virtual" },
-    ["<Leader>gd"] = { "<cmd>lua require('gitsigns').diffthis()<cr>", desc = "Git Giff" }, -- see diff unstaged
-    ["<Leader>gD"] = { function() require("gitsigns").diffthis "~" end, desc = "Git Giff(staged)" }, -- see diff all include unstaged and staged
+    ["<Leader>gd"] = { "<cmd>lua require('gitsigns').diffthis()<cr>", desc = "Git Giff" },               -- see diff unstaged
+    ["<Leader>gD"] = { "<cmd>lua require('gitsigns').diffthis('HEAD')<cr>", desc = "Git Giff(staged)" }, -- see diff all include unstaged and staged
     ["<A-g>"] = { "<cmd>lua require('plugins.user.my_funcs').git_gitui_toggle()<cr>", desc = "gitui" },
     ["<Leader>gP"] = { "<cmd>lua require('gitsigns').preview_hunk()<cr>", desc = "Hunk Preview Hover" },
     ["<Leader>gi"] = { "<cmd>lua require('gitsigns').blame_line()<cr>", desc = "Line Info" },
@@ -86,10 +86,10 @@ return {
     opts = {
       -- your configuration comes here
       -- for example
-      enabled = true, -- if you want to enable the plugin
+      enabled = true,                                               -- if you want to enable the plugin
       message_template = " [<date>] [<author>]:<summary>  <<sha>>", -- template for the blame message, check the Message template section for more options
-      date_format = "%Y-%m-%d %H:%M:%S", -- template for the date, check Date format section for more options
-      virtual_text_column = 1, -- virtual text start column, check Start virtual text at column section for more options
+      date_format = "%Y-%m-%d %H:%M:%S",                            -- template for the date, check Date format section for more options
+      virtual_text_column = 1,                                      -- virtual text start column, check Start virtual text at column section for more options
     },
     config = function(_, opts)
       require("gitblame").setup(opts)
@@ -116,19 +116,19 @@ return {
             -- Config for changed files, and staged files in diff views.
             layout = "diff2_horizontal",
             disable_diagnostics = false, -- Temporarily disable diagnostics for diff buffers while in the view.
-            winbar_info = true, -- See |diffview-config-view.x.winbar_info|
+            winbar_info = true,          -- See |diffview-config-view.x.winbar_info|
           },
           merge_tool = {
             -- Config for conflicted files in diff views during a merge or rebase.
             layout = "diff3_mixed",
             disable_diagnostics = true, -- Temporarily disable diagnostics for diff buffers while in the view.
-            winbar_info = true, -- See |diffview-config-view.x.winbar_info|
+            winbar_info = true,         -- See |diffview-config-view.x.winbar_info|
           },
           file_history = {
             -- Config for changed files in file history views.
             layout = "diff2_horizontal",
             disable_diagnostics = false, -- Temporarily disable diagnostics for diff buffers while in the view.
-            winbar_info = true, -- See |diffview-config-view.x.winbar_info|
+            winbar_info = true,          -- See |diffview-config-view.x.winbar_info|
           },
         },
       }
