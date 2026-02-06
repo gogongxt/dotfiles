@@ -237,6 +237,7 @@ def connect_to_server(server_details):
     global child
     try:
         cmd = f"ssh {server_details['add']} -p {server_details['port']} {server_details['ssh_user']}@{server_details['host']}"
+        print(cmd)
         env = os.environ.copy()
         env["TERM"] = "xterm-256color"
 
