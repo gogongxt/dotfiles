@@ -22,6 +22,16 @@ vim.api.nvim_create_autocmd("ColorScheme", {
   desc = "Override diff colors for Catppuccin",
 })
 
+vim.opt.fillchars = {
+  horiz = "═",
+  horizup = "╩",
+  horizdown = "╦",
+  vert = "║",
+  vertleft = "╣",
+  vertright = "╠",
+  verthoriz = "╬",
+}
+
 -- toggle snacks image show
 -- Ref: https://github.com/folke/snacks.nvim/issues/1739#issuecomment-3413850508
 local disable_snacks_image = function()
