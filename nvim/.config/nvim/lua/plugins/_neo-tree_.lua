@@ -2,7 +2,7 @@
 
 -- vim.keymap.set("n", "<leader>E", "<cmd>Neotree reveal<CR>", { desc = "Toggle Neo-tree & Reveal File" })
 
-local enable_smart_autofollow = true
+local enable_smart_autofollow = false
 
 if enable_smart_autofollow then
   local project_root = vim.fn.getcwd()

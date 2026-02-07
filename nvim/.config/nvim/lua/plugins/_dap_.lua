@@ -1,15 +1,18 @@
-if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
-
-require "dap.c_cpp_rust"
-require "dap.dap-lldb"
-require "dap.python"
+-- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
 return {
   {
-    "jay-babu/mason-nvim-dap.nvim",
+    "WhoIsSethDaniel/mason-tool-installer.nvim",
     opts = {
-      ensure_installed = { "python", "cpp", "rust" },
+      ensure_installed = { "debugpy", "codelldb" },
     },
+  },
+  {
+    "mfussenegger/nvim-dap-python",
+    config = function()
+      local debugpy_path = vim.fn.stdpath "data" .. "/mason/packages/debugpy/venv/bin/python3"
+      require("dap-python").setup(debugpy_path)
+    end,
   },
   {
     "theHamsta/nvim-dap-virtual-text",
@@ -32,14 +35,16 @@ return {
         --- @param options nvim_dap_virtual_text_options Current options for nvim-dap-virtual-text
         --- @return string|nil A text how the virtual text should be displayed or nil, if this variable shouldn't be displayed
         display_callback = function(variable, buf, stackframe, node, options)
+          -- by default, strip out new line characters
           if options.virt_text_pos == "inline" then
-            return " = " .. variable.value
+            return " = " .. variable.value:gsub("%s+", " ")
           else
-            return variable.name .. " = " .. variable.value
+            return variable.name .. " = " .. variable.value:gsub("%s+", " ")
           end
         end,
         -- position of virtual text, see `:h nvim_buf_set_extmark()`, default tries to inline the virtual text. Use 'eol' to set to end of line
-        virt_text_pos = vim.fn.has "nvim-0.10" == 1 and "inline" or "eol",
+        -- virt_text_pos = vim.fn.has "nvim-0.10" == 1 and "inline" or "eol",
+        virt_text_pos = "eol",
 
         -- experimental features:
         all_frames = false, -- show virtual text for all stack frames not only current. Only works for debugpy on my machine.
@@ -49,19 +54,19 @@ return {
       }
     end,
   },
-  {
-    "Weissle/persistent-breakpoints.nvim",
-    enabled = require("my_sys").GetConfig("config_", "dap.persistent_breakpoints_enabled", false),
-    config = function()
-      require("persistent-breakpoints").setup {
-        load_breakpoints_event = { "BufReadPost" },
-      }
-      local opts = { noremap = true, silent = true }
-      local keymap = vim.api.nvim_set_keymap
-      -- Save breakpoints to file automatically.
-      keymap("n", "<Leader>db", "<cmd>lua require('persistent-breakpoints.api').toggle_breakpoint()<cr>", opts)
-      keymap("n", "<Leader>dC", "<cmd>lua require('persistent-breakpoints.api').set_conditional_breakpoint()<cr>", opts)
-      keymap("n", "<Leader>dB", "<cmd>lua require('persistent-breakpoints.api').clear_all_breakpoints()<cr>", opts)
-    end,
-  },
+  -- {
+  --   "Weissle/persistent-breakpoints.nvim",
+  --   enabled = require("my_sys").GetConfig("config_", "dap.persistent_breakpoints_enabled", false),
+  --   config = function()
+  --     require("persistent-breakpoints").setup {
+  --       load_breakpoints_event = { "BufReadPost" },
+  --     }
+  --     local opts = { noremap = true, silent = true }
+  --     local keymap = vim.api.nvim_set_keymap
+  --     -- Save breakpoints to file automatically.
+  --     keymap("n", "<Leader>db", "<cmd>lua require('persistent-breakpoints.api').toggle_breakpoint()<cr>", opts)
+  --     keymap("n", "<Leader>dC", "<cmd>lua require('persistent-breakpoints.api').set_conditional_breakpoint()<cr>", opts)
+  --     keymap("n", "<Leader>dB", "<cmd>lua require('persistent-breakpoints.api').clear_all_breakpoints()<cr>", opts)
+  --   end,
+  -- },
 }
