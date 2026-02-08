@@ -182,9 +182,34 @@ return {
     end,
   },
   {
-    "Weissle/persistent-breakpoints.nvim",
-    opts = {
-      save_dir = vim.fn.getcwd() .. "/.nvim/dap_breakpoints",
+    "gogongxt/persistent-breakpoints.nvim",
+    event = "BufReadPost",
+    opts = function(_, opts)
+      return require("astrocore").extend_tbl(opts, {
+        load_breakpoints_event = { "BufReadPost" },
+        save_dir = vim.fn.getcwd() .. "/.nvim/dap_breakpoints",
+        filename = "breakpoints", -- filename set to breakpoints.json
+      })
+    end,
+    keys = {
+      {
+        "<Leader>db",
+        function() require("persistent-breakpoints.api").toggle_breakpoint() end,
+        { silent = true },
+        desc = "Toggle Breakpoint",
+      },
+      {
+        "<Leader>dB",
+        function() require("persistent-breakpoints.api").clear_all_breakpoints() end,
+        { silent = true },
+        desc = "Clear Breakpoints",
+      },
+      {
+        "<Leader>dC",
+        function() require("persistent-breakpoints.api").set_conditional_breakpoint() end,
+        { silent = true },
+        desc = "Conditional Breakpoint",
+      },
     },
   },
 }
