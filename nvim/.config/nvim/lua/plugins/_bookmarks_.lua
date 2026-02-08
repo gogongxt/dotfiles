@@ -35,13 +35,8 @@ return {
   -- },
   {
     "gogongxt/bookmarks.nvim",
-    -- pin the plugin at specific version for stability
-    -- backup your bookmark sqlite db when there are breaking changes (major version change)
-    -- tag = "3.2.0",
     -- event = "VeryLazy",
     dependencies = {
-      { "gogongxt/sqlite.lua" },
-      { "stevearc/dressing.nvim" }, -- optional: better UI
       { "folke/snacks.nvim" }, -- snacks picker support (alternative to telescope)
     },
     config = function()
