@@ -11,4 +11,9 @@ return {
   -- import/override with your plugins folder
   { import = "astrocommunity.recipes.picker-nvchad-theme" },
   { import = "astrocommunity.utility.noice-nvim" },
+
+  -- debug dap
+  { import = "astrocommunity.debugging.nvim-dap-view" },
+  { import = "astrocommunity.debugging.persistent-breakpoints-nvim" },
+  { import = "astrocommunity.debugging.nvim-dap-repl-highlights" },
 }

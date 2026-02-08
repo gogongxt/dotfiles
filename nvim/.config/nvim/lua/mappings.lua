@@ -21,7 +21,10 @@ function M.set_mappings(map_table, base)
 
   for mode, maps in pairs(map_table) do
     for keymap, options in pairs(maps) do
-      if options then
+      if options == false then
+        -- 删除映射
+        pcall(vim.keymap.del, mode, keymap)
+      elseif options then
         local cmd
         local keymap_opts = vim.deepcopy(base_opts) -- 复制基础选项
 

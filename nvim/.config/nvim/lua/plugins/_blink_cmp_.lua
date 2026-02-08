@@ -18,6 +18,34 @@ return {
 
     keymap = {
       ["<Tab>"] = { "accept", "fallback" },
+
+      -- dap-repl: 菜单显示时用 blink 选择，未显示时用 dap-repl 历史记录
+      ["<C-N>"] = {
+        function(cmp)
+          local ft = vim.api.nvim_buf_get_option(0, "filetype")
+          local menu_visible = cmp.is_menu_visible()
+          if ft == "dap-repl" and not menu_visible then
+            vim.schedule(function() require("dap.repl").on_down() end)
+            return true
+          end
+          local result = cmp.select_next()
+          return result ~= nil
+        end,
+        "fallback_to_mappings",
+      },
+      ["<C-P>"] = {
+        function(cmp)
+          local ft = vim.api.nvim_buf_get_option(0, "filetype")
+          local menu_visible = cmp.is_menu_visible()
+          if ft == "dap-repl" and not menu_visible then
+            vim.schedule(function() require("dap.repl").on_up() end)
+            return true
+          end
+          local result = cmp.select_prev()
+          return result ~= nil
+        end,
+        "fallback_to_mappings",
+      },
     },
     cmdline = {
       completion = {

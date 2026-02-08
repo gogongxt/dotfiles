@@ -52,6 +52,15 @@ return {
         view_history = "messages", -- view for :messages
         view_search = false, -- view for search count messages. Set to `false` to disable
       }
+      -- Disable Noice's LSP features to use AstroLSP's rounded border instead
+      opts.lsp = {
+        hover = {
+          enabled = false,
+        },
+        signature = {
+          enabled = false,
+        },
+      }
     end,
   },
 }

@@ -54,19 +54,131 @@ return {
       }
     end,
   },
-  -- {
-  --   "Weissle/persistent-breakpoints.nvim",
-  --   enabled = require("my_sys").GetConfig("config_", "dap.persistent_breakpoints_enabled", false),
-  --   config = function()
-  --     require("persistent-breakpoints").setup {
-  --       load_breakpoints_event = { "BufReadPost" },
-  --     }
-  --     local opts = { noremap = true, silent = true }
-  --     local keymap = vim.api.nvim_set_keymap
-  --     -- Save breakpoints to file automatically.
-  --     keymap("n", "<Leader>db", "<cmd>lua require('persistent-breakpoints.api').toggle_breakpoint()<cr>", opts)
-  --     keymap("n", "<Leader>dC", "<cmd>lua require('persistent-breakpoints.api').set_conditional_breakpoint()<cr>", opts)
-  --     keymap("n", "<Leader>dB", "<cmd>lua require('persistent-breakpoints.api').clear_all_breakpoints()<cr>", opts)
-  --   end,
-  -- },
+  {
+    "mfussenegger/nvim-dap",
+  },
+  {
+    "igorlfs/nvim-dap-view",
+    opts = {
+      winbar = {
+        -- You can add a "console" section to merge the terminal with the other views
+        sections = { "console", "scopes", "watches", "exceptions", "breakpoints", "threads", "repl" },
+        -- Must be one of the sections declared above
+        default_section = "console",
+        -- Append hints with keymaps within the labels
+        show_keymap_hints = true,
+        -- Configure each section individually
+        base_sections = {
+          -- Labels can be set dynamically with functions
+          -- Each function receives the window's width and the current section as arguments
+          breakpoints = { label = "Breakpoints", keymap = "B" },
+          scopes = { label = "Scopes", keymap = "S" },
+          exceptions = { label = "Exceptions", keymap = "E" },
+          watches = { label = "Watches", keymap = "W" },
+          threads = { label = "Threads", keymap = "T" },
+          repl = { label = "REPL", keymap = "R" },
+          sessions = { label = "Sessions", keymap = "K" },
+          console = { label = "Console", keymap = "C" },
+        },
+        -- Add your own sections
+        custom_sections = {},
+        controls = {
+          enabled = true,
+          position = "right",
+          buttons = {
+            "play",
+            "step_into",
+            "step_over",
+            "run_to_cursor",
+            "step_out",
+            "step_back",
+            "run_last",
+            "terminate",
+            "disconnect",
+          },
+          custom_buttons = {
+            run_to_cursor = {
+              render = function()
+                local dap = require "dap"
+                local session = dap.session()
+                local stopped = session and session.stopped_thread_id
+                local hl = stopped and "ControlStepInto" or "ControlNC"
+                return "%#NvimDapView" .. hl .. "#" .. "" .. "%*"
+              end,
+              action = function() require("dap").run_to_cursor() end,
+            },
+          },
+        },
+      },
+      icons = {
+        collapsed = "󰅂 ",
+        disabled = "",
+        disconnect = "",
+        enabled = "",
+        expanded = "󰅀 ",
+        filter = "󰈲",
+        negate = " ",
+        pause = "",
+        play = "",
+        run_last = "",
+        step_back = "",
+        step_into = "",
+        step_out = "",
+        step_over = "",
+        terminate = "",
+      },
+    },
+    -- 添加 terminal 窗口导航 keymap
+    config = function(_, opts)
+      require("dap-view").setup(opts)
+      -- 为 REPL/Console terminal buffer 添加窗口导航
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = { "dap-repl" },
+        callback = function(event)
+          local buf = event.buf
+          local has_smart_splits = pcall(require, "smart-splits")
+          -- 支持 niv 三种模式：优先使用 smart-splits，否则使用 wincmd
+          if has_smart_splits then
+            vim.keymap.set(
+              { "n", "i", "v" },
+              "<C-h>",
+              [[<cmd>lua require('smart-splits').move_cursor_left()<cr>]],
+              { buffer = buf }
+            )
+            vim.keymap.set(
+              { "n", "i", "v" },
+              "<C-j>",
+              [[<cmd>lua require('smart-splits').move_cursor_down()<cr>]],
+              { buffer = buf }
+            )
+            vim.keymap.set(
+              { "n", "i", "v" },
+              "<C-k>",
+              [[<cmd>lua require('smart-splits').move_cursor_up()<cr>]],
+              { buffer = buf }
+            )
+            vim.keymap.set(
+              { "n", "i", "v" },
+              "<C-l>",
+              [[<cmd>lua require('smart-splits').move_cursor_right()<cr>]],
+              { buffer = buf }
+            )
+          else
+            vim.keymap.set({ "n", "i", "v" }, "<C-h>", [[<Cmd>wincmd h<CR>]], { buffer = buf })
+            vim.keymap.set({ "n", "i", "v" }, "<C-j>", [[<Cmd>wincmd j<CR>]], { buffer = buf })
+            vim.keymap.set({ "n", "i", "v" }, "<C-k>", [[<Cmd>wincmd k<CR>]], { buffer = buf })
+            vim.keymap.set({ "n", "i", "v" }, "<C-l>", [[<Cmd>wincmd l<CR>]], { buffer = buf })
+          end
+          -- vim.keymap.set("i", "<C-w>", function() return "<C-o>vbd" end, { buffer = buf, expr = true })
+          vim.keymap.set("i", "<C-w>", "<C-S-w>", { buffer = true }) -- https://github.com/mfussenegger/nvim-dap/issues/786
+        end,
+      })
+    end,
+  },
+  {
+    "Weissle/persistent-breakpoints.nvim",
+    opts = {
+      save_dir = vim.fn.getcwd() .. "/.nvim/dap_breakpoints",
+    },
+  },
 }

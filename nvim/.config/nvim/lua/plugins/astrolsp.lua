@@ -10,6 +10,15 @@ return {
   "AstroNvim/astrolsp",
   ---@type AstroLSPOpts
   opts = {
+    -- Customize default behavior of LSP builtin functions
+    defaults = {
+      hover = {
+        border = "rounded",
+      },
+      signature_help = {
+        border = "rounded",
+      },
+    },
     -- Configuration table of features provided by AstroLSP
     features = {
       codelens = true,        -- enable/disable codelens refresh on start

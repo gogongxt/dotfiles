@@ -4,6 +4,9 @@
 -- This is just pure lua so anything that doesn't
 -- fit in the normal config locations above can go here
 
+vim.opt.errorbells = false
+vim.opt.visualbell = true
+
 -- define function to change color for catppuccin*
 local function set_diff_highlights()
   vim.cmd [[
@@ -175,6 +178,22 @@ mappings.set_mappings {
       noremap = true,
       silent = true,
     },
+
+    -- debug dap
+    ["<Leader>da"] = { function() require("dap-view").add_expr() end, desc = "Add expression" },
+    ["<Leader>dE"] = false,
+    ["<Leader>dR"] = { function() require("dap").run_last() end, desc = "Run last" },
+    ["<Leader>dh"] = {
+      function() require("dap.ui.widgets").hover(nil, { border = "rounded" }) end,
+      desc = "Widgets hover",
+    },
+    ["<Leader>di"] = false,
+    ["<Leader>dj"] = { function() require("dap").step_into() end, desc = "Step into (F11)" },
+    ["<Leader>dJ"] = { function() require("dap").step_over() end, desc = "Step over (F10)" },
+    ["<Leader>do"] = { function() require("dap").step_out() end, desc = "Step out (S-F11)" },
+    ["<Leader>dO"] = false,
+    ["<Leader>dl"] = { function() require("dap").run_to_cursor() end, desc = "Run to cursor" },
+    ["<a-p>"] = { function() require("dap.ui.widgets").preview() end, desc = "Widgets preview" },
   },
   v = {
     -- delete comments
