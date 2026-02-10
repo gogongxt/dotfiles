@@ -1,5 +1,49 @@
 -- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
+-- Custom DAP Breakpoints Picker
+---@param opts snacks.picker.Config
+---@type snacks.picker.finder
+local function dap_breakpoints_finder(opts, ctx)
+  local ok, breakpoints = pcall(function() return require("dap.breakpoints").get() end)
+  if not ok then
+    vim.notify("DAP not available", vim.log.levels.WARN)
+    return ctx.filter:filter {}
+  end
+  local items = {} ---@type snacks.picker.finder.Item[]
+  for bufnr, buf_bps in pairs(breakpoints) do
+    local file = vim.api.nvim_buf_get_name(bufnr)
+    for _, bp in ipairs(buf_bps) do
+      local state = bp.state or {}
+      local verified = not state.verified and "✗" or "✓"
+      -- Get line content for display
+      local line_content = ""
+      if vim.api.nvim_buf_is_loaded(bufnr) then
+        local lines = vim.api.nvim_buf_get_lines(bufnr, bp.line - 1, bp.line, false)
+        line_content = lines[1] or ""
+      end
+      -- Build info string
+      local info_parts = {}
+      -- if not state.verified then
+      --   table.insert(info_parts, state.message and "Rejected: " .. state.message or "Rejected")
+      -- end
+      if bp.logMessage then table.insert(info_parts, "Log: " .. bp.logMessage) end
+      if bp.condition then table.insert(info_parts, "Cond: " .. bp.condition) end
+      if bp.hitCondition then table.insert(info_parts, "Hit: " .. bp.hitCondition) end
+      local info = #info_parts > 0 and "[" .. table.concat(info_parts, ", ") .. "]" or ""
+      table.insert(items, {
+        file = file,
+        -- DON'T set buf field, so preview reads file content instead of opening buffer
+        pos = { bp.line, 0 },
+        line = line_content, -- line should be string content, not line number
+        comment = info ~= "" and info or nil, -- use comment field for additional info, use nil to avoid extra space
+        label = verified, -- show verified status as label
+        breakpoint_data = bp,
+      })
+    end
+  end
+  return ctx.filter:filter(items)
+end
+
 local mappings = require "mappings"
 mappings.set_mappings {
   n = {
@@ -74,6 +118,7 @@ return {
             end,
             desc = "Find ALL TODO FIXME NOTE...",
           },
+          ["<Leader>fd"] = { function() require("snacks").picker.dap_breakpoints() end, desc = "Find DAP breakpoints" },
         },
         v = {
           ["<Leader>fw"] = {
@@ -95,6 +140,14 @@ return {
     "folke/snacks.nvim",
     opts = {
       picker = {
+        -- Custom source for DAP breakpoints
+        sources = {
+          dap_breakpoints = {
+            finder = dap_breakpoints_finder,
+            format = "file",
+            preview = "file",
+          },
+        },
         toggles = {
           regex = { icon = "R", value = true }, -- R键表示启用正则表达式
           exclude_icon = { icon = "!Exc", value = true }, -- E键表示启用exclude
