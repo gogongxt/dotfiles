@@ -154,6 +154,34 @@ return {
           exclude_docs_icon = { icon = "!Docs", value = true }, -- D键表示启用文档排除
         },
         actions = {
+          cycle_preview_layout = function(picker)
+            -- 获取当前外层 box 方向（"horizontal"=预览在右，"vertical"=预览在下）
+            local current_box = picker.resolved_layout.layout and picker.resolved_layout.layout.box
+            -- horizontal <-> vertical 切换
+            local next_box = (current_box == "horizontal") and "vertical" or "horizontal"
+            picker:set_layout {
+              layout = {
+                box = next_box,
+                width = 0.8,
+                min_width = 120,
+                height = 0.8,
+                {
+                  box = "vertical",
+                  border = true,
+                  title = "{title} {live} {flags}",
+                  { win = "input", height = 1, border = "bottom" },
+                  { win = "list", border = "none" },
+                },
+                {
+                  win = "preview",
+                  title = "{preview}",
+                  border = true,
+                  width = (next_box == "horizontal") and 0.5 or nil,
+                  height = (next_box == "vertical") and 0.5 or nil,
+                },
+              },
+            }
+          end,
           toggle_exclude = function(picker)
             -- 在picker源码grep中是这样处理exclude的
             -- for _, e in ipairs(opts.exclude or {}) do
@@ -204,6 +232,7 @@ return {
               ["<C-j>"] = { "history_forward", mode = { "i", "n" } },
               ["<C-k>"] = { "history_back", mode = { "i", "n" } },
               ["<a-p>"] = { "toggle_preview", mode = { "i", "n" } },
+              ["<a-s-p>"] = { "cycle_preview_layout", mode = { "i", "n" } },
               ["<a-r>"] = { "toggle_regex", mode = { "i", "n" } },
               ["<c-b>"] = { "preview_scroll_up", mode = { "i", "n" } },
               ["<c-d>"] = { "list_scroll_down", mode = { "i", "n" } },
