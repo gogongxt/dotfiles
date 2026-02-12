@@ -37,13 +37,12 @@ return {
     "gogongxt/bookmarks.nvim",
     -- event = "VeryLazy",
     dependencies = {
-      { "folke/snacks.nvim" }, -- snacks picker support (alternative to telescope)
+      { "folke/snacks.nvim" },
     },
     config = function()
       -- check the "./lua/bookmarks/default-config.lua" file for all the options
       local opts = {
         picker = {
-          -- type = "telescope", -- or "telescope" (default)
           type = "snacks", -- or "telescope" (default)
         },
         signs = {
