@@ -97,7 +97,7 @@ return {
             end,
             desc = "Find ALL TODO FIXME NOTE...",
           },
-          ["<Leader>fd"] = { function() require("snacks").picker.dap_breakpoints() end, desc = "Find DAP breakpoints" },
+          ["<Leader>dl"] = { function() require("snacks").picker.dap_breakpoints() end, desc = "Find DAP breakpoints" },
         },
         v = {
           ["<Leader>fw"] = {

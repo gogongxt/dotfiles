@@ -192,7 +192,7 @@ mappings.set_mappings {
     ["<Leader>dJ"] = { function() require("dap").step_over() end, desc = "Step over (F10)" },
     ["<Leader>do"] = { function() require("dap").step_out() end, desc = "Step out (S-F11)" },
     ["<Leader>dO"] = false,
-    ["<Leader>dl"] = { function() require("dap").run_to_cursor() end, desc = "Run to cursor" },
+    ["<Leader>dC"] = { function() require("dap").run_to_cursor() end, desc = "Run to cursor" },
     ["<a-p>"] = { function() require("dap.ui.widgets").preview() end, desc = "Widgets preview" },
   },
   v = {
