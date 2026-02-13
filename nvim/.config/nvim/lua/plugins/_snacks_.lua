@@ -35,6 +35,7 @@ local function dap_breakpoints_finder(opts, ctx)
         -- DON'T set buf field, so preview reads file content instead of opening buffer
         pos = { bp.line, 0 },
         line = line_content, -- line should be string content, not line number
+        text = file .. ":" .. bp.line .. ":" .. line_content, -- same format as grep for searching
         comment = info ~= "" and info or nil, -- use comment field for additional info, use nil to avoid extra space
         label = verified, -- show verified status as label
         breakpoint_data = bp,
@@ -135,7 +136,6 @@ return {
       },
     },
   },
-
   {
     "folke/snacks.nvim",
     opts = {
@@ -146,6 +146,7 @@ return {
             finder = dap_breakpoints_finder,
             format = "file",
             preview = "file",
+            matcher = { fuzzy = false }, -- use fuzzy matching like grep
           },
         },
         toggles = {
