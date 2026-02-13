@@ -70,6 +70,7 @@ return {
     end,
     keys = {
       { "mm", "<cmd>BookmarksMark<cr>", mode = { "n" } },
+      { "mM", "<cmd>BookmarksDesc<cr>", mode = { "n" } },
       { "mu", "<cmd>BookmarksSignToggle<cr>", mode = { "n" } },
       { "ms", "<cmd>BookmarksGrep<cr>", mode = { "n" } },
       { "mi", "<cmd>BookmarksInfoCurrentBookmark<cr>", mode = { "n" } },
