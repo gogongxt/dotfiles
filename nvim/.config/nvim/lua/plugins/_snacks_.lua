@@ -39,6 +39,7 @@ local function dap_breakpoints_finder(opts, ctx)
         comment = info ~= "" and info or nil, -- use comment field for additional info, use nil to avoid extra space
         label = verified, -- show verified status as label
         breakpoint_data = bp,
+        bufnr = bufnr, -- save bufnr for deletion
       })
     end
   end
@@ -203,6 +204,18 @@ return {
             picker.list:set_target()
             picker:find()
           end,
+          delete_breakpoint = function(picker)
+            local item = picker:current()
+            if not item or not item.bufnr then
+              vim.notify("No breakpoint selected", vim.log.levels.WARN)
+              return
+            end
+            require("dap.breakpoints").remove(item.bufnr, item.pos[1])
+            vim.notify("Breakpoint deleted", vim.log.levels.INFO)
+            -- refresh the picker list
+            picker.list:set_target()
+            picker:find()
+          end,
         },
         win = {
           input = {
@@ -222,6 +235,7 @@ return {
               ["<C-_>"] = { "edit_split", mode = { "i", "n" } },
               ["<a-e>"] = { "toggle_exclude", mode = { "i", "n" } },
               ["<a-d>"] = { "toggle_docs", mode = { "i", "n" } },
+              ["<c-x>"] = { "delete_breakpoint", mode = { "i", "n" } },
               -- ["<c-->"] = { "edit_split", mode = { "i", "n" } }, -- cannot map ctrl--
             },
           },
