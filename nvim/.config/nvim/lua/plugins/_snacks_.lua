@@ -45,29 +45,6 @@ local function dap_breakpoints_finder(opts, ctx)
   return ctx.filter:filter(items)
 end
 
-local mappings = require "mappings"
-mappings.set_mappings {
-  n = {
-    -- ["<Leader>z"] = { "<cmd>lua Snacks.zen()<cr>", desc = "Focus Current Buffer" },
-    -- ["<Leader>Z"] = { "<cmd>lua Snacks.zen.zoom()<cr>", desc = "Focus Current Buffer Zoom" },
-
-    -- ["<Leader>fw"] = { function() require("snacks").picker.grep { need_search = "123" } end, desc = "Find words" },
-    -- ["<Leader>fW"] = {
-    --   function() require("snacks").picker.grep { hidden = true, ignored = true } end,
-    --   desc = "Find words in all files",
-    -- },
-  },
-}
-
--- local keymap = vim.keymap.set
--- keymap(
---   { "n" },
---   "<Leader>fw",
---   function() require("snacks").picker.grep { need_search = "123" } end,
---   { desc = "Find words" }
--- )
--- keymap({ "n" }, "<Leader>gk", "<cmd>lua require('gitsigns').nav_hunk('prev')<cr>", { desc = "Hunk prev" })
-
 return {
   {
     "AstroNvim/astrocore",
