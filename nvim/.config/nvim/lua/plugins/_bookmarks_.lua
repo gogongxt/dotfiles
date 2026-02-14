@@ -52,7 +52,12 @@ return {
             color = "red",
             line_bg = "#572626",
           },
-          desc_format = function(bookmark) return bookmark.name end,
+          desc_format = function(bookmark)
+            if bookmark.description and bookmark.description ~= "" then
+              return (bookmark.description:match "[^\n]+" or bookmark.description) .. "..."
+            end
+            return bookmark.name
+          end,
         },
       }
       require("bookmarks").setup(opts) -- you must call setup to init sqlite db
