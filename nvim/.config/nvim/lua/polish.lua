@@ -194,6 +194,42 @@ mappings.set_mappings {
     ["<Leader>dO"] = false,
     ["<Leader>dC"] = { function() require("dap").run_to_cursor() end, desc = "Run to cursor" },
     ["<a-p>"] = { function() require("dap.ui.widgets").preview() end, desc = "Widgets preview" },
+    ["<Leader>dn"] = {
+      function()
+        local breakpoints = require "dap.breakpoints"
+        local bufnr = vim.api.nvim_get_current_buf()
+        local cur_line = vim.api.nvim_win_get_cursor(0)[1]
+        local bps = breakpoints.get(bufnr)[bufnr] or {}
+        table.sort(bps, function(a, b) return a.line < b.line end)
+        for _, bp in ipairs(bps) do
+          if bp.line > cur_line then
+            vim.api.nvim_win_set_cursor(0, { bp.line, 0 })
+            return
+          end
+        end
+        -- wrap around to first breakpoint
+        if #bps > 0 then vim.api.nvim_win_set_cursor(0, { bps[1].line, 0 }) end
+      end,
+      desc = "Next breakpoint",
+    },
+    ["<Leader>dp"] = {
+      function()
+        local breakpoints = require "dap.breakpoints"
+        local bufnr = vim.api.nvim_get_current_buf()
+        local cur_line = vim.api.nvim_win_get_cursor(0)[1]
+        local bps = breakpoints.get(bufnr)[bufnr] or {}
+        table.sort(bps, function(a, b) return a.line > b.line end)
+        for _, bp in ipairs(bps) do
+          if bp.line < cur_line then
+            vim.api.nvim_win_set_cursor(0, { bp.line, 0 })
+            return
+          end
+        end
+        -- wrap around to last breakpoint
+        if #bps > 0 then vim.api.nvim_win_set_cursor(0, { bps[1].line, 0 }) end
+      end,
+      desc = "Prev breakpoint",
+    },
   },
   v = {
     -- delete comments
