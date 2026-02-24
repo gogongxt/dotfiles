@@ -31,7 +31,7 @@ tmux() {
             shift
             command tmux kill-session -t "$@"
             ;;
-        ls)
+        ls|l|ll)
             shift
             command tmux ls
             ;;
@@ -149,7 +149,7 @@ _tmux_completion_bash() {
     local cur prev words cword
     _get_comp_words_by_ref -n : cur prev words cword
 
-    local subcommands="ls rm kill sw reboot save cd --"
+    local subcommands="ls l ll rm kill sw reboot save cd --"
     local sessions=$(command tmux ls -F '#S' 2>/dev/null)
 
     if [ "$cword" -eq 1 ]; then
@@ -183,6 +183,8 @@ _tmux_completion_zsh() {
     # 定义静态子命令和它们的描述
     subcommands=(
         'ls:List active sessions'
+        'l:List active sessions (alias for ls)'
+        'll:List active sessions (alias for ls)'
         'rm:Kill a session'
         'kill:Kill a session (alias for rm)'
         'sw:Switch window'
