@@ -227,12 +227,13 @@ def sigwinch_handler(signum, frame):
         child.setwinsize(rows, cols)
 
 
-def connect_to_server(server_details):
+def connect_to_server(server_details, auto_command=None):
     """
     连接到服务器，支持动态认证提示列表。
 
     Args:
         server_details: 包含服务器连接信息的字典，包括 auth_prompts 列表
+        auto_command: 连接成功后自动执行的命令
     """
     global child
     try:
@@ -258,6 +259,9 @@ def connect_to_server(server_details):
 
         def handle_successful_login():
             child.logfile_read = None
+            if auto_command:
+                # 发送自动执行的命令
+                child.sendline(auto_command)
             child.interact()
             return "break"
 
@@ -350,6 +354,12 @@ def main():
         default="servers.yaml",
         help="服务器YAML配置文件路径",
     )
+    parser.add_argument(
+        "-c",
+        "--command",
+        default=None,
+        help="SSH连接成功后自动执行的命令 (例如: 'tmux attach' 或 'tmux new -s main')",
+    )
     args = parser.parse_args()
 
     config_file = args.config
@@ -365,7 +375,7 @@ def main():
 
     print(f"正在获取 '{server_name}' 的详细信息...")
     server_details = get_server_details(config_file, server_name)
-    connect_to_server(server_details)
+    connect_to_server(server_details, args.command)
 
 
 if __name__ == "__main__":
