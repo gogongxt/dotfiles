@@ -187,7 +187,7 @@ mappings.set_mappings {
       function() require("dap.ui.widgets").hover(nil, { border = "rounded" }) end,
       desc = "Widgets hover",
     },
-    ["<Leader>di"] = false,
+    ["<Leader>di"] = { function() require("dap").focus_frame() end, desc = "Focus frame" },
     ["<Leader>dj"] = { function() require("dap").step_into() end, desc = "Step into (F11)" },
     ["<Leader>dJ"] = { function() require("dap").step_over() end, desc = "Step over (F10)" },
     ["<Leader>do"] = { function() require("dap").step_out() end, desc = "Step out (S-F11)" },
