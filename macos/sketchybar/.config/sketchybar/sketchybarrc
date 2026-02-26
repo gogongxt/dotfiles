@@ -76,7 +76,6 @@ do
         label.padding_right=0 \
         label.font="sketchybar-app-font:Regular:14.0" \
         label.font.size=20 \
-        script="python3 $CONFIG_DIR/plugins/space_display.py $i False"  \
         click_script="/opt/homebrew/bin/yabai -m space --focus $i" \
         background.corner_radius=10
     sketchybar --add item space.${i}.spacer $POS \

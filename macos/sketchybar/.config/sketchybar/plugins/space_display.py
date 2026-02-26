@@ -102,17 +102,16 @@ def remove_outdated_windows(space_id: int, current_window_ids: List[str]) -> Non
         pass
 
 def add_window_items(space_id: int, windows: List[Dict[str, Any]], selected: bool) -> List[str]:
-    """Add sketchybar items for each window in the space.
-    
+    """Add or update sketchybar items for each window in the space.
+
     Args:
         space_id: The space ID we're working with.
         windows: List of window dictionaries to display.
         selected: Whether this space is currently selected.
-    
+
     Returns:
         List of window item IDs that were created.
     """
-    # print("windows",windows)
     window_ids = []
     k = get_display_grouping_factor()
     display_id = int((int(space_id)-1)/k)+1
@@ -120,70 +119,130 @@ def add_window_items(space_id: int, windows: List[Dict[str, Any]], selected: boo
     for index, win in enumerate(windows):
         item_id = f"win.{int(space_id)}.{win['id']}"
         window_ids.append(item_id)
-        yabai_change_space = f"bash -c 'yabai -m space --focus {int(space_id)}'"
-        cmd = [
-            "/opt/homebrew/bin/sketchybar",
-            "--add", "item", item_id, "center",
-            "--set", item_id, 
-            f"icon.color={'0xffffffff' if selected else '0x80ffffff'}",
-            f"background.padding_right={'5' if index == 0 else '0'}",
-            f"display={display_id}",
-            "background.drawing=true",
-            "background.height=10",
-            "background.image.scale=0.75",
-            f"background.image=app.{win['app']}",
-            f"click_script={yabai_change_space}",
-            "--move", item_id, "after", f"space.{int(space_id)}",
-        ]
-        subprocess.run(cmd, check=True)
-    
-    # print("window_ids",window_ids)
+
+        # Check if item already exists
+        try:
+            subprocess.check_output([
+                "/opt/homebrew/bin/sketchybar", "--query", item_id
+            ], stderr=subprocess.DEVNULL)
+            # Item exists, just update its properties
+            yabai_change_space = f"bash -c 'yabai -m space --focus {int(space_id)}'"
+            cmd = [
+                "/opt/homebrew/bin/sketchybar",
+                "--set", item_id,
+                f"icon.color={'0xffffffff' if selected else '0x80ffffff'}",
+                f"background.padding_right=2",
+                f"background.image=app.{win['app']}",
+            ]
+            subprocess.run(cmd, check=True, capture_output=True)
+        except subprocess.CalledProcessError:
+            # Item doesn't exist, create it
+            yabai_change_space = f"bash -c 'yabai -m space --focus {int(space_id)}'"
+            cmd = [
+                "/opt/homebrew/bin/sketchybar",
+                "--add", "item", item_id, "center",
+                "--set", item_id,
+                f"icon.color={'0xffffffff' if selected else '0x80ffffff'}",
+                f"background.padding_left=2",
+                f"background.padding_right=2",
+                f"display={display_id}",
+                "background.drawing=true",
+                "background.height=10",
+                "background.image.scale=0.75",
+                f"background.image=app.{win['app']}",
+                f"click_script={yabai_change_space}",
+                "--move", item_id, "after", f"space.{int(space_id)}",
+            ]
+            subprocess.run(cmd, check=True)
+
     return window_ids
 
 def create_window_group(space_id: int, window_ids: List[str], selected: bool) -> None:
-    """Create the main bracket group containing space and window items.
-    
+    """Create or update the main bracket group containing space and window items.
+
     Args:
         space_id: The space ID we're working with.
         window_ids: List of window item IDs to include.
         selected: Whether this space is currently selected.
     """
     bracket_items = [f"space.{int(space_id)}"] + window_ids
-    # print(bracket_items)
-    
-    # Remove existing bracket if exists
-    try:
-        subprocess.run(
-            ["/opt/homebrew/bin/sketchybar", "--remove", f"win.{int(space_id)}"],
-            check=True
-        )
-    except subprocess.CalledProcessError:
-        pass
-    
+
     k = get_display_grouping_factor()
     display_id = int((int(space_id)-1)/k)+1
-    if bracket_items:
+    bracket_name = f"win.{int(space_id)}"
+
+    # Check if bracket already exists and get its current items
+    current_items = []
+    try:
+        bracket_info = json.loads(subprocess.check_output([
+            "/opt/homebrew/bin/sketchybar", "--query", bracket_name
+        ]).decode('utf-8'))
+        current_items = bracket_info.get('bracket', [])
+    except (subprocess.CalledProcessError, json.JSONDecodeError):
+        pass
+
+    # Check if items or selection state actually changed
+    items_changed = set(current_items) != set(bracket_items)
+
+    if items_changed:
+        # Only remove and recreate if content actually changed
+        try:
+            subprocess.run(
+                ["/opt/homebrew/bin/sketchybar", "--remove", bracket_name],
+                check=True, capture_output=True
+            )
+        except subprocess.CalledProcessError:
+            pass
+
+        if bracket_items:
+            cmd = [
+                "/opt/homebrew/bin/sketchybar",
+                "--add", "bracket", bracket_name,
+            ] + bracket_items + [
+                "--set", bracket_name,
+                "background.height=28",
+                f"background.border_width={'0' if selected else '1'}",
+                "background.border_color=0x80ffffff",
+                f"background.corner_radius={'5' if selected else '5'}",
+                f"background.color={'0xff89b482' if selected else '0x00ffffff'}",
+                f"display={display_id}",
+                f"click_script='yabai -m space --focus {int(space_id)}'",
+            ]
+            subprocess.run(cmd, check=True)
+    else:
+        # Just update the visual properties without recreating
         cmd = [
             "/opt/homebrew/bin/sketchybar",
-            "--add", "bracket", f"win.{int(space_id)}",
-        ] + bracket_items + [
-            "--set", f"win.{int(space_id)}",
-            "background.height=28",
+            "--set", bracket_name,
             f"background.border_width={'0' if selected else '1'}",
-            "background.border_color=0x80ffffff",
-            f"background.corner_radius={'5' if selected else '5'}",
             f"background.color={'0xff89b482' if selected else '0x00ffffff'}",
-            f"display={display_id}",
-            f"click_script='yabai -m space --focus {int(space_id)}'",
         ]
-        # print("cmd",cmd)
-        subprocess.run(cmd, check=True)
+        try:
+            subprocess.run(cmd, check=True, capture_output=True)
+        except subprocess.CalledProcessError:
+            # If update fails, bracket might not exist, recreate it
+            if bracket_items:
+                cmd = [
+                    "/opt/homebrew/bin/sketchybar",
+                    "--add", "bracket", bracket_name,
+                ] + bracket_items + [
+                    "--set", bracket_name,
+                    "background.height=28",
+                    f"background.border_width={'0' if selected else '1'}",
+                    "background.border_color=0x80ffffff",
+                    f"background.corner_radius={'5' if selected else '5'}",
+                    f"background.color={'0xff89b482' if selected else '0x00ffffff'}",
+                    f"display={display_id}",
+                    f"click_script='yabai -m space --focus {int(space_id)}'",
+                ]
+                subprocess.run(cmd, check=True)
 
-def update_space_display(space_id: Optional[int] = None, selected: Optional[bool] = None) -> None:
+def update_space_display(space_id: Optional[int] = None, windows: Optional[List[Dict[str, Any]]] = None, selected: Optional[bool] = None) -> None:
     """Main function to update the display for a space.
-    
+
     Args:
         space_id: The space ID to update. If None, gets current space.
+        windows: Pre-fetched list of windows for this space. If None, queries yabai.
         selected: Whether this space is currently selected. If None, defaults to True.
     """
     if space_id is None:
@@ -193,7 +252,9 @@ def update_space_display(space_id: Optional[int] = None, selected: Optional[bool
     # print("space_id",space_id)
     # print("selected",selected)
 
-    windows = get_space_windows(space_id)
+    # If windows not provided, fetch them from yabai
+    if windows is None:
+        windows = get_space_windows(space_id)
     # print(windows)
     window_ids = [f"win.{space_id}.{w['id']}" for w in windows]
 
@@ -215,18 +276,19 @@ def main() -> None:
     # Parse command line arguments
     space_id = None
     selected = True
-    
+
     if len(sys.argv) > 1:
         try:
             space_id = int(sys.argv[1])
         except ValueError:
             print(f"Invalid space ID: {sys.argv[1]}", file=sys.stderr)
             sys.exit(1)
-    
+
     if len(sys.argv) > 2:
         selected = sys.argv[2].lower() == 'true'
-    
-    update_space_display(space_id, selected)
+
+    # Call update_space_display without windows parameter (will query yabai)
+    update_space_display(space_id=space_id, selected=selected)
 
 if __name__ == "__main__":
     main()
