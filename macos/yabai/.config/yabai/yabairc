@@ -63,6 +63,7 @@ yabai -m rule --add app="^Clash for Windows$" manage=off
 yabai -m rule --add app="^Clash Verge$" manage=off
 yabai -m rule --add app="^Raycast$" manage=off
 yabai -m rule --add app="^iDock$" manage=off
+yabai -m rule --add app="^kitty$" opacity=1.0
 
 # signals
 # yabai -m signal --add event=window_destroyed active=yes action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse &> /dev/null || yabai -m window --focus \$(yabai -m query --windows --space | jq .[0].id) &> /dev/null"
