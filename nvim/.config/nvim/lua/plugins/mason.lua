@@ -41,7 +41,6 @@ return {
 
         -- cmake
         "neocmakelsp",
-        "cmakelang",
 
         -- toml
         "taplo",
