@@ -101,6 +101,9 @@ return {
           },
         },
       },
+      neocmake = {
+        cmd = { "neocmakelsp", "stdio" },
+      },
     },
     -- customize how language servers are attached
     handlers = {
