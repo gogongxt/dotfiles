@@ -30,6 +30,10 @@ return {
         "isort",
         -- "debugpy",
 
+        -- cpp
+        "clangd",
+        "clang-format",
+
         -- bash
         "bash-language-server",
         "shfmt",
