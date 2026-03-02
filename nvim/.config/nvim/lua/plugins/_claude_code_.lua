@@ -174,6 +174,7 @@ if vim.fn.executable "specstory" == 1 then
 else
   claude_specstory = "claude"
 end
+claude_specstory="source ~/.zshrc;"..claude_specstory
 
 return {
   "gogongxt/claudecode.nvim",
