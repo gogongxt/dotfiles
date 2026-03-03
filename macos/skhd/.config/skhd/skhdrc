@@ -127,8 +127,8 @@ cmd + shift - d : bash $HOME/.config/yabai/scripts/scratchpad.sh user user_d_cha
 cmd + shift - w : bash $HOME/.config/yabai/scripts/scratchpad.sh app_name WeChat "open -a /Applications/WeChat.app/Contents/MacOS/WeChat" >> $HOME/.config/yabai/log.log
 cmd + shift - m : bash $HOME/.config/yabai/scripts/scratchpad.sh user user_neteasemusic "open -a /Applications/NeteaseMusic.app/Contents/MacOS/NeteaseMusic" >> $HOME/.config/yabai/log.log
 # cmd - `
-cmd - 0x32 : bash $HOME/.config/yabai/scripts/scratchpad.sh title scratchpad "kitty -d ~ -T scratchpad tmux -u new-session -A -s scratchpad" >> $HOME/.config/yabai/log.log
-cmd - escape : bash $HOME/.config/yabai/scripts/scratchpad.sh title scratchpad "kitty -d ~ -T scratchpad tmux -u new-session -A -s scratchpad" >> $HOME/.config/yabai/log.log
+cmd - 0x32 : bash $HOME/.config/yabai/scripts/scratchpad.sh title scratchpad "kitty -d ~ -T scratchpad zsh -ic 'command tmux -u new-session -A -s scratchpad'" >> $HOME/.config/yabai/log.log
+cmd - escape : bash $HOME/.config/yabai/scripts/scratchpad.sh title scratchpad "kitty -d ~ -T scratchpad zsh -ic 'command tmux -u new-session -A -s scratchpad'" >> $HOME/.config/yabai/log.log
 
 
 # cmd - m : bash $HOME/.config/yabai/scripts/open_application.sh "NetEaseMusic" /Applications/NeteaseMusic.app/Contents/MacOS/NeteaseMusic 8 >> $HOME/.config/yabai/log.log

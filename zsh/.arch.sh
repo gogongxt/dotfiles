@@ -1,4 +1,5 @@
 macos() {
+    export TMUX_SHOW_STATUS_RIGHT="true"
     export HOMEBREW_NO_AUTO_UPDATE=1 # disable brew autoupdate when install package
     export PATH="/opt/homebrew/bin:$PATH"
     alias updatedb="/usr/libexec/locate.update"
