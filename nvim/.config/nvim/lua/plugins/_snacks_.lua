@@ -169,10 +169,10 @@ return {
             if not picker._exclude then
               picker._exclude = true
               picker.opts.exclude = picker.opts.exclude or {}
-              table.insert(picker.opts.exclude, "3rdparty/**")
+              table.insert(picker.opts.exclude, "3rdparty*/**")
               table.insert(picker.opts.exclude, "**test**")
-              table.insert(picker.opts.exclude, "benchmark/**")
-              table.insert(picker.opts.exclude, "examples/**")
+              table.insert(picker.opts.exclude, "benchmark*/**")
+              table.insert(picker.opts.exclude, "examples*/**")
               picker.opts.exclude_icon = true
               vim.notify("Add exclude ( 3rdparty/, **test**, benchmark/, examples/ )", vim.log.levels.INFO)
             else
