@@ -31,8 +31,8 @@
 | `DiffviewOpen HEAD~2`                        | diff view between specical commit and current |
 | `DiffviewOpen d4a7b0d`                       | diff view between specical commit and current |
 | `DiffviewOpen d4a7b0d^!`                     | diff view single specical commit              |
-| `DiffviewOpen HEAD~4..HEAD~2`                | diff view range [head~4, head~2)              |
-| `DiffviewOpen d4a7b0d..519b30e`              | diff view range [head~4, head~2)              |
+| `DiffviewOpen HEAD~4..HEAD~2`                | diff view range [head\~4, head\~2)            |
+| `DiffviewOpen d4a7b0d..519b30e`              | diff view range [head\~4, head\~2)            |
 | `DiffviewOpen origin/main...HEAD`            | diff view between origin/main and HEAD        |
 | `DiffviewFileHistory`                        | diff view current branch                      |
 | `DiffviewFileHistory %`                      | diff view current file                        |
