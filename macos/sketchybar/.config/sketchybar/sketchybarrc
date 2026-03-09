@@ -89,6 +89,21 @@ done
 # We add some regular items to the left side of the bar, where
 # only the properties deviating from the current defaults need to be set
 
+# Lyric display - shows current playing song lyrics
+# Click to toggle between showing lyric text or just the icon
+sketchybar --add item lyric left \
+    --set lyric \
+        label=">" \
+        icon.drawing=off \
+        label.font="Hack Nerd Font:Bold:14.0" \
+        label.color=0x80ffffff \
+        padding_left=0 \
+        padding_right=10 \
+        click_script="python3 \"$PLUGIN_DIR/lyric.py\" --click"
+# Launch the lyric plugin in background
+pkill -f lyric.py
+python3 "$PLUGIN_DIR/lyric.py" &
+
 # sketchybar --add item chevron left \
 #            --set chevron icon= label.drawing=off \
 #            --add item front_app left \
