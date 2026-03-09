@@ -13,6 +13,7 @@ import time
 
 API_BASE = "http://localhost:3000"
 STATE_FILE = os.path.expanduser("~/.cache/sketchybar/lyric.state")
+LYRIC_CACHE_DIR = os.path.expanduser("~/.cache/sketchybar/lyrics")
 
 
 def get_collapsed():
@@ -113,13 +114,66 @@ def parse_lrc(lrc_text):
     return lyrics
 
 
+def get_cache_file_path(title, artist):
+    """Get the cache file path for a song based on title and artist"""
+    # Create a safe filename from title and artist
+    safe_name = f"{title}_{artist}".replace("/", "_").replace("\\", "_")
+    safe_name = "".join(c for c in safe_name if c.isalnum() or c in " _-").strip()
+    # Limit filename length
+    safe_name = safe_name[:100]
+    return os.path.join(LYRIC_CACHE_DIR, f"{safe_name}.lrc")
+
+
+def load_lyric_from_cache(title, artist):
+    """Load lyrics from cache file if exists"""
+    if not title or title == "?" or not artist or artist == "?":
+        return None
+
+    cache_file = get_cache_file_path(title, artist)
+    if os.path.exists(cache_file):
+        try:
+            with open(cache_file, "r") as f:
+                lrc_text = f.read()
+            return parse_lrc(lrc_text)
+        except Exception as e:
+            print(f"Failed to load cached lyric: {e}", file=sys.stderr)
+    return None
+
+
+def save_lyric_to_cache(title, artist, lrc_text):
+    """Save lyrics to cache file"""
+    if not title or title == "?" or not artist or artist == "?":
+        return
+
+    try:
+        # Ensure cache directory exists
+        if not os.path.exists(LYRIC_CACHE_DIR):
+            os.makedirs(LYRIC_CACHE_DIR)
+
+        cache_file = get_cache_file_path(title, artist)
+        with open(cache_file, "w") as f:
+            f.write(lrc_text)
+    except Exception as e:
+        print(f"Failed to save lyric to cache: {e}", file=sys.stderr)
+
+
 def fetch_lyric(title, artist):
-    """Fetch lyrics from NetEase cloud API"""
+    """Fetch lyrics from cache or NetEase cloud API"""
     global current_song_id, current_lyric
 
     if not title or title == "?" or not artist or artist == "?":
         return None
 
+    # First check cache
+    cached_lyric = load_lyric_from_cache(title, artist)
+    if cached_lyric is not None:
+        with lyric_lock:
+            current_lyric = cached_lyric
+        # Generate a fake song_id to prevent re-fetching
+        current_song_id = f"cached_{title}_{artist}"
+        return current_lyric
+
+    # If not in cache, fetch from API
     try:
         import urllib.parse
 
@@ -166,6 +220,9 @@ def fetch_lyric(title, artist):
 
         lyric_data = json.loads(lyric_result.stdout)
         lrc_text = lyric_data.get("lrc", {}).get("lyric", "")
+
+        # Save to cache
+        save_lyric_to_cache(title, artist, lrc_text)
 
         with lyric_lock:
             current_lyric = parse_lrc(lrc_text)
@@ -252,7 +309,7 @@ def update_sketchybar(lyric_text, playing, title, artist):
     if not playing or collapsed:
         cmd.extend(["label.color=0x80ffffff"])
     else:
-        cmd.extend(["label.color=0xffffffff"])
+        cmd.extend(["label.color=0xddffffff"])
 
     subprocess.run(cmd, capture_output=True)
 
@@ -303,7 +360,7 @@ def main():
                 last_collapsed = current_collapsed
                 last_update = current_time
 
-            time.sleep(0.2)
+            time.sleep(0.1)
 
         except Exception as e:
             print(f"Error in main loop: {e}", file=sys.stderr)
