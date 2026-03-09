@@ -11,7 +11,7 @@ import sys
 import threading
 import time
 
-API_BASE = "http://localhost:3000"
+API_BASE = "http://localhost:3123"
 STATE_FILE = os.path.expanduser("~/.cache/sketchybar/lyric.state")
 LYRIC_CACHE_DIR = os.path.expanduser("~/.cache/sketchybar/lyrics")
 

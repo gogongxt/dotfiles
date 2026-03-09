@@ -91,6 +91,8 @@ done
 
 # Lyric display - shows current playing song lyrics
 # Click to toggle between showing lyric text or just the icon
+pkill -f "NeteaseCloudMusicApi" 2>/dev/null
+PORT=3123 npx NeteaseCloudMusicApi >/dev/null 2>&1 &
 sketchybar --add item lyric left \
     --set lyric \
         label=">" \
