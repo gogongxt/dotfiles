@@ -234,6 +234,13 @@ def get_current_lyric_line(lyrics, index):
     return lyrics[index][1]
 
 
+def get_next_lyric_line(lyrics, index):
+    """Get next lyric at given index"""
+    if not lyrics or index + 1 >= len(lyrics):
+        return None
+    return lyrics[index + 1][1]
+
+
 def get_current_time_micros():
     """Calculate actual playback position in microseconds"""
     current_epoch = int(time.time() * 1000000)
@@ -265,10 +272,8 @@ def stream():
             pass
 
 
-def update_sketchybar(lyric_text, playing, title, artist):
-    """Update sketchybar item with current lyric"""
-    item_name = "lyric"
-
+def update_sketchybar(lyric_text, next_lyric_text, playing, title, artist):
+    """Update sketchybar items with current and next lyric"""
     # Check collapsed state
     collapsed = get_collapsed()
 
@@ -281,15 +286,17 @@ def update_sketchybar(lyric_text, playing, title, artist):
     if collapsed:
         # Only show icon when collapsed
         display_text = ""
+        next_display_text = ""
     else:
-        # Show full lyric
+        # Show full lyric with length limit
         display_text = lyric_text[:50] if lyric_text else "..."
+        next_display_text = next_lyric_text[:50] if next_lyric_text else "..."
 
     # Build full label: icon + lyric
     label = f"{icon} {display_text}"
 
-    # Update sketchybar
-    cmd = ["sketchybar", "--set", item_name, f"label={label}"]
+    # Update main lyric item
+    cmd = ["sketchybar", "--set", "lyric", f"label={label}"]
 
     # If not playing or collapsed, dim the item
     if not playing or collapsed:
@@ -298,6 +305,17 @@ def update_sketchybar(lyric_text, playing, title, artist):
         cmd.extend(["label.color=0xddffffff"])
 
     subprocess.run(cmd, capture_output=True)
+
+    # Update next lyric item
+    next_cmd = ["sketchybar", "--set", "lyric_next", f"label={next_display_text}"]
+
+    # Next lyric is always dimmed
+    if not playing or collapsed:
+        next_cmd.extend(["label.color=0x40ffffff"])
+    else:
+        next_cmd.extend(["label.color=0x80ffffff"])
+
+    subprocess.run(next_cmd, capture_output=True)
 
 
 def main():
@@ -332,8 +350,9 @@ def main():
             lyric_index = 0
             lyric_index_song_id = current_song_id
 
-        # Get current lyric line
+        # Get current and next lyric lines
         current_text = get_current_lyric_line(current_lyric, lyric_index)
+        next_text = get_next_lyric_line(current_lyric, lyric_index)
         print(current_text)
 
         # Check collapsed state change
@@ -346,7 +365,7 @@ def main():
             or current_collapsed != last_collapsed
             or (current_time - last_update) > 5
         ):
-            update_sketchybar(current_text, playing, title, artist)
+            update_sketchybar(current_text, next_text, playing, title, artist)
             last_lyric = current_text
             last_collapsed = current_collapsed
             last_update = current_time
