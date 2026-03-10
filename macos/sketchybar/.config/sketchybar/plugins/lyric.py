@@ -83,6 +83,34 @@ current_song_id = None
 lyric_index = 0  # 增量指针，记录当前歌词索引
 lyric_index_song_id = None  # 跟踪当前索引对应的歌曲ID
 
+# Lyric filter patterns - lines containing these will not be displayed
+LYRIC_FILTER_PATTERNS = [
+    "录音师 : ",
+    "录音 : ",
+    "贝斯 : ",
+    "鼓 : ",
+    "混音师 : ",
+    "混音室 : ",
+    "母带后期",
+    "和声 : ",
+    "电吉他 : ",
+    "制作人 : ",
+    "编曲 : ",
+    "监制 : ",
+    "OP : ",  # Original Publisher
+    "SP : ",  # Sub Publisher
+    "剪辑录音室 : ",
+    "Programmed : ",
+    "录音室 : ",
+    "演奏 : ",
+    "吉他 : ",
+    "吉他Solo : ",
+    "混音：",
+    "母带：",
+    "OP：",
+    "SP：",
+]
+
 
 def parse_lrc(lrc_text):
     """Parse lrc lyrics, return (time, lyric) list"""
@@ -111,6 +139,23 @@ def parse_lrc(lrc_text):
     return lyrics
 
 
+def is_lyric_filtered(text):
+    """Check if lyric text should be filtered out"""
+    if not text:
+        return True
+    for pattern in LYRIC_FILTER_PATTERNS:
+        if pattern in text:
+            return True
+    return False
+
+
+def filter_lyrics(lyrics):
+    """Filter out lyrics that match filter patterns"""
+    if not lyrics:
+        return []
+    return [(time, text) for time, text in lyrics if not is_lyric_filtered(text)]
+
+
 def get_cache_file_path(title, artist):
     """Get the cache file path for a song based on title and artist"""
     # Create a safe filename from title and artist
@@ -131,7 +176,8 @@ def load_lyric_from_cache(title, artist):
         try:
             with open(cache_file, "r") as f:
                 lrc_text = f.read()
-            return parse_lrc(lrc_text)
+            parsed = parse_lrc(lrc_text)
+            return filter_lyrics(parsed)
         except Exception as e:
             print(f"Failed to load cached lyric: {e}", file=sys.stderr)
     return None
@@ -222,7 +268,7 @@ def fetch_lyric(title, artist):
     # Save to cache
     save_lyric_to_cache(title, artist, lrc_text)
 
-    current_lyric = parse_lrc(lrc_text)
+    current_lyric = filter_lyrics(parse_lrc(lrc_text))
 
     return current_lyric
 
