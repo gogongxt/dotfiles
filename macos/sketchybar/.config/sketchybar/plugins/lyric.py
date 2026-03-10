@@ -14,26 +14,22 @@ import time
 API_BASE = "http://localhost:3123"
 STATE_FILE = os.path.expanduser("~/.cache/sketchybar/lyric.state")
 LYRIC_CACHE_DIR = os.path.expanduser("~/.cache/sketchybar/lyrics")
+TIME_INTERVAL_S = 0.1
+TIME_BIAS_S = 0.1
 
 
 def get_collapsed():
     """Get collapsed state from file"""
-    try:
-        if os.path.exists(STATE_FILE):
-            with open(STATE_FILE, "r") as f:
-                return f.read().strip() == "collapsed"
-    except:
-        pass
+    if os.path.exists(STATE_FILE):
+        with open(STATE_FILE, "r") as f:
+            return f.read().strip() == "collapsed"
     return False
 
 
 def set_collapsed(collapsed):
     """Save collapsed state to file"""
-    try:
-        with open(STATE_FILE, "w") as f:
-            f.write("collapsed" if collapsed else "expanded")
-    except:
-        pass
+    with open(STATE_FILE, "w") as f:
+        f.write("collapsed" if collapsed else "expanded")
 
 
 def handle_click():
@@ -84,7 +80,8 @@ defaults = {
 live = dict(defaults)
 current_lyric = []
 current_song_id = None
-lyric_lock = threading.Lock()
+lyric_index = 0  # 增量指针，记录当前歌词索引
+lyric_index_song_id = None  # 跟踪当前索引对应的歌曲ID
 
 
 def parse_lrc(lrc_text):
@@ -167,85 +164,74 @@ def fetch_lyric(title, artist):
     # First check cache
     cached_lyric = load_lyric_from_cache(title, artist)
     if cached_lyric is not None:
-        with lyric_lock:
-            current_lyric = cached_lyric
+        current_lyric = cached_lyric
         # Generate a fake song_id to prevent re-fetching
         current_song_id = f"cached_{title}_{artist}"
         return current_lyric
 
     # If not in cache, fetch from API
+    keywords = f"{title} {artist}"
+
+    search_cmd = [
+        "curl",
+        "-s",
+        "-G",
+        f"{API_BASE}/cloudsearch",
+        "--data-urlencode",
+        f"keywords={keywords}",
+    ]
+    search_result = subprocess.run(
+        search_cmd, capture_output=True, text=True, timeout=10
+    )
+
+    if not search_result.stdout:
+        return None
+
     try:
-        import urllib.parse
-
-        keywords = f"{title} {artist}"
-        encoded_keywords = urllib.parse.quote(keywords)
-
-        search_cmd = [
-            "curl",
-            "-s",
-            "-G",
-            f"{API_BASE}/cloudsearch",
-            "--data-urlencode",
-            f"keywords={keywords}",
-        ]
-        search_result = subprocess.run(
-            search_cmd, capture_output=True, text=True, timeout=10
-        )
-
-        if not search_result.stdout:
-            return None
-
         search_data = json.loads(search_result.stdout)
-        songs = search_data.get("result", {}).get("songs", [])
+    except json.JSONDecodeError:
+        return None
 
-        if not songs:
-            return None
+    songs = search_data.get("result", {}).get("songs", [])
 
-        song_id = songs[0]["id"]
+    if not songs:
+        return None
 
-        # Skip if same song
-        if song_id == current_song_id:
-            return current_lyric
+    song_id = songs[0]["id"]
 
-        current_song_id = song_id
-
-        # Get lyrics
-        lyric_cmd = ["curl", "-s", f"{API_BASE}/lyric?id={song_id}"]
-        lyric_result = subprocess.run(
-            lyric_cmd, capture_output=True, text=True, timeout=10
-        )
-
-        if not lyric_result.stdout:
-            return None
-
-        lyric_data = json.loads(lyric_result.stdout)
-        lrc_text = lyric_data.get("lrc", {}).get("lyric", "")
-
-        # Save to cache
-        save_lyric_to_cache(title, artist, lrc_text)
-
-        with lyric_lock:
-            current_lyric = parse_lrc(lrc_text)
-
+    # Skip if same song
+    if song_id == current_song_id:
         return current_lyric
 
-    except Exception as e:
-        print(f"Failed to fetch lyric: {e}", file=sys.stderr)
+    current_song_id = song_id
+
+    # Get lyrics
+    lyric_cmd = ["curl", "-s", f"{API_BASE}/lyric?id={song_id}"]
+    lyric_result = subprocess.run(lyric_cmd, capture_output=True, text=True, timeout=10)
+
+    if not lyric_result.stdout:
         return None
 
-
-def get_current_lyric_line(lyrics, elapsed_micros):
-    """Get current lyric line based on elapsed time"""
-    if not lyrics:
+    try:
+        lyric_data = json.loads(lyric_result.stdout)
+    except json.JSONDecodeError:
         return None
 
-    for i, (time_us, _) in enumerate(lyrics):
-        if time_us + 0.1 > elapsed_micros:
-            if i > 0:
-                return lyrics[i - 1][1]
-            return None
+    lrc_text = lyric_data.get("lrc", {}).get("lyric", "")
 
-    return lyrics[-1][1] if lyrics else None
+    # Save to cache
+    save_lyric_to_cache(title, artist, lrc_text)
+
+    current_lyric = parse_lrc(lrc_text)
+
+    return current_lyric
+
+
+def get_current_lyric_line(lyrics, index):
+    """Get lyric at given index"""
+    if not lyrics or index >= len(lyrics):
+        return None
+    return lyrics[index][1]
 
 
 def get_current_time_micros():
@@ -275,7 +261,7 @@ def stream():
             else:
                 p = {k: v for k, v in p.items() if v is not None}
                 live.update(p)
-        except Exception as e:
+        except (json.JSONDecodeError, KeyError):
             pass
 
 
@@ -329,42 +315,53 @@ def main():
     last_collapsed = get_collapsed()
 
     while True:
-        try:
-            # Calculate current playback time
-            elapsed_micros = get_current_time_micros()
+        # Calculate current playback time
+        elapsed_micros = get_current_time_micros()
 
-            title = live.get("title", "?")
-            artist = live.get("artist", "?")
-            playing = live["playing"]
+        title = live.get("title", "?")
+        artist = live.get("artist", "?")
+        playing = live["playing"]
 
-            # Fetch new lyrics when song changes or starts playing
-            if playing and title != "?" and artist != "?":
-                fetch_lyric(title, artist)
+        # Fetch new lyrics when song changes or starts playing
+        if playing and title != "?" and artist != "?":
+            fetch_lyric(title, artist)
 
-            # Get current lyric line
-            with lyric_lock:
-                current_text = get_current_lyric_line(current_lyric, elapsed_micros)
+        # Update lyric index (incremental: O(1) since time always increases)
+        global lyric_index, lyric_index_song_id
+        if current_song_id != lyric_index_song_id:
+            lyric_index = 0
+            lyric_index_song_id = current_song_id
 
-            # Check collapsed state change
-            current_collapsed = get_collapsed()
+        # Get current lyric line
+        current_text = get_current_lyric_line(current_lyric, lyric_index)
+        print(current_text)
 
-            # Update if: lyric changed, collapsed state changed, or every 5 seconds
-            current_time = time.time()
+        # Check collapsed state change
+        current_collapsed = get_collapsed()
+
+        # Update if: lyric changed, collapsed state changed, or every 5 seconds
+        current_time = time.time()
+        if (
+            current_text != last_lyric
+            or current_collapsed != last_collapsed
+            or (current_time - last_update) > 5
+        ):
+            update_sketchybar(current_text, playing, title, artist)
+            last_lyric = current_text
+            last_collapsed = current_collapsed
+            last_update = current_time
+
+        # Update lyric index if needed
+        while lyric_index < len(current_lyric) - 1:
             if (
-                current_text != last_lyric
-                or current_collapsed != last_collapsed
-                or (current_time - last_update) > 5
+                current_lyric[lyric_index + 1][0]
+                <= elapsed_micros + TIME_BIAS_S * 1000000
             ):
-                update_sketchybar(current_text, playing, title, artist)
-                last_lyric = current_text
-                last_collapsed = current_collapsed
-                last_update = current_time
+                lyric_index += 1
+            else:
+                break
 
-            time.sleep(0.1)
-
-        except Exception as e:
-            print(f"Error in main loop: {e}", file=sys.stderr)
-            time.sleep(1)
+        time.sleep(TIME_INTERVAL_S)
 
 
 if __name__ == "__main__":
