@@ -1,0 +1,23 @@
+new_tab sglang_0_5_5
+launch zsh -ic "myssh A800x2 -c 'tmux sglang_0_5_5'"
+
+new_tab sglang_0_5_7
+launch zsh -ic "myssh A800x2 -c 'tmux sglang_0_5_7'"
+
+new_tab sglang_0_5_9
+launch zsh -ic "myssh A800x2 -c 'tmux sglang_0_5_9'"
+
+new_tab H200-patch30
+launch zsh -ic "myssh '用于连接luban物理机(堡垒机)' -c \"dssh ml-b1-ser070.nmg03 -t 'sudo docker exec -it gogongxt-sglang-patch30 /bin/zsh -ic \\\"tmux qwen3\\\"'\""
+
+new_tab H200-GLM-5
+launch zsh -ic "myssh '用于连接luban物理机(堡垒机)' -c \"dssh ml-b1-ser063.nmg03 -t 'sudo docker exec -it gogongxt-sglang-0.5.9 /bin/zsh -ic \\\"tmux glm-5\\\"'\""
+
+new_tab benchmark
+launch zsh -ic "myssh A800x2 -c 'tmux benchmark'"
+
+new_tab nanosglang
+launch zsh -ic "myssh A800x2 -c 'tmux nanosglang'"
+
+new_tab qwen3-next
+launch zsh -ic "myssh A800x2 -c 'tmux qwen3-next'"
