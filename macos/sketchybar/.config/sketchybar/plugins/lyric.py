@@ -85,30 +85,23 @@ lyric_index_song_id = None  # 跟踪当前索引对应的歌曲ID
 
 # Lyric filter patterns - lines containing these will not be displayed
 LYRIC_FILTER_PATTERNS = [
-    "录音师 : ",
-    "录音 : ",
-    "贝斯 : ",
-    "鼓 : ",
-    "混音师 : ",
-    "混音室 : ",
+    "录音师",
+    "录音",
+    "贝斯",
+    "混音师",
+    "混音室",
     "母带后期",
-    "和声 : ",
-    "电吉他 : ",
-    "制作人 : ",
-    "编曲 : ",
-    "监制 : ",
-    "OP : ",  # Original Publisher
-    "SP : ",  # Sub Publisher
-    "剪辑录音室 : ",
-    "Programmed : ",
-    "录音室 : ",
-    "演奏 : ",
-    "吉他 : ",
-    "吉他Solo : ",
-    "混音：",
-    "母带：",
-    "OP：",
-    "SP：",
+    "和声",
+    "制作人",
+    "编曲",
+    "监制",
+    "录音室",
+    "Programmed",
+    "录音室",
+    "演奏",
+    "吉他",
+    "混音",
+    "母带",
 ]
 
 
