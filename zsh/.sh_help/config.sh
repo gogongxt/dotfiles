@@ -175,7 +175,19 @@ alias myssh='python3 ~/.scripts/ssh/myssh.py'
 alias password='python3 ~/.scripts/ssh/password.py'
 alias documents='python3 ~/.scripts/code/documents.py'
 alias specstory_clean='python3 ~/.scripts/code/specstory_clean.py'
-command -v specstory >/dev/null 2>&1 && command -v claude >/dev/null 2>&1 && alias claude="source ~/.zshrc;specstory run claude --no-cloud-sync"
+if command -v claude >/dev/null 2>&1; then
+  claude() {
+    (
+      source ~/.zshrc
+      proxy off >/dev/null 2>&1
+      if command -v specstory >/dev/null 2>&1; then
+        specstory run claude --no-cloud-sync "$@"
+      else
+        command claude "$@"
+      fi
+    )
+  }
+fi
 #🔼🔼🔼
 
 # enable cmake generate compile json file

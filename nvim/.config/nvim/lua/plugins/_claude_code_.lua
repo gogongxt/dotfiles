@@ -3,14 +3,11 @@
 local function setup_toggleterm_provider()
   local Terminal = require("toggleterm.terminal").Terminal
   local toggleterm = require "toggleterm"
-
   -- Store the claude terminal instance
   local claude_terminal = nil
-
   local function get_or_create_claude_terminal(cmd_string, env_table, config)
     -- Use config.cwd if provided, otherwise use current working directory
     local cwd = config and config.cwd or vim.fn.getcwd()
-
     -- Determine terminal size based on config
     local size = nil
     if config and config.split_width_percentage then
@@ -19,11 +16,9 @@ local function setup_toggleterm_provider()
       -- Ensure minimum size of 20 columns and maximum of 120 columns
       size = math.max(20, math.min(size, 120))
     end
-
     -- Determine direction based on split_side config
     -- toggleterm uses 'vertical' for both left and right splits
     local direction = "vertical"
-
     if not claude_terminal then
       claude_terminal = Terminal:new {
         cmd = cmd_string,
@@ -63,14 +58,12 @@ local function setup_toggleterm_provider()
       -- Update close_on_exit setting if it changed
       if config then claude_terminal.close_on_exit = config.auto_close ~= false end
     end
-
     -- Handle split positioning and resizing (toggleterm doesn't directly support
     -- left/right positioning in the constructor, but we can move and resize after it opens)
     local original_open = claude_terminal.open
     claude_terminal.open = function(self, size_override, direction_override)
       -- Call the original open function
       original_open(self, size, direction_override)
-
       -- Move and resize window if it's a vertical split and we have config
       if self:is_open() and self.window and config then
         if config.split_side then
@@ -82,52 +75,41 @@ local function setup_toggleterm_provider()
             vim.api.nvim_win_call(self.window, function() vim.cmd "wincmd L" end)
           end
         end
-
         -- Apply exact width resizing if specified
         if size and config.split_width_percentage then
           vim.api.nvim_win_call(self.window, function() vim.cmd("vertical resize " .. size) end)
         end
       end
     end
-
     return claude_terminal
   end
-
   return {
     setup = function(config)
       -- No specific setup needed for toggleterm provider
       -- But we can store any global config here if needed
     end,
-
     open = function(cmd_string, env_table, config, focus)
       focus = focus ~= false -- Default to true
       local term = get_or_create_claude_terminal(cmd_string, env_table, config)
-
       if not term:is_open() then term:open() end
-
       if focus and term.window then
         vim.api.nvim_set_current_win(term.window)
         vim.cmd "startinsert"
       end
     end,
-
     close = function()
       if claude_terminal and claude_terminal:is_open() then claude_terminal:close() end
     end,
-
     toggle = function(cmd_string, env_table, effective_config)
       local term = get_or_create_claude_terminal(cmd_string, env_table, effective_config)
       term:toggle()
     end,
-
     simple_toggle = function(cmd_string, env_table, effective_config)
       local term = get_or_create_claude_terminal(cmd_string, env_table, effective_config)
       term:toggle()
     end,
-
     focus_toggle = function(cmd_string, env_table, effective_config)
       local term = get_or_create_claude_terminal(cmd_string, env_table, effective_config)
-
       if not term:is_open() then
         term:open()
         if term.window then
@@ -149,21 +131,17 @@ local function setup_toggleterm_provider()
         end
       end
     end,
-
     get_active_bufnr = function()
       if claude_terminal and claude_terminal.bufnr and claude_terminal:is_open() then return claude_terminal.bufnr end
       return nil
     end,
-
     is_available = function()
       local ok, _ = pcall(require, "toggleterm")
       return ok
     end,
-
     ensure_visible = function()
       if claude_terminal and not claude_terminal:is_open() then claude_terminal:open() end
     end,
-
     _get_terminal_for_test = function() return claude_terminal end,
   }
 end
@@ -174,11 +152,10 @@ if vim.fn.executable "specstory" == 1 then
 else
   claude_specstory = "claude"
 end
-claude_specstory="source ~/.zshrc;"..claude_specstory
+claude_specstory = "source ~/.zshrc;proxy off >/dev/null 2>&1;" .. claude_specstory
 
 return {
-  "gogongxt/claudecode.nvim",
-  commit = "7bd8944edab45261ae2d4119a5f4f2225cb6ec96",
+  "coder/claudecode.nvim",
   dependencies = { "akinsho/toggleterm.nvim" },
   opts = {
     -- terminal_cmd = "ccr code",
