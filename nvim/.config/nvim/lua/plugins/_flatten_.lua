@@ -2,7 +2,8 @@
 
 return {
   {
-    "willothy/flatten.nvim",
+    "gogongxt/flatten.nvim",
+    branch = "fix-swap-error",
     config = true,
     lazy = false,
     priority = 1001,
