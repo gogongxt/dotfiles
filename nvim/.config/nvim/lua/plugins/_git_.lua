@@ -1,5 +1,7 @@
 -- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
+local make_repeatable = require("plugins.user.my_funcs.repeat").make_repeatable
+
 local mappings = require "mappings"
 mappings.set_mappings {
   n = {
@@ -36,19 +38,23 @@ mappings.set_mappings {
       desc = "Toggle stage/unstage buffer",
     },
     ["<Leader>gj"] = {
-      "<cmd>lua require('gitsigns').nav_hunk('next')<cr>",
+      make_repeatable(function() require("gitsigns").nav_hunk "next" end),
+      expr = true,
       desc = "Hunk Next",
     },
     ["<Leader>gk"] = {
-      "<cmd>lua require('gitsigns').nav_hunk('prev')<cr>",
+      make_repeatable(function() require("gitsigns").nav_hunk "prev" end),
+      expr = true,
       desc = "Hunk Prev",
     },
     ["<Leader>gJ"] = {
-      "<cmd>lua require('gitsigns').nav_hunk('next',{target='staged'})<cr>",
+      make_repeatable(function() require("gitsigns").nav_hunk("next", { target = "staged" }) end),
+      expr = true,
       desc = "Hunk Next(staged)",
     },
     ["<Leader>gK"] = {
-      "<cmd>lua require('gitsigns').nav_hunk('prev',{target='staged'})<cr>",
+      make_repeatable(function() require("gitsigns").nav_hunk("prev", { target = "staged" }) end),
+      expr = true,
       desc = "Hunk Prev(staged)",
     },
     ["<Leader>gB"] = {
