@@ -1,5 +1,7 @@
 -- if true then return end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
+local make_repeatable = require("plugins.user.my_funcs.repeat").make_repeatable
+
 -- This will run last in the setup process.
 -- This is just pure lua so anything that doesn't
 -- fit in the normal config locations above can go here
@@ -156,16 +158,14 @@ mappings.set_mappings {
       desc = "Toggle Render",
     },
     ["gn"] = {
-      "<cmd>lua require('illuminate').goto_next_reference(true)<cr>",
-      desc = "Delete Comments",
-      noremap = true,
-      silent = true,
+      make_repeatable(function() require("illuminate").goto_next_reference(true) end),
+      expr = true,
+      desc = "Next Reference",
     },
     ["gp"] = {
-      "<cmd>lua require('illuminate').goto_prev_reference(true)<cr>",
-      desc = "Delete Comments",
-      noremap = true,
-      silent = true,
+      make_repeatable(function() require("illuminate").goto_prev_reference(true) end),
+      expr = true,
+      desc = "Prev Reference",
     },
     ["<c-g>"] = {
       function()
@@ -188,14 +188,30 @@ mappings.set_mappings {
       desc = "Widgets hover",
     },
     ["<Leader>di"] = { function() require("dap").focus_frame() end, desc = "Focus frame" },
-    ["<Leader>dj"] = { function() require("dap").step_into() end, desc = "Step into (F11)" },
-    ["<Leader>dJ"] = { function() require("dap").step_over() end, desc = "Step over (F10)" },
-    ["<Leader>do"] = { function() require("dap").step_out() end, desc = "Step out (S-F11)" },
+    ["<Leader>dj"] = {
+      make_repeatable(function() require("dap").step_into() end),
+      expr = true,
+      desc = "Step into (F11)",
+    },
+    ["<Leader>dJ"] = {
+      make_repeatable(function() require("dap").step_over() end),
+      expr = true,
+      desc = "Step over (F10)",
+    },
+    ["<Leader>do"] = {
+      make_repeatable(function() require("dap").step_out() end),
+      expr = true,
+      desc = "Step out (S-F11)",
+    },
     ["<Leader>dO"] = false,
-    ["<Leader>dC"] = { function() require("dap").run_to_cursor() end, desc = "Run to cursor" },
+    ["<Leader>dC"] = {
+      make_repeatable(function() require("dap").run_to_cursor() end),
+      expr = true,
+      desc = "Run to cursor",
+    },
     ["<a-p>"] = { function() require("dap.ui.widgets").preview() end, desc = "Widgets preview" },
     ["<Leader>dn"] = {
-      function()
+      make_repeatable(function()
         local breakpoints = require "dap.breakpoints"
         local bufnr = vim.api.nvim_get_current_buf()
         local cur_line = vim.api.nvim_win_get_cursor(0)[1]
@@ -209,11 +225,12 @@ mappings.set_mappings {
         end
         -- wrap around to first breakpoint
         if #bps > 0 then vim.api.nvim_win_set_cursor(0, { bps[1].line, 0 }) end
-      end,
+      end),
+      expr = true,
       desc = "Next breakpoint",
     },
     ["<Leader>dp"] = {
-      function()
+      make_repeatable(function()
         local breakpoints = require "dap.breakpoints"
         local bufnr = vim.api.nvim_get_current_buf()
         local cur_line = vim.api.nvim_win_get_cursor(0)[1]
@@ -227,7 +244,8 @@ mappings.set_mappings {
         end
         -- wrap around to last breakpoint
         if #bps > 0 then vim.api.nvim_win_set_cursor(0, { bps[1].line, 0 }) end
-      end,
+      end),
+      expr = true,
       desc = "Prev breakpoint",
     },
   },

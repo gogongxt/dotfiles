@@ -1,5 +1,7 @@
 -- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
+local make_repeatable = require("plugins.user.my_funcs.repeat").make_repeatable
+
 return {
   -- {
   --   -- 书签插件
@@ -79,10 +81,10 @@ return {
       { "mu", "<cmd>BookmarksSignToggle<cr>", mode = { "n" } },
       { "ms", "<cmd>BookmarksGrep<cr>", mode = { "n" } },
       { "mi", "<cmd>BookmarksInfoCurrentBookmark<cr>", mode = { "n" } },
-      { "mn", "<cmd>BookmarksGotoNext<cr>", mode = { "n" } },
-      { "mp", "<cmd>BookmarksGotoPrev<cr>", mode = { "n" } },
-      { "mN", "<cmd>BookmarksGotoNextInList<cr>", mode = { "n" } },
-      { "mP", "<cmd>BookmarksGotoPrevInList<cr>", mode = { "n" } },
+      { "mn", make_repeatable(function() vim.cmd "BookmarksGotoNext" end), expr = true, mode = { "n" } },
+      { "mp", make_repeatable(function() vim.cmd "BookmarksGotoPrev" end), expr = true, mode = { "n" } },
+      { "mN", make_repeatable(function() vim.cmd "BookmarksGotoNextInList" end), expr = true, mode = { "n" } },
+      { "mP", make_repeatable(function() vim.cmd "BookmarksGotoPrevInList" end), expr = true, mode = { "n" } },
       { "ml", "<cmd>BookmarksGoto<cr>", mode = { "n" } },
       { "mb", "<cmd>BookmarksLists<cr>", mode = { "n" } },
       { "mB", "<cmd>BookmarksNewList<cr>", mode = { "n" } },
