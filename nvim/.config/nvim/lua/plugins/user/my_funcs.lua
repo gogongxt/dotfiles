@@ -135,22 +135,6 @@ M.DebugAllBuffers = function()
   end
 end
 
-M.git_gitui_toggle = function()
-  local Terminal = require("toggleterm.terminal").Terminal
-  local gitui = Terminal:new {
-    cmd = "gitui",
-    hidden = true,
-    direction = "float",
-    float_opts = {
-      border = "curved",
-    },
-    on_open = function(_) vim.cmd "startinsert!" end,
-    on_close = function(_) end,
-    count = 99,
-  }
-  gitui:toggle()
-end
-
 M.get_buf_fullpath = function()
   -- print(vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf()))
   return vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())

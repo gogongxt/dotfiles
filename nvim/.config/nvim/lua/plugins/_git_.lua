@@ -2,6 +2,22 @@
 
 local make_repeatable = require("plugins.user.my_funcs.repeat").make_repeatable
 
+local function git_gitui_toggle()
+  local Terminal = require("toggleterm.terminal").Terminal
+  local gitui = Terminal:new {
+    cmd = "gitui",
+    hidden = true,
+    direction = "float",
+    float_opts = {
+      border = "curved",
+    },
+    on_open = function(_) vim.cmd "startinsert!" end,
+    on_close = function(_) end,
+    count = 99,
+  }
+  gitui:toggle()
+end
+
 local mappings = require "mappings"
 mappings.set_mappings {
   n = {
@@ -65,14 +81,14 @@ mappings.set_mappings {
     ["<Leader>gBv"] = { "<cmd>BlameToggle virtual<cr>", desc = "Blame virtual" },
     ["<Leader>gd"] = { "<cmd>lua require('gitsigns').diffthis()<cr>", desc = "Git Giff" },               -- see diff unstaged
     ["<Leader>gD"] = { "<cmd>lua require('gitsigns').diffthis('HEAD')<cr>", desc = "Git Giff(staged)" }, -- see diff all include unstaged and staged
-    ["<A-g>"] = { "<cmd>lua require('plugins.user.my_funcs').git_gitui_toggle()<cr>", desc = "gitui" },
+    ["<A-g>"] = { function() git_gitui_toggle() end, desc = "gitui" },
     ["<Leader>gP"] = { "<cmd>lua require('gitsigns').preview_hunk()<cr>", desc = "Hunk Preview Hover" },
     ["<Leader>gi"] = { "<cmd>lua require('gitsigns').blame_line()<cr>", desc = "Line Info" },
     ["<Leader>gq"] = { "<cmd>lua require('gitsigns').setqflist()<cr>", desc = "Git Quickfix" },
     ["<Leader>gQ"] = { "<cmd>lua require('gitsigns').setqflist('all')<cr>", desc = "Git Quickfix(all files)" },
   },
   t = {
-    ["<A-g>"] = { "<cmd>lua require('plugins.user.my_funcs').git_gitui_toggle()<cr>", desc = "gitui" },
+    ["<A-g>"] = { function() git_gitui_toggle() end, desc = "gitui" },
   },
 }
 
