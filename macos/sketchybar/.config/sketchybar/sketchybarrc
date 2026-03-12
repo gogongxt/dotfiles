@@ -99,7 +99,7 @@ sketchybar --add item lyric left \
         icon.drawing=off \
         label.font="Hack Nerd Font:Bold:14.0" \
         label.color=0xddffffff \
-        padding_left=0 \
+        padding_left=-20 \
         padding_right=0 \
         click_script="python3 \"$PLUGIN_DIR/lyric.py\" --click"
 # Lyric next - shows next lyric line with dimmed color
