@@ -89,17 +89,43 @@ done
 # We add some regular items to the left side of the bar, where
 # only the properties deviating from the current defaults need to be set
 
-# Lyric display - shows current playing song lyrics
+# Music artwork - shows album cover
 # Click to toggle between showing lyric text or just the icon
 pkill -f "NeteaseCloudMusicApi" 2>/dev/null
 PORT=3123 npx NeteaseCloudMusicApi >/dev/null 2>&1 &
+sketchybar --add item music_artwork left \
+    --set music_artwork \
+        icon.drawing=off \
+        label.drawing=off \
+        background.drawing=on \
+        background.image.scale=0.3 \
+        background.height=20 \
+        background.width=20 \
+        background.clip=on \
+        background.color=0x00000000 \
+        background.x_offset=0 \
+        padding_left=-20 \
+        padding_right=0 \
+        width=20 \
+        click_script="python3 \"$PLUGIN_DIR/lyric.py\" --click"
+# Song title - shows current playing song name
+sketchybar --add item song_title left \
+    --set song_title \
+        label="" \
+        icon.drawing=off \
+        label.font="Hack Nerd Font:Bold:12.0" \
+        label.color=0xdd00ff00 \
+        padding_left=-10 \
+        padding_right=0 \
+        click_script="python3 \"$PLUGIN_DIR/lyric.py\" --click"
+# Lyric display - shows current playing song lyrics
 sketchybar --add item lyric left \
     --set lyric \
         label=">" \
         icon.drawing=off \
         label.font="Hack Nerd Font:Bold:14.0" \
         label.color=0xddffffff \
-        padding_left=-20 \
+        padding_left=0 \
         padding_right=0 \
         click_script="python3 \"$PLUGIN_DIR/lyric.py\" --click"
 # Lyric next - shows next lyric line with dimmed color
@@ -109,8 +135,8 @@ sketchybar --add item lyric_next left \
         icon.drawing=off \
         label.font="Hack Nerd Font:Bold:14.0" \
         label.color=0x80ffffff \
-        padding_left=0 \
-        padding_right=10 \
+        padding_left=10 \
+        padding_right=0 \
         click_script="python3 \"$PLUGIN_DIR/lyric.py\" --click"
 # Launch the lyric plugin in background
 pkill -f lyric.py

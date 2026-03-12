@@ -14,8 +14,12 @@ import time
 API_BASE = "http://localhost:3123"
 STATE_FILE = os.path.expanduser("~/.cache/sketchybar/lyric.state")
 LYRIC_CACHE_DIR = os.path.expanduser("~/.cache/sketchybar/lyrics")
+ARTWORK_CACHE_DIR = os.path.expanduser("~/.cache/sketchybar/cover")
 TIME_INTERVAL_S = 0.1
 TIME_BIAS_S = 0.1
+
+# Ensure artwork cache directory exists
+os.makedirs(ARTWORK_CACHE_DIR, exist_ok=True)
 
 
 def get_collapsed():
@@ -75,6 +79,8 @@ defaults = {
     "elapsedTimeMicros": 0,
     "playing": False,
     "durationMicros": 0,
+    "artworkData": None,
+    "artworkMimeType": None,
 }
 
 live = dict(defaults)
@@ -176,6 +182,24 @@ def save_lyric_to_cache(title, artist, lrc_text):
             f.write(lrc_text)
     except Exception as e:
         print(f"Failed to save lyric to cache: {e}", file=sys.stderr)
+
+
+def load_artwork_from_cache(title, artist):
+    """Load artwork from cache if exists (uses same index as lyric cache)"""
+    if not title or title == "?" or not artist or artist == "?":
+        return None
+
+    # Use same naming logic as lyric cache, but in artwork_cache directory
+    safe_name = f"{title}_{artist}".replace("/", "_").replace("\\", "_")
+    safe_name = "".join(c for c in safe_name if c.isalnum() or c in " _-").strip()
+    safe_name = safe_name[:100]
+
+    # Try both .jpg and .png extensions
+    for ext in ["jpg", "png"]:
+        cache_file = os.path.join(ARTWORK_CACHE_DIR, f"{safe_name}.{ext}")
+        if os.path.exists(cache_file):
+            return cache_file
+    return None
 
 
 def fetch_lyric(title, artist):
@@ -292,8 +316,50 @@ def stream():
             else:
                 p = {k: v for k, v in p.items() if v is not None}
                 live.update(p)
+                # Handle artwork data - decode and save to file
+                if "artworkData" in p and p["artworkData"]:
+                    # Use live dict to get the latest title/artist (handles diff updates)
+                    title = live.get("title", "")
+                    artist = live.get("artist", "")
+                    save_artwork(
+                        p["artworkData"],
+                        p.get("artworkMimeType", "image/jpeg"),
+                        title,
+                        artist,
+                    )
         except (json.JSONDecodeError, KeyError):
             pass
+
+
+def save_artwork(artwork_base64, mime_type, title="", artist=""):
+    """Save artwork base64 data to cache directory"""
+    try:
+        import base64
+
+        # Determine file extension based on mime type
+        ext = "jpg"
+        if "png" in mime_type.lower():
+            ext = "png"
+
+        # Only save to cache if we have title and artist
+        if title and artist and title != "?" and artist != "?":
+            safe_name = f"{title}_{artist}".replace("/", "_").replace("\\", "_")
+            safe_name = "".join(
+                c for c in safe_name if c.isalnum() or c in " _-"
+            ).strip()
+            safe_name = safe_name[:100]
+            cache_path = os.path.join(ARTWORK_CACHE_DIR, f"{safe_name}.{ext}")
+
+            # Decode base64 and save
+            artwork_data = base64.b64decode(artwork_base64)
+            with open(cache_path, "wb") as f:
+                f.write(artwork_data)
+
+            return cache_path
+        return None
+    except Exception as e:
+        print(f"Failed to save artwork: {e}", file=sys.stderr)
+        return None
 
 
 def update_sketchybar(lyric_text, next_lyric_text, playing, title, artist):
@@ -311,13 +377,53 @@ def update_sketchybar(lyric_text, next_lyric_text, playing, title, artist):
         # Only show icon when collapsed
         display_text = ""
         next_display_text = ""
+        song_title_text = ""
     else:
         # Show full lyric with length limit
         display_text = lyric_text[:50] if lyric_text else "..."
         next_display_text = next_lyric_text[:50] if next_lyric_text else "..."
+        # Show song title (truncated)
+        if title and title != "?" and title != "No Music":
+            song_title_text = title[:30]
+        else:
+            song_title_text = ""
 
     # Build full label: icon + lyric
     label = f"{icon} {display_text}"
+
+    # Update artwork item - only use cached artwork
+    artwork_cmd = ["sketchybar", "--set", "music_artwork"]
+
+    # Try to load cached artwork
+    cached_artwork = None
+    if title and title != "?" and title != "No Music" and artist and artist != "?":
+        cached_artwork = load_artwork_from_cache(title, artist)
+
+    if cached_artwork and os.path.exists(cached_artwork):
+        artwork_cmd.extend([f"background.image={cached_artwork}"])
+    else:
+        # No cached artwork, use default icon
+        artwork_cmd.extend(
+            [
+                "background.image=/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericMusicPlayerIcon.icns"
+            ]
+        )
+
+    # Always use transparent background for artwork
+    artwork_cmd.extend(["background.color=0x00000000"])
+
+    subprocess.run(artwork_cmd, capture_output=True)
+
+    # Update song title item
+    song_title_cmd = ["sketchybar", "--set", "song_title", f"label={song_title_text}"]
+
+    # Song title color: green when playing, dim when not
+    if playing and not collapsed:
+        song_title_cmd.extend(["label.color=0xdd00ff00"])
+    else:
+        song_title_cmd.extend(["label.color=0xa0ffffff"])
+
+    subprocess.run(song_title_cmd, capture_output=True)
 
     # Update main lyric item
     cmd = ["sketchybar", "--set", "lyric", f"label={label}"]
