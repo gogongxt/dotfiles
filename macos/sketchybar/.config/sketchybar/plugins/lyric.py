@@ -204,9 +204,14 @@ def load_artwork_from_cache(title, artist):
 
 def fetch_lyric(title, artist):
     """Fetch lyrics from cache or NetEase cloud API"""
-    global current_song_id, current_lyric
+    global current_song_id, current_lyric, lyric_index, lyric_index_song_id
 
     if not title or title == "?" or not artist or artist == "?":
+        # Clear lyrics when title/artist is invalid
+        current_lyric = []
+        current_song_id = None
+        lyric_index = 0
+        lyric_index_song_id = None
         return None
 
     # First check cache
@@ -215,6 +220,8 @@ def fetch_lyric(title, artist):
         current_lyric = cached_lyric
         # Generate a fake song_id to prevent re-fetching
         current_song_id = f"cached_{title}_{artist}"
+        lyric_index = 0
+        lyric_index_song_id = current_song_id
         return current_lyric
 
     # If not in cache, fetch from API
@@ -233,16 +240,31 @@ def fetch_lyric(title, artist):
     )
 
     if not search_result.stdout:
+        # Clear lyrics when API fails
+        current_lyric = []
+        current_song_id = None
+        lyric_index = 0
+        lyric_index_song_id = None
         return None
 
     try:
         search_data = json.loads(search_result.stdout)
     except json.JSONDecodeError:
+        # Clear lyrics when parsing fails
+        current_lyric = []
+        current_song_id = None
+        lyric_index = 0
+        lyric_index_song_id = None
         return None
 
     songs = search_data.get("result", {}).get("songs", [])
 
     if not songs:
+        # Clear lyrics when no songs found
+        current_lyric = []
+        current_song_id = None
+        lyric_index = 0
+        lyric_index_song_id = None
         return None
 
     song_id = songs[0]["id"]
@@ -258,11 +280,19 @@ def fetch_lyric(title, artist):
     lyric_result = subprocess.run(lyric_cmd, capture_output=True, text=True, timeout=10)
 
     if not lyric_result.stdout:
+        # Clear lyrics when API fails
+        current_lyric = []
+        lyric_index = 0
+        lyric_index_song_id = None
         return None
 
     try:
         lyric_data = json.loads(lyric_result.stdout)
     except json.JSONDecodeError:
+        # Clear lyrics when parsing fails
+        current_lyric = []
+        lyric_index = 0
+        lyric_index_song_id = None
         return None
 
     lrc_text = lyric_data.get("lrc", {}).get("lyric", "")
@@ -271,6 +301,8 @@ def fetch_lyric(title, artist):
     save_lyric_to_cache(title, artist, lrc_text)
 
     current_lyric = filter_lyrics(parse_lrc(lrc_text))
+    lyric_index = 0
+    lyric_index_song_id = current_song_id
 
     return current_lyric
 
@@ -405,7 +437,7 @@ def update_sketchybar(lyric_text, next_lyric_text, playing, title, artist):
         # No cached artwork, use default icon
         artwork_cmd.extend(
             [
-                "background.image=/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericMusicPlayerIcon.icns"
+                f"background.image={os.path.join(os.path.dirname(__file__), 'music_cover.jpg')}"
             ]
         )
 
