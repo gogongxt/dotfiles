@@ -208,20 +208,23 @@ def fetch_lyric(title, artist):
 
     if not title or title == "?" or not artist or artist == "?":
         # Clear lyrics when title/artist is invalid
-        current_lyric = []
-        current_song_id = None
-        lyric_index = 0
-        lyric_index_song_id = None
+        if current_lyric:  # Only reset if we had lyrics before
+            current_lyric = []
+            current_song_id = None
+            lyric_index = 0
+            lyric_index_song_id = None
         return None
 
     # First check cache
     cached_lyric = load_lyric_from_cache(title, artist)
     if cached_lyric is not None:
-        current_lyric = cached_lyric
-        # Generate a fake song_id to prevent re-fetching
-        current_song_id = f"cached_{title}_{artist}"
-        lyric_index = 0
-        lyric_index_song_id = current_song_id
+        # Only update if it's a different song (not same cached song)
+        cache_song_id = f"cached_{title}_{artist}"
+        if current_song_id != cache_song_id:
+            current_lyric = cached_lyric
+            current_song_id = cache_song_id
+            lyric_index = 0
+            lyric_index_song_id = current_song_id
         return current_lyric
 
     # If not in cache, fetch from API
@@ -240,31 +243,34 @@ def fetch_lyric(title, artist):
     )
 
     if not search_result.stdout:
-        # Clear lyrics when API fails
-        current_lyric = []
-        current_song_id = None
-        lyric_index = 0
-        lyric_index_song_id = None
+        # Clear lyrics when API fails (only if we had lyrics before)
+        if current_lyric:
+            current_lyric = []
+            current_song_id = None
+            lyric_index = 0
+            lyric_index_song_id = None
         return None
 
     try:
         search_data = json.loads(search_result.stdout)
     except json.JSONDecodeError:
-        # Clear lyrics when parsing fails
-        current_lyric = []
-        current_song_id = None
-        lyric_index = 0
-        lyric_index_song_id = None
+        # Clear lyrics when parsing fails (only if we had lyrics before)
+        if current_lyric:
+            current_lyric = []
+            current_song_id = None
+            lyric_index = 0
+            lyric_index_song_id = None
         return None
 
     songs = search_data.get("result", {}).get("songs", [])
 
     if not songs:
-        # Clear lyrics when no songs found
-        current_lyric = []
-        current_song_id = None
-        lyric_index = 0
-        lyric_index_song_id = None
+        # Clear lyrics when no songs found (only if we had lyrics before)
+        if current_lyric:
+            current_lyric = []
+            current_song_id = None
+            lyric_index = 0
+            lyric_index_song_id = None
         return None
 
     song_id = songs[0]["id"]
@@ -280,19 +286,21 @@ def fetch_lyric(title, artist):
     lyric_result = subprocess.run(lyric_cmd, capture_output=True, text=True, timeout=10)
 
     if not lyric_result.stdout:
-        # Clear lyrics when API fails
-        current_lyric = []
-        lyric_index = 0
-        lyric_index_song_id = None
+        # Clear lyrics when API fails (only if we had lyrics before)
+        if current_lyric:
+            current_lyric = []
+            lyric_index = 0
+            lyric_index_song_id = None
         return None
 
     try:
         lyric_data = json.loads(lyric_result.stdout)
     except json.JSONDecodeError:
-        # Clear lyrics when parsing fails
-        current_lyric = []
-        lyric_index = 0
-        lyric_index_song_id = None
+        # Clear lyrics when parsing fails (only if we had lyrics before)
+        if current_lyric:
+            current_lyric = []
+            lyric_index = 0
+            lyric_index_song_id = None
         return None
 
     lrc_text = lyric_data.get("lrc", {}).get("lyric", "")
