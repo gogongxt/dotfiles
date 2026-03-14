@@ -81,6 +81,7 @@ defaults = {
     "durationMicros": 0,
     "artworkData": None,
     "artworkMimeType": None,
+    "bundleIdentifier": None,
 }
 
 live = dict(defaults)
@@ -88,11 +89,13 @@ current_lyric = []
 current_song_id = None
 lyric_index = 0  # 增量指针，记录当前歌词索引
 lyric_index_song_id = None  # 跟踪当前索引对应的歌曲ID
+last_bundle_identifier = None  # 缓存上一次的bundleIdentifier，用于diff消息
 
 # Lyric filter patterns - lines containing these will not be displayed
 LYRIC_FILTER_PATTERNS = [
     ":",
     "：",
+    "版权",
 ]
 
 
@@ -339,7 +342,7 @@ def get_current_time_micros():
 
 def stream():
     """Background thread to listen for media control events"""
-    global live
+    global live, last_bundle_identifier
 
     process = subprocess.Popen(
         ["media-control", "stream", "--micros"],
@@ -351,9 +354,21 @@ def stream():
         try:
             d = json.loads(line_bytes)
             p = d["payload"]
+
+            # Check if this is NetEase Music - use cached identifier for diff messages
+            bundle_identifier = p.get("bundleIdentifier") if p else None
+            # Update cached identifier if present in current message
+            if bundle_identifier:
+                last_bundle_identifier = bundle_identifier
+            # Use cached identifier for diff messages without bundleIdentifier
+            effective_bundle_identifier = bundle_identifier or last_bundle_identifier
+            is_netease = effective_bundle_identifier == "com.netease.163music"
+
             if not d["diff"] and len(p) == 0:
-                live = dict(defaults)
-            else:
+                # Only reset if it was NetEase Music (media stopped)
+                if is_netease:
+                    live = dict(defaults)
+            elif is_netease:
                 p = {k: v for k, v in p.items() if v is not None}
                 live.update(p)
                 # Handle artwork data - decode and save to file
@@ -367,6 +382,7 @@ def stream():
                         title,
                         artist,
                     )
+            # Ignore messages from other apps
         except (json.JSONDecodeError, KeyError):
             pass
 
