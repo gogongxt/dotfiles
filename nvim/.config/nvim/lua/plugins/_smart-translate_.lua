@@ -91,16 +91,22 @@ return {
           source = "auto",
           target = "zh-CN",
           handle = "float",
-          engine = "google",
+          engine = "baidu",
         },
         cache = true,
       },
-      proxy = proxy,
+      proxy = nil,
       engine = {
         deepl = {
           -- Support SHELL variables, or fill in directly
           api_key = "$DEEPL_API_KEY",
           base_url = "https://api-free.deepl.com/v2/translate",
+        },
+        baidu = {
+          -- Support SHELL variables, or fill in directly
+          app_id = "$NVIM_TRANSLATE_BAIDU_APP_ID",
+          api_key = "$NVIM_TRANSLATE_BAIDU_API_KEY",
+          base_url = "https://fanyi-api.baidu.com/ait/api/aiTextTranslate",
         },
       },
       hooks = {
