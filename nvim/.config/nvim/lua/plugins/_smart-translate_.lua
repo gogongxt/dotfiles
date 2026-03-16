@@ -1,5 +1,8 @@
 -- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
+-- proxy priority: PROXY > PROXY_DEFAULT > default
+local proxy = os.getenv "PROXY" or os.getenv "PROXY_DEFAULT" or "http://127.0.0.1:7890"
+
 local mappings = require "mappings"
 mappings.set_mappings {
   n = {},
@@ -22,7 +25,18 @@ return {
           ["<Leader>tp"] = false,
           ["<Leader>tv"] = false,
           -- add translate keymap
-          ["<Leader>tt"] = { "<cmd>Translate<cr>", desc = "translate words show", noremap = true, silent = true },
+          ["<Leader>tt"] = {
+            "<cmd>Translate --target=zh-CN<cr>",
+            desc = "translate words show",
+            noremap = true,
+            silent = true,
+          },
+          ["<Leader>tT"] = {
+            "<cmd>Translate --target=en<cr>",
+            desc = "translate words show",
+            noremap = true,
+            silent = true,
+          },
           ["<Leader>ts"] = {
             "<cmd>Translate --handle=split<cr>",
             desc = "translate words split",
@@ -38,7 +52,13 @@ return {
         },
         v = {
           ["<Leader>tt"] = {
-            "<cmd>'<,'>Translate<cr>",
+            ":'<,'>Translate --target=zh-CN<cr>",
+            desc = "translate words show",
+            noremap = true,
+            silent = true,
+          },
+          ["<Leader>tT"] = {
+            ":'<,'>Translate --target=en<cr>",
             desc = "translate words show",
             noremap = true,
             silent = true,
@@ -60,45 +80,49 @@ return {
     },
   },
   {
-    "askfiy/smart-translate.nvim",
+    "gogongxt/smart-translate.nvim",
     cmd = { "Translate" },
     dependencies = {
       "askfiy/http.nvim", -- a wrapper implementation of the Python aiohttp library that uses CURL to send requests.
     },
-    config = function()
-      require("smart-translate").setup {
-        default_config = {
-          default = {
-            cmds = {
-              source = "auto",
-              target = "zh-CN",
-              handle = "float",
-              engine = "google",
-            },
-            cache = true,
-          },
-          engine = {
-            deepl = {
-              -- Support SHELL variables, or fill in directly
-              api_key = "$DEEPL_API_KEY",
-              base_url = "https://api-free.deepl.com/v2/translate",
-            },
-          },
-          hooks = {
-            ---@param opts SmartTranslate.Config.Hooks.BeforeCallOpts
-            ---@return string[]
-            before_translate = function(opts) return opts.original end,
-            ---@param opts SmartTranslate.Config.Hooks.AfterCallOpts
-            ---@return string[]
-            after_translate = function(opts) return opts.translation end,
-          },
-          -- Custom translator
-          translator = {
-            engine = {},
-            handle = {},
-          },
+    opts = {
+      default = {
+        cmds = {
+          source = "auto",
+          target = "zh-CN",
+          handle = "float",
+          engine = "google",
         },
-      }
-    end,
+        cache = true,
+      },
+      proxy = proxy,
+      engine = {
+        deepl = {
+          -- Support SHELL variables, or fill in directly
+          api_key = "$DEEPL_API_KEY",
+          base_url = "https://api-free.deepl.com/v2/translate",
+        },
+      },
+      hooks = {
+        ---@param opts SmartTranslate.Config.Hooks.BeforeCallOpts
+        ---@return string[]
+        before_translate = function(opts)
+          vim.notify("Begin Translate...", vim.log.levels.INFO, { title = "󰊿 Translate" })
+          return opts.original
+        end,
+        ---@param opts SmartTranslate.Config.Hooks.AfterCallOpts
+        ---@return string[]
+        after_translate = function(opts)
+          vim.notify("Translate Completely", vim.log.levels.INFO, { title = "󰊿 Translate" })
+          return opts.translation
+        end,
+      },
+      -- Custom translator
+      translator = {
+        engine = {},
+        handle = {},
+      },
+    },
+    config = function(_, opts) require("smart-translate").setup(opts) end,
   },
 }
