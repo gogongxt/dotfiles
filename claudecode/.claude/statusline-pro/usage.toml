@@ -1,0 +1,488 @@
+# ====================================================================
+# Claude Code 状态栏增强系统 主配置模板
+# ====================================================================
+#
+# 这个配置文件是 Claude Code Statusline Pro 的主配置模板
+# 由 ConfigLoader 在配置初始化时使用
+#
+# 配置文件位置和优先级（从高到低）：
+# 1. 命令行参数（最高优先级）
+# 2. 项目级配置：~/.claude/projects/{project_id}/statusline-pro/config.toml
+# 3. 用户级配置：~/.claude/statusline-pro/config.toml
+# 4. 内置默认值（最低优先级）
+#
+# 使用方法：
+# 1. 运行 `npx ccsp@latest config init` 初始化配置
+#    旧命令 `npx claude-code-statusline-pro@latest` 仍可用，但会提示迁移
+#    或 `npx ccsp@latest config init -g` 初始化全局配置
+# 2. 根据需要修改配置项
+# 3. 运行 `npx ccsp@latest validate` 验证配置
+#
+# ====================================================================
+
+# ==================== 基础配置 ====================
+
+# 组件预设字符串 | Component preset string
+# 定义状态栏显示的组件及其顺序，每个字符对应一个组件
+# P=项目名, M=模型名, B=Git分支, T=Token使用, U=使用成本, S=状态
+# 可以自由组合，如 "PMB" 只显示项目、模型和分支
+# preset = "PMBTUS"
+preset = "MBT"
+
+# 主题名称 | Theme name  
+# 支持三种内置主题：classic（经典）, powerline（电力线）, capsule（胶囊）
+# classic: 传统分隔符样式，兼容性最好
+# powerline: 现代箭头连接样式，需要 Nerd Font 字体支持
+# capsule: 圆角胶囊样式，现代化UI风格，需要 Nerd Font 字体支持
+theme = "classic"
+
+# 界面语言 | Interface language
+# 支持中文(zh)和英文(en)，影响错误消息、帮助文本等
+# 系统会根据环境变量自动检测，也可手动指定
+language = "zh"
+
+# 调试模式 | Debug mode
+# 启用后会输出详细的调试信息，用于问题排查
+# 生产环境建议设为 false
+debug = false
+
+# ==================== 终端能力配置 ====================
+
+[terminal]
+# 强制启用 Nerd Font 图标 | Force enable Nerd Font icons
+# true: 强制使用 Nerd Font 图标（需要支持的字体）
+# false: 使用终端自动检测结果
+# 注意：启用前请确保终端字体支持 Nerd Font 图标
+force_nerd_font = false
+
+# 强制启用 Emoji 图标 | Force enable Emoji icons  
+# true: 强制使用 Unicode Emoji 图标
+# false: 使用终端自动检测结果
+# Emoji 兼容性好，但在某些终端中显示效果可能不佳
+force_emoji = false
+
+# 强制启用文本图标 | Force enable text icons
+# true: 强制使用纯文本图标（如 [P], [M] 等）
+# false: 使用终端自动检测结果  
+# 文本图标兼容性最佳，适合所有终端环境
+force_text = false
+
+# ==================== 存储系统配置 ====================
+
+[storage]
+# 启用对话级成本追踪 | Enable conversation-level cost tracking
+# 当启用时，会追踪整个对话链的所有session，为conversation显示模式提供数据
+# 关闭后只追踪当前session，减少存储空间占用
+enableConversationTracking = true
+
+# 启用成本数据持久化 | Enable cost persistence
+# 将每个session的成本数据保存到 ~/.claude/projects/{project}/statusline-pro/sessions/
+# 用于统计分析和对话恢复，关闭后数据仅在内存中保留
+enableCostPersistence = true
+
+# 自动清理旧会话数据（天数）| Auto-cleanup old sessions (days)
+# 设置为 0 禁用自动清理
+# 建议设置合理的清理周期以控制存储空间
+# 清理不会影响当前活跃的对话链
+autoCleanupDays = 30
+
+# ==================== 样式配置 ====================
+
+[style]
+# 组件间分隔符 | Component separator
+# 在组件之间显示的分隔符字符，可以自定义
+separator = "|"
+
+# 启用颜色显示 | Enable color display
+# true: 启用颜色, false: 禁用颜色, "auto": 自动检测终端支持
+# 颜色能提升可读性，但在某些环境中可能不被支持
+enable_colors = true
+
+# 启用表情符号显示 | Enable emoji display  
+# true: 启用Emoji, false: 禁用Emoji, "auto": 自动检测终端支持
+# 注意：此设置与 terminal.force_emoji 配合工作
+enable_emoji = true
+
+# 启用Nerd Font图标显示 | Enable Nerd Font icon display
+# true: 启用Nerd Font, false: 禁用Nerd Font, "auto": 自动检测字体支持
+# 需要终端字体支持 Nerd Font 图标
+enable_nerd_font = true
+
+# 分隔符颜色 | Separator color
+# 支持标准终端颜色：black, red, green, yellow, blue, magenta, cyan, white
+# 也支持亮色变体：bright_red, bright_green 等
+separator_color = "white"
+
+# 分隔符前空格 | Space before separator
+# 在分隔符前添加的空格字符，用于调整视觉间距
+separator_before = " "
+
+# 分隔符后空格 | Space after separator  
+# 在分隔符后添加的空格字符，用于调整视觉间距
+separator_after = " "
+
+# 紧凑模式 | Compact mode
+# 启用后会减少空格和间距，适合窄屏幕环境
+compact_mode = false
+
+# 最大宽度限制 | Maximum width limit
+# 限制状态栏的最大字符宽度，0表示不限制
+# 超过限制时会自动省略或缩短内容
+max_width = 120
+
+# ==================== 主题配置 ====================
+# 每个主题都有独特的视觉风格和特性
+# 主题选择通过上面的 theme 字段控制
+
+[themes.classic]
+# 启用彩色渐变 | Enable gradient colors
+# 在progress bar和状态显示中使用渐变色彩效果
+enable_gradient = true
+
+# 忽略分隔符设置 | Ignore separator settings  
+# true: 使用主题内置分隔符, false: 使用 style.separator 设置
+ignore_separator = false
+
+# 精细进度条 | Fine-grained progress bar
+# 使用更精细的字符显示progress bar，提升视觉效果
+fine_progress = false
+
+# 胶囊样式 | Capsule style
+# 使用圆角胶囊样式包裹组件，modern UI风格
+capsule_style = false
+
+[themes.powerline]
+# Powerline主题 - 现代箭头连接风格
+# 需要支持Powerline字体的终端才能正确显示
+enable_gradient = true
+ignore_separator = false
+
+# 精细进度条在Powerline主题中效果更佳
+fine_progress = true
+capsule_style = false
+
+[themes.capsule]
+# Capsule主题 - 现代胶囊样式  
+# 圆角边框，适合现代化UI环境
+enable_gradient = true
+
+# 胶囊样式通常忽略传统分隔符
+ignore_separator = true
+fine_progress = true
+
+# 胶囊主题的核心特性
+capsule_style = true
+
+# ==================== 组件配置 ====================
+# 状态栏由多个组件组成，每个组件负责显示特定信息
+# 所有组件都支持三级图标系统：Nerd Font → Emoji → Text
+
+[components]
+# 组件显示顺序 | Component display order
+# 定义组件在状态栏中的排列顺序，可以调整或删除不需要的组件
+order = ["project", "model", "branch", "tokens", "usage", "status"]
+
+# -------------------- 项目组件 --------------------
+# 显示当前项目或工作区名称
+
+[components.project]
+# 是否启用该组件 | Whether to enable this component
+enabled = true
+# 颜色配置 | Color configuration  
+# 支持标准终端颜色：black, red, green, yellow, blue, magenta, cyan, white
+icon_color = "blue"
+text_color = "white" # 文字颜色
+
+# 三级图标系统 | Three-level icon system
+# 系统会根据终端能力自动选择合适的图标类型
+emoji_icon = "📁"        # Emoji图标 - 兼容性最好，通用支持
+nerd_icon = ""         # Nerd Font图标 - 需要终端字体支持
+text_icon = "[P]"       # 文本图标 - 兼容性最佳，所有终端都支持
+show_when_empty = false # 当项目为空时是否显示
+
+# -------------------- 模型组件 --------------------
+# 显示当前使用的Claude模型名称
+[components.model]
+enabled = true
+icon_color = "cyan"
+text_color = "white"
+emoji_icon = "🤖"
+nerd_icon = ""
+text_icon = "[M]"
+# 显示模型全名 | Show full model name
+# false: 显示缩写版本（如 S4.5），true: 显示完整名称（如 Sonnet 4.5）
+show_full_name = false
+
+# 自定义模型名映射 | Custom model name mapping
+# 将长模型名映射为简短易读的名称，节省状态栏空间。此处仅用于修改自定义映射，实际在代码内已有默认规则
+[components.model.mapping]
+# Opus 模型
+"claude-opus-4-1-20250805" = "O4.1"
+"claude-opus-4-20250514" = "O4"
+
+# Sonnet 模型  
+"claude-sonnet-4-5-20250929" = "S4.5"
+"claude-sonnet-4-5-20250929[1m]" = "S4.5[1m]"
+"claude-sonnet-4-20250514" = "S4"
+"claude-sonnet-4-20250514[1m]" = "S4[1m]"
+
+# Haiku 模型
+"claude-3-5-haiku-20241022" = "H3.5"
+"claude-3-haiku-20240307" = "H3"
+
+# 自定义模型长名称映射 | Custom model long name mapping  
+# 当 show_full_name = true 时显示的友好名称。此处仅用于修改自定义映射，实际在代码内已有默认规则
+[components.model.long_name_mapping]
+# Opus 模型
+"claude-opus-4-1-20250805" = "Opus 4.1"
+"claude-opus-4-20250514" = "Opus 4"
+
+# Sonnet 模型
+"claude-sonnet-4-5-20250929" = "Sonnet 4.5"
+"claude-sonnet-4-5-20250929[1m]" = "Sonnet 4.5[1m]"
+"claude-sonnet-4-20250514" = "Sonnet 4"
+"claude-sonnet-4-20250514[1m]" = "Sonnet 4[1m]"
+"claude-3-7-sonnet-20250219" = "Sonnet 3.7"
+
+# Haiku 模型
+"claude-3-5-haiku-20241022" = "Haiku 3.5"
+"claude-3-haiku-20240307" = "Haiku 3"
+
+# -------------------- 分支组件 --------------------
+# 显示Git分支信息和工作区状态
+[components.branch]
+enabled = true
+icon_color = "green"
+text_color = "white"
+emoji_icon = "🌿"
+nerd_icon = ""
+text_icon = "[B]"
+# 无Git仓库时是否显示 | Show when not in Git repository
+show_when_no_git = false
+
+# 分支名最大长度 | Maximum length of branch name
+# 超过此长度的分支名会被截断，避免状态栏过长
+max_length = 15
+
+[components.branch.status]
+show_dirty = true        # 显示脏工作区状态
+show_ahead_behind = true # 显示ahead/behind计数
+show_stash_count = true  # 显示stash数量
+
+[components.branch.status_icons]
+dirty_emoji = "⚡"      # 脏工作区图标
+ahead_emoji = "🔼"      # ahead提交图标
+behind_emoji = "🔽"     # behind提交图标
+stash_emoji = "📦"      # stash存储图标
+dirty_nerd = "\uF0E7"  # 脏工作区 Nerd Font图标
+ahead_nerd = "\uF062"  # ahead提交 Nerd Font图标
+behind_nerd = "\uF063" # behind提交 Nerd Font图标
+stash_nerd = "\uF01C"  # stash存储 Nerd Font图标
+dirty_text = "[*]"     # 脏工作区文本图标
+ahead_text = "[↑]"     # ahead提交文本图标
+behind_text = "[↓]"    # behind提交文本图标
+stash_text = "[S]"     # stash存储文本图标
+
+[components.branch.status_colors]
+clean = "green"    # 干净状态颜色
+dirty = "yellow"   # 脏工作区颜色
+ahead = "cyan"     # ahead提交颜色
+behind = "magenta" # behind提交颜色
+operation = "red"  # 操作颜色
+
+# -------------------- Token组件 --------------------
+# 显示Token使用情况和上下文窗口进度，支持可视化进度条和阈值警告
+[components.tokens]
+enabled = true
+icon_color = "yellow"
+text_color = "white"
+emoji_icon = "📊"
+nerd_icon = ""
+text_icon = "[T]"
+# 显示彩色渐变进度条 | Show gradient progress bar
+show_gradient = true
+
+# 显示进度条 | Show progress bar - 以可视化方式显示Token使用比例
+show_progress_bar = true
+
+# 显示百分比 | Show percentage - 显示具体的百分比数值
+show_percentage = true
+
+# 显示原始数字 | Show raw numbers - 显示具体的Token数量（如 "1500/8192"）
+show_raw_numbers = false
+
+# 进度条宽度 | Progress bar width - 进度条的字符宽度，影响显示精度
+progress_width = 15
+
+# 进度条字符配置 | Progress bar characters
+[components.tokens.progress_bar_chars]
+filled = "█" # 已填充区域字符
+empty = "░"  # 空白区域字符  
+backup = "▓" # 备份区域字符（接近阈值时使用）
+
+# Token状态颜色配置 | Token status colors
+[components.tokens.colors]
+safe = "green"     # 安全状态颜色（低于warning阈值）
+warning = "yellow" # 警告状态颜色（warning-danger范围）
+danger = "red"     # 危险状态颜色（超过danger阈值）
+
+# Token阈值配置 | Token thresholds (百分比)
+# 定义不同警告级别的Token使用百分比阈值
+[components.tokens.thresholds]
+warning = 60  # 警告阈值（百分比）- 开始显示黄色警告
+danger = 85   # 危险阈值（百分比）- 显示红色危险警告
+backup = 85   # 备份区域阈值（百分比）- 进度条备份显示
+critical = 95 # 临界阈值（百分比）- 显示临界状态图标
+
+# Token状态图标配置 | Token status icons
+# 在特定阈值时显示的状态图标（三级图标系统）
+[components.tokens.status_icons.emoji]
+backup = "⚡"   # 备份区域图标（接近阈值）
+critical = "🔥" # 临界状态图标（极度危险）
+
+[components.tokens.status_icons.nerd]
+backup = ""
+critical = ""
+
+[components.tokens.status_icons.text]
+backup = "[!]"
+critical = "[X]"
+
+# 上下文窗口大小映射 | Context window size mapping
+# 为不同模型定义上下文窗口大小（Token数）
+[components.tokens.context_windows]
+default = 200_000                          # 默认窗口大小
+"claude-opus-4-1-20250805" = 200_000
+"claude-opus-4-20250514" = 200_000
+"claude-sonnet-4-20250514" = 200_000
+"claude-sonnet-4-20250514[1m]" = 1_000_000 # 1m模型特殊窗口大小
+"claude-3-7-sonnet-20250219" = 200_000
+"claude-3-5-haiku-20241022" = 200_000
+"claude-3-haiku-20240307" = 200_000
+
+# -------------------- Usage组件 --------------------
+# 显示会话成本和代码行数统计
+[components.usage]
+enabled = true
+icon_color = "cyan"
+text_color = "white"
+emoji_icon = "💰"
+nerd_icon = " "
+text_icon = "[$]"
+# 数值精度 | Decimal precision - 成本显示的小数位数
+precision = 2
+
+# 显示模式 | Display mode
+# "session": 仅显示当前session成本（如 "$0.05"）
+# "conversation": 显示跨session累加成本（如 "$6.96 (2 sessions)"）
+display_mode = "session"
+
+# 显示添加的代码行数 | Show lines added
+show_lines_added = true
+
+# 显示删除的代码行数 | Show lines removed  
+show_lines_removed = false
+
+# -------------------- Status组件 --------------------
+# 显示Claude Code的当前状态和最近错误信息
+[components.status]
+enabled = true
+icon_color = "magenta"
+text_color = "white"
+emoji_icon = "✨"
+nerd_icon = ""
+text_icon = "[S]"
+
+# 显示最近错误 | Show recent errors - 显示最近发生的错误信息
+show_recent_errors = true
+
+# Status状态图标配置 | Status icons config  
+# 定义不同Claude Code状态的图标显示
+[components.status.icons.emoji]
+ready = "✅"    # 就绪状态
+thinking = "💭" # 思考中状态
+tool = "🔧"     # 工具调用状态
+error = "❌"    # 错误状态
+warning = "⚠️" # 警告状态
+
+[components.status.icons.nerd]
+ready = ""
+thinking = ""
+tool = ""
+error = ""
+warning = ""
+
+[components.status.icons.text]
+ready = "[OK]"
+thinking = "[...]"
+tool = "[TOOL]"
+error = "[ERR]"
+warning = "[WARN]"
+
+# Status状态颜色配置 | Status colors config
+[components.status.colors]
+ready = "green"     # 就绪状态颜色
+thinking = "yellow" # 思考状态颜色
+tool = "blue"       # 工具调用状态颜色
+error = "red"       # 错误状态颜色
+warning = "yellow"  # 警告状态颜色
+
+# ==================== 预设映射配置 ====================
+# 定义preset字符串中每个字符对应的组件名称
+[preset_mapping]
+P = "project" # P字符对应项目组件
+M = "model"   # M字符对应模型组件
+B = "branch"  # B字符对应分支组件
+T = "tokens"  # T字符对应Token组件
+U = "usage"   # U字符对应Usage组件
+S = "status"  # S字符对应Status组件
+
+# ==================== 高级配置 ====================
+# 系统级高级功能配置
+[advanced]
+# 启用缓存 | Enable cache - 缓存Git操作和组件渲染结果
+cache_enabled = true
+
+# 最近错误条数 | Recent error count - 保留的最近错误数量
+recent_error_count = 5
+
+# Git命令超时 | Git command timeout (毫秒) - Git操作的超时时间
+git_timeout = 1_000
+
+# 自定义颜色代码 | Custom color codes - 扩展颜色映射
+custom_color_codes = {}
+
+# ==================== 多行显示配置 ====================
+# 多行状态栏系统配置 - 支持Widget扩展功能
+[multiline]
+# 是否启用多行显示 | Enable multiline display
+# 启用后可以显示多行扩展信息，如API数据、统计信息等（默认已启用，可改为 false 关闭）
+enabled = true
+
+# 最大行数 | Maximum rows - 限制多行显示的最大行数
+max_rows = 5
+
+# 各行样式配置 | Row style configuration
+[multiline.rows]
+# 第1行配置 | Row 1 configuration
+row1 = { separator = " | ", max_width = 120 }
+
+# ==================== 实验性功能 ====================
+# 实验性功能开关，可能不稳定
+[experimental]
+# 启用实验性功能 | Enable experimental features
+# 开启后可能包含未完全测试的新功能
+enable_experimental = false
+
+# ====================================================================
+# 配置完成！
+# ====================================================================
+#
+# 关键提醒：
+# 1. 修改配置后建议运行 `npx ccsp@latest validate` 验证
+# 2. 多行功能默认开启，如需关闭可设置 multiline.enabled = false
+# 3. API密钥等敏感信息建议配置在 ~/.claude/settings.json 的 envs 字段
+# 4. 终端字体不支持时会自动回退到兼容性更好的图标类型，但终端能力检测有局限性。可以使用force强制设定图标
+# 5. 所有颜色设置支持标准终端颜色名称
+#
+# ====================================================================

@@ -1,0 +1,197 @@
+preset = "MT"
+theme = "classic"
+language = "en"
+debug = false
+
+[terminal]
+force_nerd_font = true
+force_emoji = true 
+force_text = false
+
+[storage]
+enableConversationTracking = true
+enableCostPersistence = true
+sessionExpiryDays = 30
+enableStartupCleanup = true
+
+[style]
+separator = "|"
+enable_colors = true
+enable_emoji = true
+enable_nerd_font = true
+separator_color = "white"
+separator_before = " "
+separator_after = " "
+
+[components]
+order = []
+
+[components.project]
+enabled = true
+icon_color = "white"
+text_color = "white"
+emoji_icon = "📁"
+nerd_icon = ""
+text_icon = "[P]"
+show_when_empty = false
+
+[components.model]
+enabled = true
+icon_color = "white"
+text_color = "white"
+emoji_icon = "🤖"
+nerd_icon = "󰧑"
+text_icon = "[M]"
+show_full_name = false
+
+[components.model.mapping]
+
+[components.model.long_name_mapping]
+
+[components.branch]
+enabled = true
+icon_color = "green"
+text_color = "white"
+emoji_icon = "🌿"
+nerd_icon = ""
+text_icon = "[B]"
+show_when_empty = false
+show_when_no_git = false
+max_length = 20
+
+[components.branch.status]
+show_dirty = false
+show_ahead_behind = false
+show_stash_count = false
+
+[components.branch.status_icons]
+dirty_emoji = "⚡"
+ahead_emoji = "🔼"
+behind_emoji = "🔽"
+stash_emoji = "📦"
+dirty_nerd = ""
+ahead_nerd = ""
+behind_nerd = ""
+stash_nerd = ""
+dirty_text = "[*]"
+ahead_text = "[↑]"
+behind_text = "[↓]"
+stash_text = "[S]"
+
+[components.branch.status_colors]
+clean = "green"
+dirty = "yellow"
+ahead = "cyan"
+behind = "magenta"
+operation = "red"
+
+[components.branch.performance]
+enable_cache = true
+cache_ttl = 5000
+git_timeout = 1000
+parallel_commands = true
+lazy_load_status = true
+skip_on_large_repo = true
+large_repo_threshold = 10000
+
+[components.tokens]
+enabled = true
+icon_color = "cyan"
+text_color = "white"
+emoji_icon = "📊"
+nerd_icon = ""
+text_icon = "[T]"
+show_zero = false
+format = "compact"
+show_progress_bar = true
+show_percentage = true
+show_raw_numbers = false
+progress_width = 10
+show_gradient = true
+
+[components.tokens.progress_bar_chars]
+filled = "█"
+empty = "░"
+backup = "▓"
+
+[components.tokens.colors]
+safe = "green"
+warning = "yellow"
+danger = "red"
+
+[components.tokens.thresholds]
+warning = 60.0
+danger = 85.0
+backup = 85.0
+critical = 95.0
+
+[components.tokens.status_icons.emoji]
+backup = "⚡"
+critical = "🔥"
+
+[components.tokens.status_icons.nerd]
+backup = ""
+critical = ""
+
+[components.tokens.status_icons.text]
+backup = "[!]"
+critical = "[X]"
+
+[components.tokens.context_windows]
+default = 200000
+
+[components.usage]
+enabled = true
+icon_color = "yellow"
+text_color = "white"
+emoji_icon = "💰"
+nerd_icon = ""
+text_icon = "[U]"
+display_mode = "smart"
+precision = 2
+show_lines_added = false
+show_lines_removed = false
+
+[components.status]
+enabled = true
+icon_color = "magenta"
+text_color = "white"
+emoji_icon = "✨"
+nerd_icon = ""
+text_icon = "[S]"
+show_when_idle = false
+show_recent_errors = true
+
+[components.status.icons.emoji]
+ready = "✅"
+thinking = "💭"
+tool = "🔧"
+error = "❌"
+warning = "⚠️"
+
+[components.status.icons.nerd]
+ready = ""
+thinking = ""
+tool = ""
+error = ""
+warning = ""
+
+[components.status.icons.text]
+ready = "[OK]"
+thinking = "[...]"
+tool = "[TOOL]"
+error = "[ERR]"
+warning = "[WARN]"
+
+[components.status.colors]
+ready = "green"
+thinking = "yellow"
+tool = "blue"
+error = "red"
+warning = "yellow"
+
+[multiline]
+enabled = true
+max_rows = 5
+
+[multiline.rows]
