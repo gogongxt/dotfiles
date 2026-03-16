@@ -181,7 +181,7 @@ if command -v claude >/dev/null 2>&1; then
       source ~/.zshrc
       proxy off >/dev/null 2>&1
       if command -v specstory >/dev/null 2>&1; then
-        specstory run claude --no-cloud-sync "$@"
+        specstory run claude -c 'ccr code' --no-cloud-sync "$@"
       else
         command claude "$@"
       fi

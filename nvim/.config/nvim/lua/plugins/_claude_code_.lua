@@ -148,7 +148,7 @@ end
 
 local claude_specstory
 if vim.fn.executable "specstory" == 1 then
-  claude_specstory = "specstory run claude --no-cloud-sync"
+  claude_specstory = "specstory run claude -c 'ccr code' --no-cloud-sync"
 else
   claude_specstory = "claude"
 end
