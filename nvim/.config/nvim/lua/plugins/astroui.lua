@@ -91,10 +91,12 @@ return {
           buffer_fg = "#a5adce",
           buffer_active_bg = "#a6d189",
           buffer_active_fg = "#000000",
-          -- 让可见buffer也使用和active相同的背景色，这样切换到neotree/terminal等时不会丢失绿色背景
-          buffer_visible_bg = "#a6d189",
+          -- buffer_active_bg: 当前聚焦的 buffer（绿色）
+          -- buffer_visible_bg: 可见但非聚焦的 buffer（浅绿色，同色系更浅）
+          buffer_visible_bg = "#86a189",
           buffer_visible_fg = "#000000",
           -- 修改路径颜色，让它在绿色背景上更清晰可见（使用深灰色/黑色）
+          buffer_path_fg = "#51576d",
           buffer_active_path_fg = "#51576d",
           buffer_visible_path_fg = "#51576d",
         },
