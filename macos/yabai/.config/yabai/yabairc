@@ -78,15 +78,6 @@ yabai -m rule --add app="^kitty$" opacity=1.0
 # yabai -m signal --add event=window_moved \
 #     action="python3 $HOME/.config/sketchybar/yabai.py >> $HOME/.config/yabai/log.log"
 
-
-# yabai -m signal --add event=window_created action="python3 $HOME/.config/sketchybar/spaces.py >> $HOME/.config/yabai/log.log"
-# yabai -m signal --add event=window_destroyed action="python3 $HOME/.config/sketchybar/spaces.py >> $HOME/.config/yabai/log.log"
-# yabai -m signal --add event=window_focused action="python3 $HOME/.config/sketchybar/spaces.py >> $HOME/.config/yabai/log.log"
-# yabai -m signal --add event=window_moved action="python3 $HOME/.config/sketchybar/spaces.py >> $HOME/.config/yabai/log.log"
-# yabai -m signal --add event=window_created action="python3 $HOME/.config/sketchybar/spaces.py"
-# yabai -m signal --add event=window_destroyed action="python3 $HOME/.config/sketchybar/spaces.py"
-# yabai -m signal --add event=window_minimized action="python3 $HOME/.config/sketchybar/spaces.py"
-# yabai -m signal --add event=window_deminimized action="python3 $HOME/.config/sketchybar/spaces.py"
 yabai -m signal --add event=window_created action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
 yabai -m signal --add event=window_destroyed action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
 yabai -m signal --add event=window_minimized action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
@@ -118,10 +109,6 @@ yabai -m signal --add event=application_terminated \
 # yabai -m signal --add event=space_created action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
 # yabai -m signal --add event=space_destroyed action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
 # yabai -m signal --add event=space_changed action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
-
-# yabai -m signal --add event=space_changed  action="python3 $HOME/.config/sketchybar/spaces.py"
-# yabai -m signal --add event=window_focused action="python3 $HOME/.config/sketchybar/spaces.py"
-# yabai -m signal --add event=window_moved action="python3 $HOME/.config/sketchybar/spaces.py"
 
 # yabai -m rule --add app="^NetEaseMusic$" space=music
 yabai -m rule --add title="scratchpad" manage=off

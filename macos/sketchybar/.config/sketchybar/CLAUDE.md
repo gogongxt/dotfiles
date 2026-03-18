@@ -4,111 +4,101 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This is a SketchyBar configuration for macOS that integrates with yabai (window manager) to create a dynamic status bar with space indicators and live window previews. The configuration automatically adapts to single or multi-monitor setups.
-
-## Common Commands
-
-### Reloading Configuration
-```bash
-# Reload sketchybar after config changes
-sketchybar --reload
-```
-
-### Testing Python Scripts
-```bash
-# Test space display update for a specific space
-python3 ~/.config/sketchybar/plugins/space_display.py <space_id> <True|False>
-
-# Example: update space 2 as selected
-python3 ~/.config/sketchybar/plugins/space_display.py 2 True
-
-# Test spaces.py with environment variables (for space change events)
-YABAI_SPACE_INDEX=2 YABAI_RECENT_SPACE_INDEX=1 python3 ~/.config/sketchybar/plugins/spaces.py
-```
-
-### Yabai Queries
-```bash
-# Query all displays
-yabai -m query --displays
-
-# Query all spaces
-yabai -m query --spaces
-
-# Query all windows
-yabai -m query --windows
-
-# Focus a specific space
-yabai -m space --focus <space_id>
-```
+This is a [SketchyBar](https://github.com/FelixKratz/SketchyBar) configuration for macOS. It provides a status bar at the bottom of the screen with space indicators, window previews, and music/lyric display integration with NetEase Cloud Music.
 
 ## Architecture
 
-### Dynamic Space Grouping
+### Main Configuration
 
-The configuration automatically adjusts the number of spaces per display based on monitor count:
-- **Single monitor**: 10 spaces per screen (spaces 1-10)
-- **Multiple monitors**: 5 spaces per screen (spaces 1-5 on display 1, 6-10 on display 2, etc.)
+- **`sketchybarrc`** - Main shell configuration script that initializes the bar, creates space items, and launches plugins. Uses dynamic space grouping: 10 spaces per display for single monitor, 5 spaces per display for multi-monitor setups.
 
-This is controlled by the `K` variable in `sketchybarrc` (lines 44-50) and the `get_display_grouping_factor()` function in `space_display.py`.
+### Plugin System
 
-### Item Naming Convention
+The `plugins/` directory contains both shell and Python scripts:
 
-- **Space items**: `space.<number>` (e.g., `space.1`, `space.2`)
-- **Window items**: `win.<space_id>.<window_id>` (e.g., `win.1.1234`)
-- **Spacer items**: `space.<number>.spacer`
-- **Bracket groups**: `win.<space_id>` (groups space item with its windows)
+- **`lyric.py`** - Core music/lyric display plugin
 
-### Main Configuration Flow
+  - Connects to local NetEase Cloud Music API (port 3123)
+  - Streams media control events via `media-control stream --micros`
+  - Fetches lyrics from NetEase API and caches them in `~/.cache/sketchybar/lyrics/`
+  - Updates sketchybar items: `music_artwork`, `song_title`, `lyric`, `lyric_next`
+  - Supports collapsed/expanded state via `~/.cache/sketchybar/lyric.state`
 
-1. **Initialization** (`sketchybarrc` lines 53-86):
-   - Queries yabai for display count
-   - Creates N space items (default: 15)
-   - Assigns each space to a display based on grouping factor
-   - Sets up click scripts and update scripts for each space
+- **`space_display.py`** - Displays window icons in each space
 
-2. **Space Updates** (`plugins/space_display.py`):
-   - Called when a space is clicked or focus changes
-   - Queries yabai for windows in the target space
-   - Filters out hidden/minimized windows and excluded apps (line 9-10)
-   - Removes outdated window items
-   - Creates new window preview items with app icons
-   - Creates bracket groups for visual grouping
+  - Queries yabai for window information
+  - Creates bracket groups combining space + window items
+  - Shows focused space with green highlight (`0xff89b482`)
+  - Filters excluded apps: `WeChat`, `D-Chat`, `ripdrag`, `NetEaseMusic`
+  - Filters excluded titles: `scratchpad`
 
-3. **Event Handling** (`plugins/spaces.py`):
-   - Designed to be called from yabai signals or manually
-   - Reads environment variables `YABAI_SPACE_INDEX` and `YABAI_RECENT_SPACE_INDEX`
-   - Updates both current and previous space displays
+- **`space_poller.py`** - Polling daemon that updates all spaces
 
-### Exclusion Lists
+  - Runs in background, queries yabai periodically
+  - Imports and reuses functions from `space_display.py` for efficiency
 
-Windows are filtered based on:
-- **Titles**: `["scratchpad"]` (line 9 in `space_display.py`)
-- **Apps**: `["WeChat", "D-Chat", "ripdrag"]` (line 10 in `space_display.py`)
+- **`yabai.py`** - Legacy helper script for yabai integration
 
-Modify these lists to include/exclude specific windows from the bar.
+- **Shell scripts** (legacy/not currently used): `clock.sh`, `battery.sh`, `volume.sh`, `front_app.sh`, `space.sh`
 
-### Dependencies
+### Key Dependencies
 
-- **SketchyBar**: `/opt/homebrew/bin/sketchybar`
-- **yabai**: `/opt/homebrew/bin/yabai`
-- **Python 3**: Required for space/window management scripts
-- **jq**: JSON parsing for display count queries
-- **Hack Nerd Font**: Icon font for labels
-- **sketchybar-app-font**: App icon font
+- **sketchybar** - Status bar application
+- **yabai** - Window manager (query via `/opt/homebrew/bin/yabai -m query`)
+- **media-control** - For streaming media playback events
+- **NeteaseCloudMusicApi** - Node.js API server for lyric fetching (launched on startup)
+- **jq** - JSON processing for display count detection
 
-## Color Scheme
+## Common Tasks
 
-- **Active space**: `0xff89b482` (green-ish background)
-- **Active icon**: `0xffffffff` (white)
-- **Inactive icon**: `0x80ffffff` (50% transparent white)
-- **Border**: `0x80ffffff` (50% transparent white)
+### Reload Configuration
 
-## Visual Properties
+```bash
+sketchybar --reload
+```
 
-- **Bar height**: 30px
-- **Bar position**: bottom
-- **Blur radius**: 20px
-- **Bracket corner radius**: 5px
-- **Window icon scale**: 0.75
-- **Window item height**: 10px
-- **Bracket group height**: 28px
+### Restart a Specific Plugin
+
+```bash
+# Restart lyric plugin
+pkill -f lyric.py && python3 "$CONFIG_DIR/plugins/lyric.py" &
+
+# Restart space poller
+pkill -f space_poller.py && python3 "$CONFIG_DIR/plugins/space_poller.py" &
+```
+
+### Debug Plugin Output
+
+```bash
+# Run lyric plugin in foreground to see output
+python3 plugins/lyric.py
+```
+
+### Check Yabai Query
+
+```bash
+# Query current spaces
+/opt/homebrew/bin/yabai -m query --spaces
+
+# Query windows
+/opt/homebrew/bin/yabai -m query --windows
+
+# Query displays
+/opt/homebrew/bin/yabai -m query --displays
+```
+
+## Item Naming Convention
+
+- Space items: `space.1`, `space.2`, ..., `space.15`
+- Space spacers: `space.{i}.spacer`
+- Window items: `win.{space_id}.{window_id}`
+- Bracket groups: `win.{space_id}`
+- Music items: `music_artwork`, `song_title`, `lyric`, `lyric_next`
+
+## Color Conventions
+
+- Active/focused: `0xffffffff` (white)
+- Inactive: `0x80ffffff` (semi-transparent white)
+- Playing: `0xdd00ff00` (green)
+- Background: `0x40000000` (semi-transparent black)
+- Selected space highlight: `0xff89b482` (green)

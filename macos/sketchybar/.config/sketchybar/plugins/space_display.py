@@ -7,7 +7,7 @@ import os
 from typing import List, Dict, Any, Optional
 
 exclude_title = ["scratchpad"]
-exclude_app = ["WeChat", "D-Chat", "ripdrag"]
+exclude_app = ["WeChat", "D-Chat", "ripdrag", "NetEaseMusic"]
 
 def get_display_grouping_factor() -> int:
     """Get the number of spaces per display based on current monitor count.
