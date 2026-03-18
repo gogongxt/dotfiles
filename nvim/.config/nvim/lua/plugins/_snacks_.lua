@@ -68,6 +68,18 @@ return {
             end,
             desc = "Find words in all files",
           },
+          ["<Leader>ff"] = {
+            function()
+              require("snacks").picker.files {
+                hidden = vim.tbl_get((vim.uv or vim.loop).fs_stat ".git" or {}, "type") == "directory",
+              }
+            end,
+            desc = "Find files",
+          },
+          ["<Leader>fF"] = {
+            function() require("snacks").picker.files { hidden = true, ignored = true } end,
+            desc = "Find all files",
+          },
           ["<Leader>fr"] = { function() require("snacks").picker.recent() end, desc = "Find recent files" },
           ["<Leader>fR"] = {
             function() require("snacks").picker.recent { filter = { cwd = true } } end,
@@ -100,6 +112,35 @@ return {
           ["<Leader>dl"] = { function() require("snacks").picker.dap_breakpoints() end, desc = "Find DAP breakpoints" },
         },
         v = {
+          ["<Leader>ff"] = {
+            function()
+              local visual = require("snacks.picker.util").visual()
+              local search = visual and visual.text or ""
+              require("snacks").picker.files {
+                pattern = search,
+                hidden = vim.tbl_get((vim.uv or vim.loop).fs_stat ".git" or {}, "type") == "directory",
+              }
+            end,
+            desc = "Find files (search selection)",
+          },
+          ["<Leader>fF"] = {
+            function()
+              local visual = require("snacks.picker.util").visual()
+              local search = visual and visual.text or ""
+              require("snacks").picker.files { pattern = search, hidden = true, ignored = true }
+            end,
+            desc = "Find all files (search selection)",
+          },
+          ["<Leader>fs"] = {
+            function() require("snacks").picker.grep_word { args = {}, regex = false, live = true } end,
+            desc = "Find string",
+          },
+          ["<Leader>fS"] = {
+            function()
+              require("snacks").picker.grep_word { args = {}, regex = false, live = true, hidden = true, ignored = true }
+            end,
+            desc = "Find string in all files",
+          },
           ["<Leader>fw"] = {
             function() require("snacks").picker.grep_word { args = {}, regex = false, live = true } end,
             desc = "Find words",
