@@ -118,7 +118,7 @@ while IFS= read -r window; do
 		if [ "$window_id" == "$cur_window_id" ]; then
 			# 如果当前窗口已经是匹配的窗口，则移动到空间10
 			bash $HOME/.config/yabai/scripts/safe_focus_space.sh "check" "10"
-			yabai -m window --space 10
+			yabai -m window $window_id --space 10
 			found_window=true
 			break
 		else
