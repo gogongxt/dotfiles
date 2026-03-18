@@ -62,7 +62,8 @@ def get_space_windows(space_id: int) -> List[Dict[str, Any]]:
                 and not w['is-hidden']
                 and not w['is-minimized']
                 and w['title'] not in exclude_title
-                and w['app'] not in exclude_app 
+                and w['app'] not in exclude_app
+                and not (w['app'] == "TencentMeeting" and w.get('title') != "腾讯会议")
         ]
         return res_w
     except (subprocess.CalledProcessError, json.JSONDecodeError):
