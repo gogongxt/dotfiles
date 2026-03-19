@@ -15,10 +15,29 @@ alias gg="serie"
 alias gs="git status"
 alias gr="git remote -v"
 alias gt="git tag"
-alias gl="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%ci) %C(green)%cn %C(reset)%s'  --all --graph --abbrev-commit -10"
-alias gll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%ci) %C(green)%cn %C(reset)%s'  --all --graph --abbrev-commit -20"
-alias glll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%ci) %C(green)%cn %C(reset)%s'  --all --graph --abbrev-commit -40"
-alias gllll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%ci) %C(green)%cn %C(reset)%s'  --all --graph --abbrev-commit"
+alias gb='
+current=$(git branch --show-current)
+branch=$(
+  {
+    echo "$current"
+    git branch --format="%(refname:short)" | grep -v "^$current$"
+  } | fzf \
+    --ansi \
+    --preview "git --no-pager log --color=always --pretty=format:\"%C(auto)%h %C(cyan)(%cd) %C(green)%cn %C(reset)%s\" --date=format:\"%Y-%m-%d %H:%M:%S\" -40 {}" \
+    --preview-window=down:70%
+)
+if [ -z "$branch" ]; then
+  return
+elif [ "$branch" = "$current" ]; then
+  echo "Already on branch: $current"
+else
+  git checkout "$branch"
+fi
+'
+alias gl="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%cd) %C(green)%cn %C(reset)%s' --date=format:'%Y-%m-%d %H:%M:%S' --all --graph --abbrev-commit -10"
+alias gll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%cd) %C(green)%cn %C(reset)%s' --date=format:'%Y-%m-%d %H:%M:%S' --all --graph --abbrev-commit -20"
+alias glll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%cd) %C(green)%cn %C(reset)%s' --date=format:'%Y-%m-%d %H:%M:%S' --all --graph --abbrev-commit -40"
+alias gllll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%cd) %C(green)%cn %C(reset)%s' --date=format:'%Y-%m-%d %H:%M:%S' --all --graph --abbrev-commit"
 alias gam='git add . && echo "exec git add all" && git commit -m '
 alias gcm='git commit --amend'
 function gsp() {
@@ -125,7 +144,7 @@ alias nv="watch -d -n 1 nvidia-smi"
 fzf_ignore=".wine,.git,.idea,.vscode,node_modules,build"
 export FZF_DEFAULT_COMMAND="fd --hidden --follow --exclude={${fzf_ignore}} "
 export FZF_DEFAULT_OPTS="--height 80% --layout=reverse --preview 'echo {} | ~/.sh_help/functions/fzf_preview.py' --preview-window=down --border \
-  --bind ctrl-d:page-down,ctrl-u:page-up,alt-p:toggle-preview,ctrl-f:preview-page-down,ctrl-b:preview-page-up \
+  --bind ctrl-d:page-down,ctrl-u:page-up,alt-p:toggle-preview,ctrl-f:preview-half-page-down,ctrl-b:preview-half-page-up \
   --color=bg+:#555555
 "
 export FZF_CTRL_R_OPTS="
