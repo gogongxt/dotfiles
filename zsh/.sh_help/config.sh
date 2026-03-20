@@ -180,6 +180,7 @@ alias myssh='python3 ~/.scripts/ssh/myssh.py'
 alias password='python3 ~/.scripts/ssh/password.py'
 alias documents='python3 ~/.scripts/code/documents.py'
 alias specstory_clean='python3 ~/.scripts/code/specstory_clean.py'
+export CLAUDE_CODE_ATTRIBUTION_HEADER=0
 if command -v claude >/dev/null 2>&1; then
   claude() {
     (
