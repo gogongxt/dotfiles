@@ -40,44 +40,6 @@ alias glll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%cd) %C(gr
 alias gllll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%cd) %C(green)%cn %C(reset)%s' --date=format:'%Y-%m-%d %H:%M:%S' --all --graph --abbrev-commit"
 alias gam='git add . && echo "exec git add all" && git commit -m '
 alias gcm='git commit --amend'
-function gsp() {
-  local stashed_something=0
-  # 检查工作区和暂存区是否有未提交的更改, git diff-index --quiet HEAD -- 会在有更改时返回1，没有更改时返回0
-  if ! git diff-index --quiet HEAD --; then
-    echo " stash (储藏本地更改)..."
-    # 使用 git stash push 并附带一条信息，方便识别 -u 参数表示同时储藏未被追踪的文件
-    if git stash push -u -m "gsp-stash-$(date +%s)"; then
-      stashed_something=1
-    else
-      echo " 'git stash' failed. Aborting. " >&2
-      return 1
-    fi
-  else
-    echo " Working directory is clean. No need to stash."
-  fi
-  echo " pull $@ ..."
-  # 将所有传递给函数的参数 ($@) 传递给 git pull
-  if ! git pull "$@"; then
-    echo " 'git pull' failed." >&2
-    # 如果拉取失败，并且我们之前确实储藏了东西，就尝试恢复它
-    if [ "$stashed_something" -eq 1 ]; then
-      echo " Attempting to restore your stashed changes..."
-      git stash pop
-    fi
-    return 1
-  fi
-  if [ "$stashed_something" -eq 1 ]; then # 如果我们之前储藏了更改，现在就把它恢复回来
-    echo " apply stash ..."
-    # 使用 pop 会在成功应用后删除该储藏，保持储藏列表干净
-    if ! git stash pop; then
-      echo " Warning: Could not automatically apply stash." >&2
-      echo " Your changes are still in the stash list." >&2
-      echo " Please resolve conflicts manually and then run 'git stash drop'. " >&2
-      return 1
-    fi
-  fi
-  echo " Done. Your branch is up-to-date and your changes are restored."
-}
 #🔼🔼🔼
 
 #🔽🔽🔽
@@ -94,7 +56,31 @@ else
 fi
 myvim() {
   if [ $# -gt 0 ]; then
-    eval "$MY_VIM_CMD \"\$@\""
+    local first_arg="$1"
+    local use_vim=0
+    # 检查第一个参数是否是文件
+    if [ -f "$first_arg" ]; then
+      # 获取文件大小 (字节)
+      local file_size=$(stat -c%s "$first_arg" 2>/dev/null || stat -f%z "$first_arg" 2>/dev/null)
+      local size_mb=$((file_size / 1024 / 1024))
+      # 获取文件行数
+      local line_count=$(wc -l < "$first_arg" 2>/dev/null | tr -d ' ')
+      # 获取最大单行长度 (扫描前1000行)
+      local max_line_length=$(head -n 1000 "$first_arg" | awk '{ if (length > max) max = length } END { print max+0 }')
+      # 如果文件大于10MB 或行数大于100000 或单行超过5000字符，使用vim
+      if [ "$size_mb" -gt 10 ] || [ "$line_count" -gt 100000 ] || [ "$max_line_length" -gt 5000 ]; then
+        use_vim=1
+      fi
+    fi
+    if [ "$use_vim" -eq 1 ]; then
+      if command -v vim >/dev/null 2>&1; then
+        vim "$@"
+      else
+        eval "$MY_VIM_CMD \"\$@\""
+      fi
+    else
+      eval "$MY_VIM_CMD \"\$@\""
+    fi
   else
     eval "$MY_VIM_CMD ."
   fi
