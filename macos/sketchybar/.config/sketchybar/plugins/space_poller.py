@@ -278,10 +278,10 @@ def group_windows_by_space(windows: List[Dict]) -> Dict[int, List[Dict]]:
             ):
                 continue
         else:
-            if window.get("level") == 1001:
+            if window.get("level") == 1001: # 悬浮窗
                 continue
-            # if window.get('title') == '腾讯会议':
-            #     continue
+            if window.get('title') == '腾讯会议' and not window.get('is-visible'): # 主页面（非会议屏幕共享页面）
+                continue
             pass
 
         space_id = window.get("space")
