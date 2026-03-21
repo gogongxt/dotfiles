@@ -312,6 +312,8 @@ return {
     }
     -- Disable file-system-specific mappings for document_symbols source
     opts.document_symbols = {
+      follow_cursor = false,
+      follow_tree_cursor = false, -- Automatically show symbol location when moving cursor in the tree
       window = {
         mappings = {
           ["y"] = false,
@@ -321,6 +323,45 @@ return {
         },
       },
     }
+
+    -- Add markdown fallback support for document_symbols
+    -- We need to patch after the plugin loads, so use a VeryLazy autocmd
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "LazyLoad",
+      callback = function(event)
+        if event.data == "neo-tree.nvim" then
+          local symbols_utils = require "neo-tree.sources.document_symbols.lib.symbols_utils"
+          local original_render = symbols_utils.render_symbols
+          symbols_utils.render_symbols = function(state, callback)
+            local bufnr = state.lsp_bufnr
+            if bufnr then
+              local ft = vim.api.nvim_buf_get_option(bufnr, "filetype")
+              if ft == "markdown" then
+                -- Check for LSP client
+                local get_clients = vim.lsp.get_clients or vim.lsp.get_active_clients
+                local has_lsp = false
+                for _, client in pairs(get_clients { bufnr = bufnr }) do
+                  if client.server_capabilities.documentSymbolProvider then
+                    has_lsp = true
+                    break
+                  end
+                end
+                -- Use markdown provider if no LSP
+                if not has_lsp then
+                  local md_ok, md_provider = pcall(require, "utils.neo-tree-markdown-provider")
+                  if md_ok then return md_provider.render_symbols(state, callback) end
+                end
+              end
+            end
+
+            return original_render(state, callback)
+          end
+
+          return true -- Remove the autocmd after execution
+        end
+      end,
+    })
+
     return opts
   end,
 }
