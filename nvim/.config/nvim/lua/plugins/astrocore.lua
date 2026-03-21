@@ -75,6 +75,7 @@ return {
 
         -- setting a mapping to false will disable it
         -- ["<C-S>"] = false,
+        ["<Leader>e"] = false, -- disable default Neo-tree toggle mapping
       },
     },
   },

@@ -1,6 +1,29 @@
 -- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
--- vim.keymap.set("n", "<leader>E", "<cmd>Neotree reveal<CR>", { desc = "Toggle Neo-tree & Reveal File" })
+vim.keymap.set(
+  "n",
+  "<leader>ee",
+  function() require("neo-tree.command").execute { source = "filesystem", toggle = true } end,
+  { desc = "Toggle Neo-tree filesystem" }
+)
+vim.keymap.set(
+  "n",
+  "<leader>eb",
+  function() require("neo-tree.command").execute { source = "buffers", toggle = true } end,
+  { desc = "Toggle Neo-tree buffers" }
+)
+vim.keymap.set(
+  "n",
+  "<leader>eo",
+  function() require("neo-tree.command").execute { source = "document_symbols", toggle = true } end,
+  { desc = "Toggle Neo-tree document symbols" }
+)
+vim.keymap.set(
+  "n",
+  "<leader>eg",
+  function() require("neo-tree.command").execute { source = "git_status", toggle = true } end,
+  { desc = "Toggle Neo-tree git status" }
+)
 
 local enable_smart_autofollow = false
 
@@ -112,6 +135,17 @@ end
 return {
   "nvim-neo-tree/neo-tree.nvim",
   opts = function(_, opts)
+    opts.sources = { "filesystem", "buffers", "document_symbols", "git_status" }
+    opts.source_selector = {
+      winbar = true,
+      content_layout = "center",
+      sources = {
+        { source = "filesystem", display_name = "󰉋 File" },
+        { source = "buffers", display_name = "󰈙 Bufs" },
+        { source = "document_symbols", display_name = " Outline" },
+        { source = "git_status", display_name = "󰊢 Git" },
+      },
+    }
     opts.window = {
       width = 30,
       mappings = {
@@ -137,8 +171,8 @@ return {
         L = "next_source",
         ["<c-\\>"] = "open_vsplit",
         ["<c-_>"] = "open_split",
-        ["d"] = "trash",         -- Use 'trash' command below, instead of 'delete' command.
-        ["D"] = "delete",        -- keep 'delete' command, for no-trash dir like iCloud.
+        ["d"] = "trash", -- Use 'trash' command below, instead of 'delete' command.
+        ["D"] = "delete", -- keep 'delete' command, for no-trash dir like iCloud.
         ["u"] = "restore_trash", -- Select from 'trash-list' -> 'trash-restore'
         ["m"] = false,
       },
@@ -273,6 +307,17 @@ return {
       window = {
         mappings = {
           ["<a-h>"] = "toggle_hidden",
+        },
+      },
+    }
+    -- Disable file-system-specific mappings for document_symbols source
+    opts.document_symbols = {
+      window = {
+        mappings = {
+          ["y"] = false,
+          ["p"] = false,
+          ["D"] = false,
+          ["<C-r>"] = false, -- Use uppercase C to match default mapping
         },
       },
     }
