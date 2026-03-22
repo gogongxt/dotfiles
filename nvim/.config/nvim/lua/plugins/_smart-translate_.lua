@@ -127,6 +127,11 @@ return {
       },
       proxy = nil,
       timeout = 10,
+      -- Float window configuration
+      float = {
+        max_width = 80, -- Maximum width of the float window (0 means no limit)
+        wrap = true, -- Enable text wrapping in the float window
+      },
       engine = {
         deepl = {
           -- Support SHELL variables, or fill in directly
