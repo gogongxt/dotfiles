@@ -126,6 +126,7 @@ return {
         cache = true,
       },
       proxy = nil,
+      timeout = 10,
       engine = {
         deepl = {
           -- Support SHELL variables, or fill in directly
