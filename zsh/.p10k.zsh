@@ -99,7 +99,7 @@
     vim_shell               # vim shell indicator (:sh)
     midnight_commander      # midnight commander shell (https://midnight-commander.org/)
     nix_shell               # nix shell (https://nixos.org/nixos/nix-pills/developing-with-nix-shell.html)
-    vi_mode                 # vi mode (you don't need this if you've enabled prompt_char)
+    # vi_mode                 # vi mode (you don't need this if you've enabled prompt_char)
     # vpn_ip                # virtual private network indicator
     # load                  # CPU load
     # disk_usage            # disk usage
@@ -786,12 +786,12 @@
   ###########[ vi_mode: vi mode (you don't need this if you've enabled prompt_char) ]###########
   # Text and color for normal (a.k.a. command) vi mode.
   # typeset -g POWERLEVEL9K_VI_COMMAND_MODE_STRING=NORMAL
-  typeset -g POWERLEVEL9K_VI_COMMAND_MODE_STRING=' NORMAL'
+  typeset -g POWERLEVEL9K_VI_COMMAND_MODE_STRING=' N'
   # typeset -g POWERLEVEL9K_VI_MODE_NORMAL_FOREGROUND=106
   typeset -g POWERLEVEL9K_VI_MODE_NORMAL_FOREGROUND=190
   # Text and color for visual vi mode.
   # typeset -g POWERLEVEL9K_VI_VISUAL_MODE_STRING=VISUAL
-  typeset -g POWERLEVEL9K_VI_VISUAL_MODE_STRING=' VISUAL'
+  typeset -g POWERLEVEL9K_VI_VISUAL_MODE_STRING=' V'
   # typeset -g POWERLEVEL9K_VI_MODE_VISUAL_FOREGROUND=68
   typeset -g POWERLEVEL9K_VI_MODE_VISUAL_FOREGROUND=210
   # Text and color for overtype (a.k.a. overwrite and replace) vi mode.
