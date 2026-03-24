@@ -172,9 +172,7 @@ return {
             -- Custom function to check if wd succeeded
             success_check = function(stdout, stderr)
               -- wd returns "无法查询到相关释义" when not found
-              if stdout:find("无法查询到相关释义") then
-                return false
-              end
+              if stdout:find "无法查询到相关释义" then return false end
               -- Check if output is not empty
               return vim.trim(stdout) ~= ""
             end,
