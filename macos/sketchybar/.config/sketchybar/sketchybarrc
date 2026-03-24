@@ -159,14 +159,45 @@ python3 "$PLUGIN_DIR/lyric.py" &
 # volume is registered. More info about the event system can be found here:
 # https://felixkratz.github.io/SketchyBar/config/events
 
-# sketchybar --add item clock right \
-#            --set clock update_freq=10 icon=  script="$PLUGIN_DIR/clock.sh" \
-#            --add item volume right \
-#            --set volume script="$PLUGIN_DIR/volume.sh" \
-#            --subscribe volume volume_change \
-#            --add item battery right \
-#            --set battery update_freq=120 script="$PLUGIN_DIR/battery.sh" \
-#            --subscribe battery system_woke power_source_change
+sketchybar --add item clock right \
+                --set clock update_freq=10 icon=󰥔  script="$PLUGIN_DIR/clock.sh" \
+                icon.font="Hack Nerd Font:Bold:17.0" \
+                icon.color="0xffdddddd" \
+                label.font="Hack Nerd Font:Bold:13.0" \
+                label.color="0xffdddddd" \
+                label.padding_right=0
+sketchybar --add bracket clock_bracket clock \
+                --set clock_bracket background.drawing=on background.color=0x30aaaaaa background.height=20 background.corner_radius=10 background.padding_left=5 background.padding_right=0
+sketchybar --add item clock_bracket.spacer right \
+                --set clock_bracket.spacer padding_left=0 padding_right=0
+
+sketchybar --add item volume right \
+                --set volume script="$PLUGIN_DIR/volume.sh" \
+                icon.font="Hack Nerd Font:Bold:17.0" \
+                icon.color="0xffdddddd" \
+                label.font="Hack Nerd Font:Bold:13.0" \
+                label.color="0xffdddddd" \
+                label.padding_right=0 \
+                --subscribe volume volume_change
+sketchybar --add bracket volume_bracket volume \
+                --set volume_bracket background.drawing=on background.color=0x30aaaaaa background.height=20 background.corner_radius=10 background.padding_left=5 background.padding_right=5
+sketchybar --add item volume_bracket.spacer right \
+                --set volume_bracket.spacer padding_left=0 padding_right=0
+
+ sketchybar --add item battery right \
+                --set battery update_freq=60 script="$PLUGIN_DIR/battery.sh" \
+                icon.font="Hack Nerd Font:Bold:17.0" \
+                icon.color="0xffdddddd" \
+                label.font="Hack Nerd Font:Bold:13.0" \
+                label.color="0xffdddddd" \
+                label.padding_right=0 \
+                --subscribe battery system_woke power_source_change
+sketchybar --add bracket battery_bracket battery \
+                --set battery_bracket background.drawing=on background.color=0x30aaaaaa background.height=20 background.corner_radius=10 background.padding_left=5 background.padding_right=5
+sketchybar --add item battery_bracket.spacer right \
+                --set battery_bracket.spacer padding_left=0 padding_right=0
+
+source "$PLUGIN_DIR/dchat.sh"
 
 ##### Force all scripts to run the first time (never do this in a script) #####
 sketchybar --update
