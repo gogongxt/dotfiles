@@ -121,7 +121,8 @@ return {
           source = "auto",
           target = "zh-CN",
           handle = "float",
-          engine = "baidu",
+          engine = "wd",
+          fallback_engines = { "baidu" },
         },
         cache = true,
       },
@@ -163,6 +164,22 @@ return {
       translator = {
         engine = {},
         handle = {},
+        terminal_commands = {
+          {
+            name = "wd",
+            command = "wd {text}",
+            timeout = 10,
+            -- Custom function to check if wd succeeded
+            success_check = function(stdout, stderr)
+              -- wd returns "无法查询到相关释义" when not found
+              if stdout:find("无法查询到相关释义") then
+                return false
+              end
+              -- Check if output is not empty
+              return vim.trim(stdout) ~= ""
+            end,
+          },
+        },
       },
     },
     config = function(_, opts) require("smart-translate").setup(opts) end,
