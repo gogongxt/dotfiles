@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 
 import os
+import shutil
 import subprocess
 import sys
 
@@ -94,9 +95,7 @@ if __name__ == "__main__":
         # 1. Use kitten icat (Kitty/Ghostty)
         kitty_window_id = os.environ.get("KITTY_WINDOW_ID", "")
         ghostty_resources = os.environ.get("GHOSTTY_RESOURCES_DIR", "")
-        if (kitty_window_id or ghostty_resources) and subprocess.run(
-            ["command", "-v", "kitten"], capture_output=True
-        ).returncode == 0:
+        if (kitty_window_id or ghostty_resources) and shutil.which("kitten"):
             if dim:
                 subprocess.run(
                     f"kitten icat --clear --transfer-mode=memory --unicode-placeholder --stdin=no --place={dim}@0x0 {file_path}",
@@ -104,10 +103,7 @@ if __name__ == "__main__":
                 )
 
         # 2. Use chafa
-        elif (
-            subprocess.run(["command", "-v", "chafa"], capture_output=True).returncode
-            == 0
-        ):
+        elif shutil.which("chafa"):
             if dim:
                 os.system(f"chafa -s {dim} {file_path}")
             else:
@@ -115,17 +111,11 @@ if __name__ == "__main__":
             print()
 
         # 3. Use catimg
-        elif (
-            subprocess.run(["command", "-v", "catimg"], capture_output=True).returncode
-            == 0
-        ):
+        elif shutil.which("catimg"):
             os.system(f"catimg {file_path}")
 
         # 4. Use imgcat (iTerm2)
-        elif (
-            subprocess.run(["command", "-v", "imgcat"], capture_output=True).returncode
-            == 0
-        ):
+        elif shutil.which("imgcat"):
             if dim:
                 w, h = dim.split("x")
                 os.system(f"imgcat -W {w} -H {h} {file_path}")
@@ -140,7 +130,7 @@ if __name__ == "__main__":
     elif preview_nameandline[0].replace("'", "").endswith((".md")):
         os.system("glow -s dark -- {}".format(preview_nameandline[0]))
     else:
-        if os.system("command -v bat >/dev/null") == 0:  # if has bat to preview file
+        if shutil.which("bat"):  # if has bat to preview file
             os.system(
                 "bat --style=numbers --color=always -r {}: {}".format(
                     preview_nameandline[1], preview_nameandline[0]
