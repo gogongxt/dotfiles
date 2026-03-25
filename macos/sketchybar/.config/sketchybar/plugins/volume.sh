@@ -6,15 +6,26 @@
 if [ "$SENDER" = "volume_change" ]; then
   VOLUME="$INFO"
 
-  case "$VOLUME" in
-    [6-9][0-9]|100) ICON="󰕾"
-    ;;
-    [3-5][0-9]) ICON="󰖀"
-    ;;
-    [1-9]|[1-2][0-9]) ICON="󰕿"
-    ;;
-    *) ICON="󰖁"
-  esac
+  # Detect if current output device is Bluetooth (headphones)
+  IS_BLUETOOTH=false
+
+  # Get Default Output Device transport type
+  TRANSPORT=$(system_profiler SPAudioDataType 2>/dev/null | grep -A 5 "Default Output Device: Yes" | grep "Transport:" | awk '{print $2}')
+
+  if [ "$TRANSPORT" = "Bluetooth" ]; then
+    IS_BLUETOOTH=true
+  fi
+
+  # Set icon based on device type and volume
+  if [ "$IS_BLUETOOTH" = true ]; then
+    ICON=""
+  else
+    if [ "$VOLUME" = "0" ]; then
+      ICON="󰖁"
+    else
+      ICON="󰕾"
+    fi
+  fi
 
   sketchybar --set "$NAME" icon="$ICON" label="$VOLUME%"
 fi
