@@ -12,7 +12,7 @@ def fzf_preview(rg_name):
         bat_range = 0
     else:
         bat_range = rg_list[1].replace("\n", "")
-    file_path_list = rg_list[0].replace("\n", "").split("/")
+    file_path_list = rg_list[0].replace("\n", "").strip().split("/")
     for i, filep in zip(range(len(file_path_list)), file_path_list):
         path_space = filep.find(" ")
         if not path_space == -1:
@@ -51,63 +51,27 @@ if __name__ == "__main__":
             )
         )
     ):
-        # Get preview dimensions
-        cols = os.environ.get("FZF_PREVIEW_COLUMNS", "")
-        lines = os.environ.get("FZF_PREVIEW_LINES", "")
-
-        dim = ""
-        if cols and lines:
-            dim = f"{cols}x{lines}"
-            # Avoid scrolling issue when Sixel image touches bottom of screen
-            kitty_window_id = os.environ.get("KITTY_WINDOW_ID", "")
-            try:
-                result = subprocess.run(
-                    ["stty", "size"],
-                    stdin=open("/dev/tty"),
-                    capture_output=True,
-                    text=True,
-                )
-                if result.returncode == 0 and not kitty_window_id:
-                    term_lines = int(result.stdout.strip().split()[0])
-                    preview_top = int(os.environ.get("FZF_PREVIEW_TOP", "0"))
-                    if preview_top + int(lines) == term_lines:
-                        dim = f"{cols}x{int(lines) - 1}"
-            except:
-                pass
-        else:
-            # Fallback: get terminal size from stty
-            try:
-                result = subprocess.run(
-                    ["stty", "size"],
-                    stdin=open("/dev/tty"),
-                    capture_output=True,
-                    text=True,
-                )
-                if result.returncode == 0:
-                    parts = result.stdout.strip().split()
-                    if len(parts) == 2:
-                        dim = f"{parts[1]}x{parts[0]}"
-            except:
-                pass
-
         file_path = preview_nameandline[0]
 
-        # 1. Use kitten icat (Kitty/Ghostty)
-        kitty_window_id = os.environ.get("KITTY_WINDOW_ID", "")
-        ghostty_resources = os.environ.get("GHOSTTY_RESOURCES_DIR", "")
-        if (kitty_window_id or ghostty_resources) and shutil.which("kitten"):
-            if dim:
-                subprocess.run(
-                    f"kitten icat --clear --transfer-mode=memory --unicode-placeholder --stdin=no --place={dim}@0x0 {file_path}",
-                    shell=True,
-                )
+        # 1. Use kitten icat
+        if shutil.which("kitten"):
+            # 获取 fzf 预览窗格的行列数，如果没有则给定默认值
+            cols = os.environ.get("FZF_PREVIEW_COLUMNS", "80")
+            lines = os.environ.get("FZF_PREVIEW_LINES", "40")
+
+            # --place 的格式是: 宽度x高度@左边距x顶边距
+            # 使用 @0x0 强制对齐到左上角 (0,0)
+            # 建议高度减去 1-2 行，给底部的状态栏留出空间，防止图片溢出导致闪烁
+            place_arg = f"--place={cols}x{int(lines)-1}@0x0"
+
+            # 执行命令，同时加上 --clear 确保切换文件时清理上一张图
+            os.system(
+                f"kitten icat --clear --stdin=no {place_arg} {file_path} 2> /dev/null"
+            )
 
         # 2. Use chafa
         elif shutil.which("chafa"):
-            if dim:
-                os.system(f"chafa -s {dim} {file_path}")
-            else:
-                os.system(f"chafa {file_path}")
+            os.system(f"chafa {file_path}")
             print()
 
         # 3. Use catimg
@@ -116,11 +80,7 @@ if __name__ == "__main__":
 
         # 4. Use imgcat (iTerm2)
         elif shutil.which("imgcat"):
-            if dim:
-                w, h = dim.split("x")
-                os.system(f"imgcat -W {w} -H {h} {file_path}")
-            else:
-                os.system(f"imgcat {file_path}")
+            os.system(f"imgcat {file_path}")
 
         # 5. Cannot find any suitable method
         else:
