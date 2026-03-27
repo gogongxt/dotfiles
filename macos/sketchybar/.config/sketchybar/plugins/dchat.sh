@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Check if D-Chat is installed
+if ! mdfind "kMDItemKind == 'Application'" | grep -qi "D-Chat\.app"; then
+    # D-Chat not found, skip creating items
+    return 0 2>/dev/null || exit 0
+fi
+
 # D-Chat status label
 sketchybar --add item dchat right \
     --set dchat \

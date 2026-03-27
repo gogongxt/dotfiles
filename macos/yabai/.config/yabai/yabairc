@@ -78,16 +78,16 @@ yabai -m rule --add app="^kitty$" opacity=1.0
 # yabai -m signal --add event=window_moved \
 #     action="python3 $HOME/.config/sketchybar/yabai.py >> $HOME/.config/yabai/log.log"
 
-yabai -m signal --add event=window_created action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
-yabai -m signal --add event=window_destroyed action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
-yabai -m signal --add event=window_minimized action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
-yabai -m signal --add event=window_deminimized action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
-yabai -m signal --add event=space_created action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
-yabai -m signal --add event=space_destroyed action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
-yabai -m signal --add event=space_changed action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
-yabai -m signal --add event=display_changed action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
-yabai -m signal --add event=display_added action="python3 $HOME/.config/yabai/scripts/space_manager.py >> $HOME/.config/yabai/log.log"
-yabai -m signal --add event=display_removed action="python3 $HOME/.config/yabai/scripts/space_manager.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=window_created action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=window_destroyed action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=window_minimized action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=window_deminimized action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=space_created action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=space_destroyed action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=space_changed action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=display_changed action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=display_added action="python3 $HOME/.config/yabai/scripts/space_manager.py >> $HOME/.config/yabai/log.log"
+# yabai -m signal --add event=display_removed action="python3 $HOME/.config/yabai/scripts/space_manager.py >> $HOME/.config/yabai/log.log"
 
 
 # https://github.com/koekeishiya/yabai/issues/878#issuecomment-814266904

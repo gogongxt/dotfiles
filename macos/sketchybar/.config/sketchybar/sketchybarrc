@@ -84,6 +84,12 @@ do
             padding_right=2.5
 done
 
+# Single global event handler
+sketchybar --add item space_handler left
+sketchybar --set space_handler \
+    drawing=off \
+    script="python3 $HOME/.config/sketchybar/plugins/space_handler.py"
+sketchybar --subscribe space_handler space_change space_windows_change display_change
 
 ##### Adding Left Items #####
 # We add some regular items to the left side of the bar, where
