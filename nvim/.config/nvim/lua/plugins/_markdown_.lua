@@ -98,29 +98,6 @@ return {
     build = "cd app && bash ./install.sh",
     config = function() vim.g.mkdp_filetypes = { "markdown" } end,
   },
-  -- {
-  --   -- NOTE: gxt_kt now can remove headlines plugin in next version
-  --   -- 增强笔记文件显示，markdown, orgmode, neorg
-  --   -- show latex on markdown file can use plugin "jbyuki/nabla.nvim"
-  --   "lukas-reineke/headlines.nvim",
-  --   enabled = false,
-  --   ft = "markdown",
-  --   dependencies = "nvim-treesitter/nvim-treesitter",
-  --   config = function()
-  --     vim.cmd [[highlight Headline1 guibg=#3B4736]]
-  --     vim.cmd [[highlight Headline2 guibg=#40464E]]
-  --     vim.cmd [[highlight Headline3 guibg=#50565E]]
-  --     vim.cmd [[highlight Headline4 guibg=#60666E]]
-  --     -- vim.cmd [[highlight CodeBlock guibg=#1c1c1c]]
-  --     vim.cmd [[highlight Dash guibg=#D19A66 gui=bold]]
-  --     require("headlines").setup {
-  --       markdown = {
-  --         bullets = { "#", "##", "###", "###" },
-  --         headline_highlights = { "Headline1", "Headline2", "Headline3", "Headline4" },
-  --       },
-  --     }
-  --   end,
-  -- },
   {
     "MeanderingProgrammer/render-markdown.nvim",
     -- dependencies = { "nvim-treesitter/nvim-treesitter", "echasnovski/mini.nvim" }, -- if you use the mini.nvim suite
@@ -128,6 +105,7 @@ return {
     -- dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" }, -- if you prefer nvim-web-devicons
     config = function()
       vim.cmd [[highlight RenderMarkdownDash guifg=#D19A66 ]]
+      vim.cmd [[highlight RenderMarkdownCode guibg=#4a4f66 ]]
       -- vim.cmd [[highlight RenderMarkdownDash guibg=#D19A66 gui=bold]]
       require("render-markdown").setup {
         -- Whether Markdown should be rendered by default or not
@@ -170,40 +148,13 @@ return {
             ]],
           },
         },
-        anti_conceal = {
-          -- This enables hiding any added text on the line the cursor is on
-          enabled = true,
-          -- Which elements to always show, ignoring anti conceal behavior. Values can either be booleans
-          -- to fix the behavior or string lists representing modes where anti conceal behavior will be
-          -- ignored. Possible keys are:
-          --  head_icon, head_background, head_border, code_language, code_background, code_border
-          --  dash, bullet, check_icon, check_scope, quote, table_border, callout, link, sign
-          ignore = {
-            code_background = true,
-            sign = true,
-          },
-          -- Number of lines above cursor to show
-          above = 0,
-          -- Number of lines below cursor to show
-          below = 0,
-        },
         padding = {
           -- Highlight to use when adding whitespace, should match background
           highlight = "Normal",
         },
         latex = {
           -- Whether LaTeX should be rendered, mainly used for health check
-          enabled = true,
-          -- Additional modes to render LaTeX
-          render_modes = true,
-          -- Executable used to convert latex formula to rendered unicode
-          converter = "latex2text",
-          -- Highlight for LaTeX blocks
-          highlight = "RenderMarkdownMath",
-          -- Amount of empty lines above LaTeX blocks
-          top_pad = 0,
-          -- Amount of empty lines below LaTeX blocks
-          bottom_pad = 0,
+          enabled = false,
         },
         on = {
           -- Called when plugin initially attaches to a buffer
@@ -295,67 +246,6 @@ return {
           left_margin = 0,
           -- Minimum width to use for paragraphs
           min_width = 0,
-        },
-        code = {
-          -- Turn on / off code block & inline code rendering
-          enabled = true,
-          -- Additional modes to render code blocks
-          render_modes = true,
-          -- Turn on / off any sign column related rendering
-          sign = true,
-          -- Determines how code blocks & inline code are rendered:
-          --  none:     disables all rendering
-          --  normal:   adds highlight group to code blocks & inline code, adds padding to code blocks
-          --  language: adds language icon to sign column if enabled and icon + name above code blocks
-          --  full:     normal + language
-          style = "full",
-          -- Determines where language icon is rendered:
-          --  right: right side of code block
-          --  left:  left side of code block
-          position = "left",
-          -- Amount of padding to add around the language
-          -- If a floating point value < 1 is provided it is treated as a percentage of the available window space
-          language_pad = 0,
-          -- Whether to include the language name next to the icon
-          language_name = true,
-          -- A list of language names for which background highlighting will be disabled
-          -- Likely because that language has background highlights itself
-          -- Or a boolean to make behavior apply to all languages
-          -- Borders above & below blocks will continue to be rendered
-          disable_background = { "diff" },
-          -- Width of the code block background:
-          --  block: width of the code block
-          --  full:  full width of the window
-          width = "full",
-          -- Amount of margin to add to the left of code blocks
-          -- If a floating point value < 1 is provided it is treated as a percentage of the available window space
-          -- Margin available space is computed after accounting for padding
-          left_margin = 0,
-          -- Amount of padding to add to the left of code blocks
-          -- If a floating point value < 1 is provided it is treated as a percentage of the available window space
-          left_pad = 0,
-          -- Amount of padding to add to the right of code blocks when width is 'block'
-          -- If a floating point value < 1 is provided it is treated as a percentage of the available window space
-          right_pad = 0,
-          -- Minimum width to use for code blocks when width is 'block'
-          min_width = 0,
-          -- Determines how the top / bottom of code block are rendered:
-          --  none:  do not render a border
-          --  thick: use the same highlight as the code body
-          --  thin:  when lines are empty overlay the above & below icons
-          border = "thin",
-          -- Used above code blocks for thin border
-          above = "▄",
-          -- Used below code blocks for thin border
-          below = "▀",
-          -- Highlight for code blocks
-          highlight = "RenderMarkdownCode",
-          -- Highlight for language, overrides icon provider value
-          highlight_language = nil,
-          -- Padding to add to the left & right of inline code
-          inline_pad = 0,
-          -- Highlight for inline code
-          highlight_inline = "RenderMarkdownCodeInline",
         },
         dash = {
           -- Turn on / off thematic break rendering

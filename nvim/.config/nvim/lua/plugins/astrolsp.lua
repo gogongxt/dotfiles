@@ -141,7 +141,13 @@ return {
       n = {
         -- a `cond` key can provided as the string of a server capability to be required to attach, or a function with `client` and `bufnr` parameters from the `on_attach` that returns a boolean
         gh = {
-          function() vim.lsp.buf.hover() end,
+          function()
+            if vim.bo.filetype == "markdown" then
+              require("snacks").image.hover()
+            else
+              vim.lsp.buf.hover()
+            end
+          end,
           desc = "Hover symbol details",
         },
         gD = {
