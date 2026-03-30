@@ -42,7 +42,12 @@ battery_status() {
 		battery=$(find /sys/class/power_supply/*/status | tail -n1)
 		awk '{print tolower($0);}' "$battery"
 	elif command_exists "pmset"; then
-		pmset -g batt | awk -F '; *' 'NR==2 { print $2 }'
+		# Check if connected to AC Power (covers charging, finishing charge, etc.)
+		if pmset -g batt | grep -q 'AC Power'; then
+			echo "charging"
+		else
+			echo "discharging"
+		fi
 	elif command_exists "acpi"; then
 		acpi -b | awk '{gsub(/,/, ""); print tolower($3); exit}'
 	elif command_exists "upower"; then
