@@ -6,7 +6,7 @@ sudo yabai --load-sa
 yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
 
 # mission-control desktop labels
-yabai -m space 1 
+yabai -m space 1
 yabai -m space 2
 yabai -m space 3
 yabai -m space 4
@@ -56,7 +56,6 @@ yabai -m rule --add app="^Dictionary$" manage=off
 yabai -m rule --add app="^词典$" manage=off
 yabai -m rule --add title="^About This Mac$" manage=off
 
-
 yabai -m rule --add app="^Cisco Secure Client$" manage=off
 yabai -m rule --add app="^TencentMeeting$" manage=off opacity=1.0
 yabai -m rule --add app="^Clash for Windows$" manage=off
@@ -89,19 +88,17 @@ yabai -m rule --add app="^kitty$" opacity=1.0
 # yabai -m signal --add event=display_added action="python3 $HOME/.config/yabai/scripts/space_manager.py >> $HOME/.config/yabai/log.log"
 # yabai -m signal --add event=display_removed action="python3 $HOME/.config/yabai/scripts/space_manager.py >> $HOME/.config/yabai/log.log"
 
-
 # https://github.com/koekeishiya/yabai/issues/878#issuecomment-814266904
 # 记录当前窗口所在的显示器ID
 yabai -m signal --add event=window_focused \
-  action='yabai -m query --windows --window | jq ".display" > /tmp/.display_focus'
+    action='yabai -m query --windows --window | jq ".display" > /tmp/.display_focus'
 yabai -m signal --add event=application_front_switched \
-  action='yabai -m query --windows --window | jq ".display" > /tmp/.display_focus'
+    action='yabai -m query --windows --window | jq ".display" > /tmp/.display_focus'
 # 当窗口关闭或应用退出时，聚焦之前记录的显示器
 yabai -m signal --add event=window_destroyed \
-  action='if [ -f "/tmp/.display_focus" ]; then yabai -m display --focus $(cat "/tmp/.display_focus"); fi'
+    action='if [ -f "/tmp/.display_focus" ]; then yabai -m display --focus $(cat "/tmp/.display_focus"); fi'
 yabai -m signal --add event=application_terminated \
-  action='if [ -f "/tmp/.display_focus" ]; then yabai -m display --focus $(cat "/tmp/.display_focus"); fi'
-
+    action='if [ -f "/tmp/.display_focus" ]; then yabai -m display --focus $(cat "/tmp/.display_focus"); fi'
 
 # yabai -m signal --add event=space_created action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
 # yabai -m signal --add event=space_destroyed action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
@@ -112,11 +109,11 @@ yabai -m signal --add event=application_terminated \
 
 # yabai -m rule --add app="^NetEaseMusic$" space=music
 yabai -m rule --add title="scratchpad" manage=off
-yabai -m rule --add app="^D-Chat$" manage=off 
-yabai -m rule --add app="^WeChat$" manage=off 
-yabai -m rule --add app="^NetEaseMusic$" manage=off 
-yabai -m rule --add app="^NeteaseMusic$" manage=off 
-yabai -m rule --add app="^Spotify$" manage=off 
+yabai -m rule --add app="^D-Chat$" manage=off
+yabai -m rule --add app="^WeChat$" manage=off
+yabai -m rule --add app="^NetEaseMusic$" manage=off
+yabai -m rule --add app="^NeteaseMusic$" manage=off
+yabai -m rule --add app="^Spotify$" manage=off
 yabai -m rule --add app="^Zotero$" opacity=1.0
 yabai -m rule --add app="^Zotero$" title="^Translate Panel$" manage=off
 yabai -m rule --add app="^IINA$" manage=off
@@ -130,31 +127,30 @@ yabai -m rule --add app="^Google Chrome$" opacity=1.0
 # yabai -m config --space games layout float
 
 # global settings
-yabai -m config                              \
-    external_bar                off:40:0     \
-    mouse_follows_focus         on           \
-    focus_follows_mouse         autoraise    \
-    window_placement            second_child \
-    window_shadow               off          \
-    window_animation_duration   0.30         \
-    window_animation_easing    ease_out_quint\
-    window_opacity_duration     0.00         \
-    active_window_opacity       1.00         \
-    normal_window_opacity       0.85         \
-    window_opacity              on           \
-    insert_feedback_color       0xaad75f5f   \
-    split_ratio                 0.50         \
-    split_type                  auto         \
-    auto_balance                off          \
-    top_padding                 5           \
-    left_padding                5           \
-    right_padding               5           \
-    bottom_padding              35           \
-    window_gap                  10           \
-    layout                      bsp          \
-    mouse_modifier              cmd           \
-    mouse_action1               move         \
-    mouse_action2               resize       \
-    mouse_drop_action           swap
+yabai -m config \
+    external_bar off:40:0 \
+    mouse_follows_focus on \
+    focus_follows_mouse autoraise \
+    window_placement second_child \
+    window_shadow off \
+    window_animation_duration 0.30 \
+    window_animation_easing ease_out_quint window_opacity_duration 0.00 \
+    active_window_opacity 1.00 \
+    normal_window_opacity 0.85 \
+    window_opacity on \
+    insert_feedback_color 0xaad75f5f \
+    split_ratio 0.50 \
+    split_type auto \
+    auto_balance off \
+    top_padding 5 \
+    left_padding 5 \
+    right_padding 5 \
+    bottom_padding 35 \
+    window_gap 10 \
+    layout bsp \
+    mouse_modifier cmd \
+    mouse_action1 move \
+    mouse_action2 resize \
+    mouse_drop_action swap
 
 echo "yabai configuration loaded.."
