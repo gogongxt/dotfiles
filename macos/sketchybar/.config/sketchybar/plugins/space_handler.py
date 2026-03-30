@@ -36,10 +36,17 @@ def remove_outdated_windows(space_id: int, current_window_ids: List[str]) -> Non
         current_window_ids: List of window IDs that should remain.
     """
     try:
-        shown_ones_json = subprocess.check_output(
-            ["/opt/homebrew/bin/sketchybar", "--query", f"win.{space_id}"],
-            stderr=subprocess.DEVNULL,
-        ).decode("utf-8")
+        shown_ones_json = (
+            subprocess.check_output(
+                ["/opt/homebrew/bin/sketchybar", "--query", f"win.{space_id}"],
+                stderr=subprocess.DEVNULL,
+            )
+            .decode("utf-8")
+            .strip()
+        )
+
+        if not shown_ones_json:
+            return
 
         shown_ones = json.loads(shown_ones_json)
         to_be_removed = []
@@ -55,7 +62,7 @@ def remove_outdated_windows(space_id: int, current_window_ids: List[str]) -> Non
             ]
             subprocess.run(remove_cmd, check=True, capture_output=True)
 
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, json.JSONDecodeError):
         pass
 
 
@@ -355,28 +362,31 @@ def update_space_display_with_windows(
 
 
 def handle_space_change(info: Dict) -> None:
-    """Handle space_change event - only update visual highlight (fast).
+    """Handle space_change event - update visual highlight for all displays.
 
     Args:
-        info: Event info containing focused space per display
+        info: Event info containing focused space per display (e.g., {"display-1": 1, "display-2": 11})
     """
-    # Query only spaces to find focused one (no need to query windows)
-    try:
-        spaces = json.loads(
-            subprocess.check_output(
-                ["/opt/homebrew/bin/yabai", "-m", "query", "--spaces"]
-            )
-        )
-    except (subprocess.CalledProcessError, json.JSONDecodeError):
-        return
+    # Parse focused spaces from info
+    focused_spaces = {}
+    for key, value in info.items():
+        if key.startswith("display-"):
+            try:
+                display_id = int(key.split("-")[1])
+                focused_spaces[display_id] = value
+            except (ValueError, IndexError):
+                continue
 
-    # Find focused space
-    focused_index = find_focused_space(spaces)
-
-    # Only update visual highlight for all spaces (fast operation)
+    # Update visual highlight for all spaces
+    k = get_display_grouping_factor()
     total_spaces = 15  # From sketchybarrc N=15
+
     for space_id in range(1, total_spaces + 1):
-        is_selected = space_id == focused_index
+        # Determine which display this space belongs to
+        display_id = int((space_id - 1) / k) + 1
+
+        # Check if this space is focused on its display
+        is_selected = focused_spaces.get(display_id) == space_id
 
         # Update space icon color (fast)
         try:
@@ -441,12 +451,44 @@ def handle_space_windows_change(info: Dict) -> None:
 
 
 def handle_display_change(info: Dict) -> None:
-    """Handle display_change event - same as space_change.
+    """Handle display_change event - update all displays.
 
     Args:
-        info: Event info
+        info: Event info (display ID that changed)
     """
-    handle_space_change(info)
+    # Query all data to get current state for all displays
+    displays, spaces, windows = query_all_data()
+
+    if not displays or not spaces:
+        return
+
+    # Build a mapping of display ID to focused space index
+    display_focused_spaces = {}
+    for space in spaces:
+        if space.get("has-focus", False):
+            display_id = space.get("display")
+            if display_id is not None:
+                display_focused_spaces[display_id] = space.get("index")
+
+    # Group windows by space
+    windows_by_space = group_windows_by_space(windows)
+
+    # Update all spaces with their appropriate display and selection state
+    k = get_display_grouping_factor()
+    total_spaces = 15  # From sketchybarrc N=15
+
+    for space_id in range(1, total_spaces + 1):
+        # Determine which display this space belongs to
+        display_id = int((space_id - 1) / k) + 1
+
+        # Check if this space is focused on its display
+        is_selected = display_focused_spaces.get(display_id) == space_id
+
+        # Get windows for this space
+        space_windows = windows_by_space.get(space_id, [])
+
+        # Update the space display
+        update_space_display_with_windows(space_id, space_windows, is_selected)
 
 
 def main():
