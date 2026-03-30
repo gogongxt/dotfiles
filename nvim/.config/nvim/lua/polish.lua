@@ -167,6 +167,57 @@ mappings.set_mappings {
       expr = true,
       desc = "Prev Reference",
     },
+
+    -- fold commands
+    ["za"] = {
+      make_repeatable(function()
+        local ok, err = pcall(vim.cmd, "normal! za")
+        if not ok then vim.notify("No fold found", vim.log.levels.WARN) end
+      end),
+      expr = true,
+      desc = "Toggle fold",
+    },
+    ["zc"] = {
+      make_repeatable(function()
+        local ok, err = pcall(vim.cmd, "normal! zc")
+        if not ok then vim.notify("No fold found", vim.log.levels.WARN) end
+      end),
+      expr = true,
+      desc = "Close fold",
+    },
+    ["zo"] = {
+      make_repeatable(function()
+        local ok, err = pcall(vim.cmd, "normal! zo")
+        if not ok then vim.notify("No fold found", vim.log.levels.WARN) end
+      end),
+      expr = true,
+      desc = "Open fold",
+    },
+    ["zA"] = {
+      make_repeatable(function()
+        local ok, err = pcall(vim.cmd, "normal! zA")
+        if not ok then vim.notify("No fold found", vim.log.levels.WARN) end
+      end),
+      expr = true,
+      desc = "Toggle fold recursively",
+    },
+    ["zC"] = {
+      make_repeatable(function()
+        local ok, err = pcall(vim.cmd, "normal! zC")
+        if not ok then vim.notify("No fold found", vim.log.levels.WARN) end
+      end),
+      expr = true,
+      desc = "Close fold recursively",
+    },
+    ["zO"] = {
+      make_repeatable(function()
+        local ok, err = pcall(vim.cmd, "normal! zO")
+        if not ok then vim.notify("No fold found", vim.log.levels.WARN) end
+      end),
+      expr = true,
+      desc = "Open fold recursively",
+    },
+
     ["<c-g>"] = {
       function()
         local full_path = vim.fn.expand "%:p"
