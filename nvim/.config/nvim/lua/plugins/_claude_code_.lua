@@ -146,13 +146,7 @@ local function setup_toggleterm_provider()
   }
 end
 
-local claude_specstory
-if vim.fn.executable "specstory" == 1 then
-  claude_specstory = "specstory run claude -c 'ccr code' --no-cloud-sync"
-else
-  claude_specstory = "claude"
-end
-claude_specstory = "source ~/.zshrc;proxy off >/dev/null 2>&1;" .. claude_specstory
+local claude_cmd = "source ~/.zshrc && claude"
 
 return {
   "coder/claudecode.nvim",
@@ -160,7 +154,7 @@ return {
   opts = {
     -- terminal_cmd = "ccr code",
     -- terminal_cmd = "claude",
-    terminal_cmd = claude_specstory,
+    terminal_cmd = claude_cmd,
     focus_after_send = true, -- When true, successful sends will focus the Claude terminal if already connected
     track_selection = true,
 
