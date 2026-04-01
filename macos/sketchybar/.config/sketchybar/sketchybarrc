@@ -171,7 +171,8 @@ sketchybar --add item clock right \
                 icon.color="0xffdddddd" \
                 label.font="Hack Nerd Font:Bold:13.0" \
                 label.color="0xffdddddd" \
-                label.padding_right=0
+                label.padding_right=0 \
+                click_script="osascript -e 'tell application \"System Events\" to click (first menu bar item of menu bar 1 of application process \"ControlCenter\" whose accessibility description contains \"时钟\" or accessibility description contains \"Clock\")'" \
 sketchybar --add bracket clock_bracket clock \
                 --set clock_bracket background.drawing=on background.color=0x30aaaaaa background.height=20 background.corner_radius=10 background.padding_left=5 background.padding_right=0
 sketchybar --add item clock_bracket.spacer right \
