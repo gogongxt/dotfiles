@@ -104,3 +104,5 @@ pip_proxy_10099() {
 alias pip_tsinghua="http_proxy= https_proxy= PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple pip"
 alias pip_aliyun="http_proxy= https_proxy= PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple pip"
 alias pip_tencent="http_proxy= https_proxy= PIP_INDEX_URL=https://mirrors.cloud.tencent.com/pypi/simple pip"
+
+export HF_ENDPOINT=https://hf-mirror.com
