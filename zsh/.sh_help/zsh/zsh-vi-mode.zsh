@@ -1,6 +1,9 @@
 # solve bug ssh zsh-vi-mode will caplitalizes the last character
 unset zle_bracketed_paste
 
+# Command line editing (vv in normal mode)
+export ZVM_VI_EDITOR="${VISUAL:-$EDITOR --cmd 'let g:flatten_wait=1'}"
+
 # Clipboard handling functions
 function _get_clipboard_cache_file() {
     echo "${HOME}/.cache/zsh_vimode_clipboard.txt"
