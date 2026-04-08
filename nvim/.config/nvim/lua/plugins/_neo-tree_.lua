@@ -324,6 +324,17 @@ return {
       },
     }
 
+    -- Override git_status mappings: change gg to goto top instead of git_commit_and_push
+    opts.git_status = {
+      window = {
+        mappings = {
+          ["gg"] = function()
+            vim.cmd "normal! gg" -- Jump to the first line (goto top)
+          end,
+        },
+      },
+    }
+
     -- Add markdown fallback support for document_symbols
     -- We need to patch after the plugin loads, so use a VeryLazy autocmd
     vim.api.nvim_create_autocmd("User", {
