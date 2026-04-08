@@ -88,7 +88,10 @@ if __name__ == "__main__":
     elif preview_nameandline[0].replace("'", "").endswith((".html", ".htm", ".xhtml")):
         os.system("w3m -dump {}".format(preview_nameandline[0]))
     elif preview_nameandline[0].replace("'", "").endswith((".md")):
-        os.system("glow -s dark -- {}".format(preview_nameandline[0]))
+        if shutil.which("glow"):
+            os.system(f"script -q -c 'glow -s dark {preview_nameandline[0]}' /dev/null")
+        else:
+            os.system("bat --color=always {}".format(preview_nameandline[0]))
     else:
         if shutil.which("bat"):  # if has bat to preview file
             os.system(
