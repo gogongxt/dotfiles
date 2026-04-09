@@ -98,11 +98,15 @@ pip_proxy() {
     local proxy="${PROXY:-$PROXY_DEFAULT}"
     http_proxy="$proxy" https_proxy="$proxy" PIP_INDEX_URL="https://pypi.org/simple" pip "$@"
 }
-pip_proxy_10099() {
-    PROXY=10.77.22.11:10099 pip_proxy "$@"
+uv_proxy() {
+    local proxy="${PROXY:-$PROXY_DEFAULT}"
+    http_proxy="$proxy" https_proxy="$proxy" PIP_INDEX_URL="https://pypi.org/simple" uv "$@"
 }
 alias pip_tsinghua="http_proxy= https_proxy= PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple pip"
 alias pip_aliyun="http_proxy= https_proxy= PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple pip"
 alias pip_tencent="http_proxy= https_proxy= PIP_INDEX_URL=https://mirrors.cloud.tencent.com/pypi/simple pip"
+alias uv_tsinghua="http_proxy= https_proxy= PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple uv"
+alias uv_aliyun="http_proxy= https_proxy= PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple uv"
+alias uv_tencent="http_proxy= https_proxy= PIP_INDEX_URL=https://mirrors.cloud.tencent.com/pypi/simple uv"
 
 export HF_ENDPOINT=https://hf-mirror.com
