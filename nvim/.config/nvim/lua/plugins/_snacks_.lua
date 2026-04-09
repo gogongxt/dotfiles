@@ -175,32 +175,49 @@ return {
         },
         actions = {
           cycle_preview_layout = function(picker)
-            -- 获取当前外层 box 方向（"horizontal"=预览在右，"vertical"=预览在下）
-            local current_box = picker.resolved_layout.layout and picker.resolved_layout.layout.box
-            -- horizontal <-> vertical 切换
-            local next_box = (current_box == "horizontal") and "vertical" or "horizontal"
-            picker:set_layout {
-              layout = {
-                box = next_box,
-                width = 0.8,
-                min_width = 120,
-                height = 0.8,
-                {
-                  box = "vertical",
-                  border = true,
-                  title = "{title} {live} {flags}",
-                  { win = "input", height = 1, border = "bottom" },
-                  { win = "list", border = "none" },
+            -- 三种状态循环：horizontal -> vertical -> hidden -> horizontal
+            local state = picker._preview_layout_state or "horizontal"
+            local next_state
+            if state == "horizontal" then
+              next_state = "vertical"
+            elseif state == "vertical" then
+              next_state = "hidden"
+            else
+              next_state = "horizontal"
+            end
+            picker._preview_layout_state = next_state
+
+            if next_state == "hidden" then
+              -- 关闭预览窗口
+              picker:toggle("preview", { enable = false })
+              vim.notify("Preview: hidden", vim.log.levels.INFO)
+            else
+              -- 确保预览窗口打开
+              if not picker.preview.win:valid() then picker:toggle("preview", { enable = true }) end
+              picker:set_layout {
+                layout = {
+                  box = next_state,
+                  width = 0.8,
+                  min_width = 120,
+                  height = 0.8,
+                  {
+                    box = "vertical",
+                    border = true,
+                    title = "{title} {live} {flags}",
+                    { win = "input", height = 1, border = "bottom" },
+                    { win = "list", border = "none" },
+                  },
+                  {
+                    win = "preview",
+                    title = "{preview}",
+                    border = true,
+                    width = (next_state == "horizontal") and 0.5 or nil,
+                    height = (next_state == "vertical") and 0.5 or nil,
+                  },
                 },
-                {
-                  win = "preview",
-                  title = "{preview}",
-                  border = true,
-                  width = (next_box == "horizontal") and 0.5 or nil,
-                  height = (next_box == "vertical") and 0.5 or nil,
-                },
-              },
-            }
+              }
+              vim.notify("Preview: " .. next_state, vim.log.levels.INFO)
+            end
           end,
           toggle_exclude = function(picker)
             -- 在picker源码grep中是这样处理exclude的
@@ -263,8 +280,9 @@ return {
             keys = {
               ["<C-j>"] = { "history_forward", mode = { "i", "n" } },
               ["<C-k>"] = { "history_back", mode = { "i", "n" } },
-              ["<a-p>"] = { "toggle_preview", mode = { "i", "n" } },
-              ["<a-s-p>"] = { "cycle_preview_layout", mode = { "i", "n" } },
+              -- ["<a-p>"] = { "toggle_preview", mode = { "i", "n" } },
+              -- ["<a-s-p>"] = { "cycle_preview_layout", mode = { "i", "n" } },
+              ["<a-p>"] = { "cycle_preview_layout", mode = { "i", "n" } },
               ["<a-r>"] = { "toggle_regex", mode = { "i", "n" } },
               ["<c-b>"] = { "preview_scroll_up", mode = { "i", "n" } },
               ["<c-d>"] = { "list_scroll_down", mode = { "i", "n" } },

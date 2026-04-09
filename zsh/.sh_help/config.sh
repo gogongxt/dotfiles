@@ -131,7 +131,9 @@ alias nv="watch -d -n 1 nvidia-smi"
 fzf_ignore=".wine,.git,.idea,.vscode,node_modules,build"
 export FZF_DEFAULT_COMMAND="fd --hidden --follow --exclude={${fzf_ignore}} "
 export FZF_DEFAULT_OPTS="--height 80% --layout=reverse --preview 'echo {} | ~/.sh_help/functions/fzf_preview.py' --preview-window=down --border \
-  --bind ctrl-d:page-down,ctrl-u:page-up,alt-p:toggle-preview,ctrl-f:preview-half-page-down,ctrl-b:preview-half-page-up \
+  --bind 'ctrl-d:page-down,ctrl-u:page-up' \
+  --bind 'ctrl-f:preview-half-page-down,ctrl-b:preview-half-page-up' \
+  --bind 'alt-p:change-preview-window(right|hidden|down)' \
   --color=bg+:#555555
 "
 export FZF_CTRL_R_OPTS="
