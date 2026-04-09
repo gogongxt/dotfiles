@@ -86,6 +86,7 @@ return {
             desc = "Find old files (cwd)",
           },
           ["<Leader>fp"] = { function() require("snacks").picker.projects() end, desc = "Find projects" },
+          ["<Leader>fj"] = { function() require("snacks").picker.jumps() end, desc = "Find jumps" },
           ["<Leader>fy"] = { function() require("snacks").picker.registers() end, desc = "Find registers" },
           ["<Leader>fn"] = { "<cmd>Noice pick<cr>", desc = "Find themes" },
           ["<Leader>fc"] = { function() require("snacks").picker.command_history() end, desc = "Find commands history" },
