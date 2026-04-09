@@ -51,16 +51,8 @@ mylog() {
             printf '\033[31mError:\033[0m Third argument must be "--"\n' >&2
             return 1
         }
-        # 展开 ~ 和 $VAR（允许 eval，输入可信）
-        eval "logfile=\"$2\""
-        # 转绝对路径（不要求存在）
-        if [[ "$logfile" != /* ]]; then
-            logfile="$PWD/$logfile"
-        fi
-        # 创建日志文件所在的目录
-        local log_dir
-        log_dir="$(dirname "$logfile")"
-        [[ "$log_dir" != "." ]] && mkdir -p "$log_dir"
+        logfile="$2"
+        mkdir -p "$(dirname "$logfile")"
         cmd=("${@:4}") # 从第4个参数开始是命令
     else
         # 默认模式：自动生成文件名
