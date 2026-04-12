@@ -86,7 +86,13 @@ M._exec_toggle = function(opts)
   local Terminal = require("toggleterm.terminal").Terminal
   -- local term = Terminal:new { cmd = opts.cmd, count = opts.count, direction = opts.direction }
   -- term:toggle(opts.size, opts.direction)
-  local term = Terminal:new { size = opts.size, cmd = opts.cmd, count = opts.count, direction = opts.direction }
+  local term = Terminal:new {
+    size = opts.size,
+    cmd = opts.cmd,
+    count = opts.count,
+    direction = opts.direction,
+    float_opts = { border = "curved" },
+  }
   term:toggle(opts.size)
 end
 
