@@ -36,7 +36,12 @@ return {
   -- 增强搜索和替换
   "windwp/nvim-spectre",
   event = "VeryLazy",
-  build = "bash build.sh",
+  build = function()
+    local spectre_path = vim.fn.stdpath "data" .. "/lazy/nvim-spectre"
+    -- 强制使用项目本地的 target 目录，覆盖全局 cargo 配置
+    local target_dir = spectre_path .. "/spectre_oxi/target"
+    vim.system({ "bash", "build.sh" }, { cwd = spectre_path, env = { CARGO_TARGET_DIR = target_dir } }):wait()
+  end,
   config = function()
     require("spectre").setup {
       is_block_ui_break = true,
