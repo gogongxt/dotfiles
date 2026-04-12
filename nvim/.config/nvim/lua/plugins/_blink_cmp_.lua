@@ -7,7 +7,7 @@
 -- TODO: blink will support insertReplaceSupport soon
 
 return {
-  "Saghen/blink.cmp",
+  "saghen/blink.cmp",
   opts = {
     completion = {
       list = { selection = { preselect = true, auto_insert = true } },

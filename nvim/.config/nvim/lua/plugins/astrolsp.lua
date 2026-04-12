@@ -21,15 +21,15 @@ return {
     },
     -- Configuration table of features provided by AstroLSP
     features = {
-      codelens = true,        -- enable/disable codelens refresh on start
-      inlay_hints = true,     -- enable/disable inlay hints on start
+      codelens = false, -- enable/disable codelens refresh on start
+      inlay_hints = true, -- enable/disable inlay hints on start
       semantic_tokens = true, -- enable/disable semantic token highlighting
     },
     -- customize lsp formatting options
     formatting = {
       -- control auto formatting on save
       format_on_save = {
-        enabled = false,    -- enable or disable format on save globally
+        enabled = false, -- enable or disable format on save globally
         allow_filetypes = { -- enable format on save for specified filetypes only
           -- "go",
         },
@@ -74,11 +74,11 @@ return {
             analysis = {
               autoSearchPaths = true,
               -- diagnosticMode = "workspace",
-              typeCheckingMode = "off",           -- here's me trying stuff
+              typeCheckingMode = "off", -- here's me trying stuff
               useLibraryCodeForTypes = true,
               reportMissingModuleSource = "none", -- here's me trying stuff
-              reportMissingImports = "none",      -- here's me trying stuff
-              reportUndefinedVariable = "none",   -- here's me trying stuff, syntax errors are still reported on diagnostics
+              reportMissingImports = "none", -- here's me trying stuff
+              reportUndefinedVariable = "none", -- here's me trying stuff, syntax errors are still reported on diagnostics
             },
           },
         },
@@ -94,8 +94,8 @@ return {
               useLibraryCodeForTypes = true,
               diagnosticSeverityOverrides = {
                 reportMissingModuleSource = "none", -- here's me trying stuff
-                reportMissingImports = "none",      -- here's me trying stuff
-                reportUndefinedVariable = "none",   -- here's me trying stuff, syntax errors are still reported on diagnostics
+                reportMissingImports = "none", -- here's me trying stuff
+                reportUndefinedVariable = "none", -- here's me trying stuff, syntax errors are still reported on diagnostics
               },
             },
           },
@@ -131,7 +131,7 @@ return {
           -- the rest of the autocmd options (:h nvim_create_autocmd)
           desc = "Refresh codelens (buffer)",
           callback = function(args)
-            if require("astrolsp").config.features.codelens then vim.lsp.codelens.refresh { bufnr = args.buf } end
+            if require("astrolsp").config.features.codelens then vim.lsp.codelens.enable(true, { bufnr = args.buf }) end
           end,
         },
       },
@@ -159,7 +159,7 @@ return {
           function() require("astrolsp.toggles").buffer_semantic_tokens() end,
           desc = "Toggle LSP semantic highlight (buffer)",
           cond = function(client)
-            return client.supports_method "textDocument/semanticTokens/full" and vim.lsp.semantic_tokens ~= nil
+            return client:supports_method "textDocument/semanticTokens/full" and vim.lsp.semantic_tokens ~= nil
           end,
         },
         ["<Leader>lj"] = { vim.diagnostic.goto_next, desc = "Next Diagnostic", noremap = true, silent = true },

@@ -321,6 +321,7 @@ return {
         opt = {
           -- 移除折叠后的填充字符
           fillchars = {
+            eob = " ",
             fold = " ",
             foldopen = "",
             foldclose = "",

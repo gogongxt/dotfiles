@@ -304,6 +304,9 @@ return {
       scroll = {
         enabled = true,
       },
+      words = {
+        enabled = true,
+      },
       notifier = {
         enabled = false,
       },

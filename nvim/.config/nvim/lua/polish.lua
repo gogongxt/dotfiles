@@ -9,6 +9,8 @@ local make_repeatable = require("plugins.user.my_funcs.repeat").make_repeatable
 vim.opt.errorbells = false
 vim.opt.visualbell = true
 
+vim.cmd.colorscheme "catppuccin"
+
 -- define function to change color for catppuccin*
 local function set_diff_highlights()
   vim.cmd [[
@@ -27,7 +29,9 @@ vim.api.nvim_create_autocmd("ColorScheme", {
   desc = "Override diff colors for Catppuccin",
 })
 
-vim.opt.fillchars = {
+-- merge fillchars config, remain fold icon
+local fillchars = vim.opt.fillchars:get() or {}
+vim.opt.fillchars = vim.tbl_extend("force", fillchars, {
   horiz = "═",
   horizup = "╩",
   horizdown = "╦",
@@ -35,7 +39,7 @@ vim.opt.fillchars = {
   vertleft = "╣",
   vertright = "╠",
   verthoriz = "╬",
-}
+})
 
 -- toggle snacks image show
 -- Ref: https://github.com/folke/snacks.nvim/issues/1739#issuecomment-3413850508
@@ -158,12 +162,12 @@ mappings.set_mappings {
       desc = "Toggle Render",
     },
     ["gn"] = {
-      make_repeatable(function() require("illuminate").goto_next_reference(true) end),
+      make_repeatable(function() Snacks.words.jump(1, true) end),
       expr = true,
       desc = "Next Reference",
     },
     ["gp"] = {
-      make_repeatable(function() require("illuminate").goto_prev_reference(true) end),
+      make_repeatable(function() Snacks.words.jump(-1, true) end),
       expr = true,
       desc = "Prev Reference",
     },

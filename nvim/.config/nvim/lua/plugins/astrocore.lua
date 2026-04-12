@@ -79,28 +79,24 @@ return {
           ["<Leader>e"] = false, -- disable default Neo-tree toggle mapping
         },
       },
+      -- v6: Treesitter configuration moved to AstroCore
+      treesitter = {
+        ensure_installed = {
+          "lua",
+          "vim",
+          "css",
+          "html",
+          "javascript",
+          "latex",
+          "norg",
+          "scss",
+          "svelte",
+          "tsx",
+          "typst",
+          "vue",
+        },
+        highlight = true,
+      },
     },
-  },
-  {
-    "nvim-treesitter/nvim-treesitter",
-    opts = function(_, opts)
-      -- list like portions of a table cannot be merged naturally and require the user to merge it manually
-      -- check to make sure the key exists
-      if not opts.ensure_installed then opts.ensure_installed = {} end
-      vim.list_extend(opts.ensure_installed, {
-        "lua",
-        "vim",
-        "css",
-        "html",
-        "javascript",
-        "latex",
-        "norg",
-        "scss",
-        "svelte",
-        "tsx",
-        "typst",
-        "vue",
-      })
-    end,
   },
 }
