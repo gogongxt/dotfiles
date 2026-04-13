@@ -1,0 +1,57 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/)",
+      "Bash(npm run test:*)",
+      "Bash(ls:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(cat:*)",
+      "Bash(tail:*)",
+      "Bash(head:*)",
+      "Bash(sed:*)"
+    ],
+    "defaultMode": "bypassPermissions"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "npx ccsp@latest"
+  },
+  "enabledPlugins": {
+    "sentry-skills@sentry-skills": true
+  },
+  "extraKnownMarketplaces": {
+    "sentry-skills": {
+      "source": {
+        "source": "github",
+        "repo": "getsentry/skills"
+      }
+    }
+  },
+  "skipWebFetchPreflight": true,
+  "syntaxHighlightingDisabled": true,
+  "alwaysThinkingEnabled": false,
+  "skipDangerousModePermissionPrompt": true,
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/notify.sh stop"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/notify.sh notification \"$CLAUDE_NOTIFICATION_TEXT\""
+          }
+        ]
+      }
+    ]
+  }
+}
