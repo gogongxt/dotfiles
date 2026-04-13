@@ -1,35 +1,35 @@
 # my personal dotfiles
 
-Use `stow` to manage my dotfiles.
-使用stow管理我自己的配置
+Managed with GNU Stow.
 
-## 目录结构
+## Directory Structure
 
-一般通用配置文件都在根目录，比如vim/nvim/tmux/fzf等
+Common configuration files are in the root directory (vim/nvim/tmux/fzf, etc.).
 
-关于i3/polybar等archlinux专属配置，可以进入到archlinux文件夹查看
+- For Arch Linux specific configurations (i3/polybar, etc.), see the `archlinux` folder.
+- For Macos specific configurations (yabai/sketchybar, etc.), see the `macos` folder.
 
+## Usage
 
-## 怎么使用
-
-```
+```bash
 cd ~
-git clone git@github.com:gxt-kt/dotfiles.git
+git clone git@github.com:gogongxt/dotfiles.git
 cd dotfiles
 stow -t ~ */
 ```
 
-具体可以查看stow命令的使用，也可以自己手动软链接
+This symlinks all packages to your home directory. You can also stow individual packages:
 
-If you have config file exists, there may some erros. Backup your original files and remove them. Then try `stow -t ~ */` again.
+```bash
+stow zsh  # only link the zsh package
+```
 
-Or you can also stow single directory like `stow zsh`, this will only link the contain package data.
+## Troubleshooting
 
-**Notice** 
+If a config file already exists, stow will report an error. Backup and remove the original file, then run `stow -t ~ */` again.
 
-If you stow a folder while the folder is exist. Then stow will only link the files under the folder instead of the whole folder.
+**Important:** If the target directory already exists, stow will symlink the files _inside_ that directory rather than the directory itself. This is usually not what you want.
 
-It's really different and it's better to link the whole folder.
+**Recommendation:** Remove the existing directory before stowing to ensure the whole folder is symlinked.
 
-**So it's recommend to remove the whole folder before stow it.**
-
+For more details, see `man stow` or the [GNU Stow manual](https://www.gnu.org/software/stow/manual/).
