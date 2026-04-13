@@ -6,6 +6,14 @@
 return {
   {
     "folke/snacks.nvim",
+    init = function()
+      -- Set highlight after colorscheme loads
+      vim.api.nvim_create_autocmd("ColorScheme", {
+        callback = function() vim.api.nvim_set_hl(0, "MyChunkColor", { fg = "#CB8764" }) end,
+      })
+      -- Also set it now in case colorscheme is already loaded
+      vim.api.nvim_set_hl(0, "MyChunkColor", { fg = "#CB8764" })
+    end,
     ---@type snacks.Config
     opts = {
       indent = {
@@ -29,7 +37,6 @@ return {
           --     "SnacksIndent8",
           -- },
         },
-        vim.api.nvim_set_hl(0, "MyChunkColor", { fg = "#CB8764" }),
         scope = {
           enabled = true, -- enable highlighting the current scope
           priority = 200,
