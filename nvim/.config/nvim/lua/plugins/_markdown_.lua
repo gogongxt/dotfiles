@@ -122,7 +122,8 @@ return {
         -- Vim modes that will show a rendered view of the markdown file, :h mode(), for
         -- all enabled components. Individual components can be enabled for other modes.
         -- Remaining modes will be unaffected by this plugin.
-        render_modes = { "n", "c", "t" },
+        -- render_modes = { "n", "c", "t" },
+        render_modes = true, -- Always render regardless of current mode
         -- Maximum file size (in MB) that this plugin will attempt to render
         -- Any file larger than this will effectively be ignored
         max_file_size = 10.0,
