@@ -34,12 +34,12 @@ local function dap_breakpoints_finder(opts, ctx)
         file = file,
         -- DON'T set buf field, so preview reads file content instead of opening buffer
         pos = { bp.line, 0 },
-        line = line_content, -- line should be string content, not line number
+        line = line_content,                                  -- line should be string content, not line number
         text = file .. ":" .. bp.line .. ":" .. line_content, -- same format as grep for searching
-        comment = info ~= "" and info or nil, -- use comment field for additional info, use nil to avoid extra space
-        label = verified, -- show verified status as label
+        comment = info ~= "" and info or nil,                 -- use comment field for additional info, use nil to avoid extra space
+        label = verified,                                     -- show verified status as label
         breakpoint_data = bp,
-        bufnr = bufnr, -- save bufnr for deletion
+        bufnr = bufnr,                                        -- save bufnr for deletion
       })
     end
   end
@@ -170,24 +170,32 @@ return {
           },
         },
         toggles = {
-          regex = { icon = "R", value = true }, -- R键表示启用正则表达式
-          exclude_icon = { icon = "!Exc", value = true }, -- E键表示启用exclude
+          regex = { icon = "R", value = true },                 -- R键表示启用正则表达式
+          exclude_icon = { icon = "!Exc", value = true },       -- E键表示启用exclude
           exclude_docs_icon = { icon = "!Docs", value = true }, -- D键表示启用文档排除
         },
         actions = {
           cycle_preview_layout = function(picker)
-            -- 三种状态循环：horizontal -> vertical -> hidden -> horizontal
-            local state = picker._preview_layout_state or "horizontal"
+            -- 检测当前布局状态
+            local current_box = picker.resolved_layout.layout.box
+            local preview_visible = picker.preview.win:valid()
+            -- 确定当前状态
+            local current_state
+            if not preview_visible then
+              current_state = "hidden"
+            else
+              current_state = current_box -- "horizontal" or "vertical"
+            end
+            -- 计算下一个状态：horizontal -> vertical -> hidden -> horizontal
             local next_state
-            if state == "horizontal" then
+            if current_state == "horizontal" then
               next_state = "vertical"
-            elseif state == "vertical" then
+            elseif current_state == "vertical" then
               next_state = "hidden"
             else
               next_state = "horizontal"
             end
             picker._preview_layout_state = next_state
-
             if next_state == "hidden" then
               -- 关闭预览窗口
               picker:toggle("preview", { enable = false })
@@ -205,8 +213,8 @@ return {
                     box = "vertical",
                     border = true,
                     title = "{title} {live} {flags}",
-                    { win = "input", height = 1, border = "bottom" },
-                    { win = "list", border = "none" },
+                    { win = "input", height = 1,     border = "bottom" },
+                    { win = "list",  border = "none" },
                   },
                   {
                     win = "preview",
