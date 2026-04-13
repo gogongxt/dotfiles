@@ -16,9 +16,21 @@ get_tmux_session() {
     fi
 }
 
+# 获取当前窗口信息
+get_tmux_window() {
+    if [[ -n "$TMUX" ]]; then
+        local index=$(tmux display-message -p '#I')
+        local name=$(tmux display-message -p '#W')
+        echo "${index}:${name}"
+    else
+        echo ""
+    fi
+}
+
 # 收集信息
 PATH_FULL="${PWD}"
 SESSION=$(get_tmux_session)
+WINDOW=$(get_tmux_window)
 
 # 构建通知
 if [[ "$EVENT_TYPE" == "stop" ]]; then
@@ -29,8 +41,12 @@ else
     SOUND="Submarine"
 fi
 
-# 使用 subtitle 高亮 tmux 会话
-SUBTITLE="🖥️ tmux: ${SESSION}"
+# 使用 subtitle 高亮 tmux 会话和当前窗口
+if [[ -n "$WINDOW" ]]; then
+    SUBTITLE="🖥️ ${SESSION} [${WINDOW}]"
+else
+    SUBTITLE="🖥️ ${SESSION}"
+fi
 
 # 消息内容
 MESSAGE="📂 ${PATH_FULL}"
