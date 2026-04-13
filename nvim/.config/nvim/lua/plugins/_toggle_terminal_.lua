@@ -14,20 +14,8 @@ local terminal_maps = {
   { vim.o.shell, "<M-BackSpace>", "Vertical Terminal2", "vertical", 0.4 },
 }
 
--- 这里原来是用的buffer size为基准
---- Get current buffer size
----@return {width: number, height: number}
--- local function get_buf_size()
---   local cbuf = vim.api.nvim_get_current_buf()
---   local bufinfo = vim.tbl_filter(function(buf)
---     return buf.bufnr == cbuf
---   end, vim.fn.getwininfo(vim.api.nvim_get_current_win()))[1]
---   if bufinfo == nil then
---     return { width = -1, height = -1 }
---   end
---   return { width = bufinfo.width, height = bufinfo.height }
--- end
--- 我改成了用总共窗口的size
+-- 使用全局 editor 大小，因为 toggleterm 总是从全局空间分割
+-- 当已有终端时，toggleterm 会在现有终端窗口内 split，而不是当前窗口
 local function get_buf_size() return { width = vim.o.columns, height = vim.o.lines } end
 
 --- Get the dynamic terminal size in cells
@@ -97,6 +85,32 @@ M._exec_toggle = function(opts)
 end
 
 M.init(terminal_maps)
+
+-- Monkey patch toggleterm 的 open_split
+-- 让 horizontal terminal 总是从编辑器底部创建，而不是在已有终端内部分割
+local ok, toggleterm_ui = pcall(require, "toggleterm.ui")
+if ok then
+  local original_open_split = toggleterm_ui.open_split
+  toggleterm_ui.open_split = function(size, term)
+    if term.direction == "horizontal" then
+      -- 总是使用 botright split，从编辑器底部创建
+      vim.cmd "botright split"
+      toggleterm_ui.resize_split(term, size)
+      -- 复用 toggleterm 的 buffer 创建逻辑
+      local api = vim.api
+      local valid_win = term.window and api.nvim_win_is_valid(term.window)
+      local window = valid_win and term.window or api.nvim_get_current_win()
+      local valid_buf = term.bufnr and api.nvim_buf_is_valid(term.bufnr)
+      local bufnr = valid_buf and term.bufnr or api.nvim_create_buf(false, false)
+      api.nvim_win_set_buf(window, bufnr)
+      term.window, term.bufnr = window, bufnr
+      term:__set_options()
+      api.nvim_set_current_buf(bufnr)
+    else
+      original_open_split(size, term)
+    end
+  end
+end
 
 -- if you only want these mappings for toggle term use term://*toggleterm#* instead
 vim.cmd "autocmd! TermOpen term://* lua set_terminal_keymaps()"
