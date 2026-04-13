@@ -104,9 +104,18 @@ return {
     dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-mini/mini.icons" }, -- if you use standalone mini plugins
     -- dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" }, -- if you prefer nvim-web-devicons
     config = function()
-      vim.cmd [[highlight RenderMarkdownDash guifg=#D19A66 ]]
-      vim.cmd [[highlight RenderMarkdownCode guibg=#4a4f66 ]]
-      -- vim.cmd [[highlight RenderMarkdownDash guibg=#D19A66 gui=bold]]
+      local function set_render_markdown_highlights()
+        vim.cmd [[highlight RenderMarkdownDash guifg=#D19A66 ]]
+        vim.cmd [[highlight RenderMarkdownCode guibg=#4a4f66 ]]
+      end
+      -- 初次设置
+      set_render_markdown_highlights()
+      -- colorscheme 切换时重新设置
+      vim.api.nvim_create_autocmd("ColorScheme", {
+        callback = set_render_markdown_highlights,
+        desc = "Override render-markdown highlights",
+      })
+
       require("render-markdown").setup {
         -- Whether Markdown should be rendered by default or not
         enabled = true,
@@ -305,7 +314,7 @@ return {
           -- | scope_highlight | optional highlight for item associated with custom checkbox |
           -- stylua: ignore
           custom = {
-              todo = { raw = '[-]', rendered = '󰥔 ', highlight = 'RenderMarkdownTodo', scope_highlight = nil },
+            todo = { raw = '[-]', rendered = '󰥔 ', highlight = 'RenderMarkdownTodo', scope_highlight = nil },
           },
         },
         quote = {
@@ -350,15 +359,15 @@ return {
           padding = 1,
           -- Minimum column width to use for padded or trimmed cell
           min_width = 0,
-        -- Characters used to replace table border
-        -- Correspond to top(3), delimiter(3), bottom(3), vertical, & horizontal
-        -- stylua: ignore
-        border = {
+          -- Characters used to replace table border
+          -- Correspond to top(3), delimiter(3), bottom(3), vertical, & horizontal
+          -- stylua: ignore
+          border = {
             '┌', '┬', '┐',
             '├', '┼', '┤',
             '└', '┴', '┘',
             '│', '─',
-        },
+          },
           -- Gets placed in delimiter row for each column, position is based on alignment
           alignment_indicator = "━",
           -- Highlight for table heading, delimiter, and the line above
