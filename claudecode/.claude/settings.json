@@ -9,7 +9,8 @@
       "Bash(cat:*)",
       "Bash(tail:*)",
       "Bash(head:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(bash:*)"
     ],
     "defaultMode": "bypassPermissions"
   },
