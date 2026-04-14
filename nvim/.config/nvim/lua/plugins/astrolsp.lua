@@ -21,15 +21,15 @@ return {
     },
     -- Configuration table of features provided by AstroLSP
     features = {
-      codelens = false, -- enable/disable codelens refresh on start
-      inlay_hints = true, -- enable/disable inlay hints on start
+      codelens = false,       -- enable/disable codelens refresh on start
+      inlay_hints = true,     -- enable/disable inlay hints on start
       semantic_tokens = true, -- enable/disable semantic token highlighting
     },
     -- customize lsp formatting options
     formatting = {
       -- control auto formatting on save
       format_on_save = {
-        enabled = false, -- enable or disable format on save globally
+        enabled = false,    -- enable or disable format on save globally
         allow_filetypes = { -- enable format on save for specified filetypes only
           -- "go",
         },
@@ -54,7 +54,8 @@ return {
       -- "basedpyright",
       -- "pyright"
     },
-    -- customize language server configuration options passed to `lspconfig`
+    -- customize language server configuration passed to `vim.lsp.config`
+    -- client specific configuration can also go in `lsp/` in your configuration root (see `:h lsp-config`)
     ---@diagnostic disable: missing-fields
     config = {
       -- clangd = { capabilities = { offsetEncoding = "utf-8" } },
@@ -74,11 +75,11 @@ return {
             analysis = {
               autoSearchPaths = true,
               -- diagnosticMode = "workspace",
-              typeCheckingMode = "off", -- here's me trying stuff
+              typeCheckingMode = "off",           -- here's me trying stuff
               useLibraryCodeForTypes = true,
               reportMissingModuleSource = "none", -- here's me trying stuff
-              reportMissingImports = "none", -- here's me trying stuff
-              reportUndefinedVariable = "none", -- here's me trying stuff, syntax errors are still reported on diagnostics
+              reportMissingImports = "none",      -- here's me trying stuff
+              reportUndefinedVariable = "none",   -- here's me trying stuff, syntax errors are still reported on diagnostics
             },
           },
         },
@@ -94,8 +95,8 @@ return {
               useLibraryCodeForTypes = true,
               diagnosticSeverityOverrides = {
                 reportMissingModuleSource = "none", -- here's me trying stuff
-                reportMissingImports = "none", -- here's me trying stuff
-                reportUndefinedVariable = "none", -- here's me trying stuff, syntax errors are still reported on diagnostics
+                reportMissingImports = "none",      -- here's me trying stuff
+                reportUndefinedVariable = "none",   -- here's me trying stuff, syntax errors are still reported on diagnostics
               },
             },
           },
@@ -107,12 +108,11 @@ return {
     },
     -- customize how language servers are attached
     handlers = {
-      -- a function without a key is simply the default handler, functions take two parameters, the server name and the configured options table for that server
-      -- function(server, opts) require("lspconfig")[server].setup(opts) end
+      -- the key `["*"]` is the default handler, function takes the server name as parameter
+      -- ["*"] = function(server) vim.lsp.enable(server) end
 
-      -- the key is the server that is being setup with `lspconfig`
+      -- the key is the server that is being setup with `vim.lsp.config`
       -- rust_analyzer = false, -- setting a handler to false will disable the set up of that language server
-      -- pyright = function(_, opts) require("lspconfig").pyright.setup(opts) end -- or a custom handler function can be passed
     },
     -- Configure buffer local auto commands to add when attaching a language server
     autocmds = {
@@ -183,7 +183,7 @@ return {
       },
     },
     -- A custom `on_attach` function to be run after the default `on_attach` function
-    -- takes two parameters `client` and `bufnr`  (`:h lspconfig-setup`)
+    -- takes two parameters `client` and `bufnr`  (`:h lsp-attach`)
     on_attach = function(client, bufnr)
       -- this would disable semanticTokensProvider for all clients
       -- client.server_capabilities.semanticTokensProvider = nil
