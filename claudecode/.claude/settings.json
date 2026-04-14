@@ -9,8 +9,7 @@
       "Bash(cat:*)",
       "Bash(tail:*)",
       "Bash(head:*)",
-      "Bash(sed:*)",
-      "Bash(bash:*)"
+      "Bash(sed:*)"
     ],
     "defaultMode": "bypassPermissions"
   },
@@ -46,6 +45,7 @@
     ],
     "Notification": [
       {
+        "matcher": "permission_prompt",
         "hooks": [
           {
             "type": "command",

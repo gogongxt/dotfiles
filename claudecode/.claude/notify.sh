@@ -10,17 +10,18 @@ NOTIFICATION_TEXT="${2:-}"
 # 获取 tmux 会话名称
 get_tmux_session() {
     if [[ -n "$TMUX" ]]; then
-        tmux display-message -p '#S'
+        command tmux display-message -p '#S'
     else
         echo "无"
     fi
 }
 
-# 获取当前窗口信息
+# 获取当前窗口信息（使用 TMUX_PANE 获取实际运行命令的窗口）
 get_tmux_window() {
-    if [[ -n "$TMUX" ]]; then
-        local index=$(tmux display-message -p '#I')
-        local name=$(tmux display-message -p '#W')
+    if [[ -n "$TMUX" && -n "$TMUX_PANE" ]]; then
+        # -t 指定目标 pane，获取该 pane 所在的窗口信息
+        local index=$(command tmux display-message -t "$TMUX_PANE" -p '#I')
+        local name=$(command tmux display-message -t "$TMUX_PANE" -p '#W')
         echo "${index}:${name}"
     else
         echo ""
