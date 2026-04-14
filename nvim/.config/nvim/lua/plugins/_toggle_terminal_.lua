@@ -112,6 +112,22 @@ if ok then
   end
 end
 
+-- 保存并恢复终端 ANSI 颜色，防止被 neovim 主题覆盖
+-- 原因：neovim 主题会设置 vim.g.terminal_color_*，覆盖终端模拟器（如 kitty）的颜色配置
+local saved_terminal_colors = {}
+for i = 0, 15 do
+  saved_terminal_colors[i] = vim.g["terminal_color_" .. i]
+end
+vim.api.nvim_create_autocmd("ColorScheme", {
+  pattern = "*",
+  callback = function()
+    for i = 0, 15 do
+      vim.g["terminal_color_" .. i] = saved_terminal_colors[i]
+    end
+  end,
+  desc = "Restore terminal colors after colorscheme change",
+})
+
 -- if you only want these mappings for toggle term use term://*toggleterm#* instead
 vim.cmd "autocmd! TermOpen term://* lua set_terminal_keymaps()"
 -- vim.keymap.set("n", "<C-t>", "<cmd>ToggleTerm<cr>")
