@@ -3,9 +3,13 @@
 -- 检测当前预览状态
 local function get_preview_state(qwinid)
   local pvs = require "bqf.preview.session"
+  local handler = require "bqf.preview.handler"
   local ps = pvs:get(qwinid)
+  -- auto_preview 关闭 = 隐藏状态（光标移动不会自动打开）
+  if not handler.autoEnabled() then return "hidden" end
+  -- auto_preview 开启，检查预览窗口状态
   if not ps or not ps:validate() then
-    return "hidden"
+    return "normal" -- 预览窗口未显示但 auto_preview 开启
   elseif ps.full then
     return "full"
   else
@@ -16,22 +20,22 @@ end
 local function cycle_preview()
   local handler = require "bqf.preview.handler"
   local qwinid = vim.api.nvim_get_current_win()
-  -- 检测当前状态
   local current_state = get_preview_state(qwinid)
   local next_state
   if current_state == "hidden" then
     next_state = "normal"
-    handler.open(qwinid, nil, true)
+    -- 启用 auto_preview 并打开预览
+    handler.toggle(qwinid)
     -- 确保不是全屏模式
     local ps = require("bqf.preview.session"):get(qwinid)
     if ps and ps.full then handler.toggleMode(qwinid) end
   elseif current_state == "normal" then
     next_state = "full"
-    handler.open(qwinid, nil, true)
     handler.toggleMode(qwinid)
   else -- full
     next_state = "hidden"
-    handler.close(qwinid)
+    -- 禁用 auto_preview 并关闭预览
+    handler.toggle(qwinid)
   end
   vim.notify("Preview: " .. next_state, vim.log.levels.INFO)
 end
@@ -40,8 +44,12 @@ end
 local function toggle_full()
   local handler = require "bqf.preview.handler"
   local qwinid = vim.api.nvim_get_current_win()
-  handler.open(qwinid, nil, true) -- 确保预览打开
-  handler.toggleMode(qwinid)
+  if not handler.autoEnabled() then
+    -- auto_preview 关闭时，先启用
+    handler.toggle(qwinid)
+  else
+    handler.toggleMode(qwinid)
+  end
 end
 
 return {
