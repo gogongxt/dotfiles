@@ -20,9 +20,7 @@
 #   -ignoreDnD          忽略勿扰模式
 #   -remove ID          移除指定分组的通知 (使用 "ALL" 移除所有)
 #   -list ID            列出指定分组的通知 (使用 "ALL" 列出所有)
-#   -timeout SECONDS    通知显示超时 (秒)
 #   -port PORT          SSH 环境下的转发端口 (默认: 7770)
-#   -json               输出 JSON 格式 (用于 -list)
 #
 # 示例:
 #   # 基本通知
@@ -61,9 +59,7 @@ while [[ $# -gt 0 ]]; do
         -ignoreDnD)   NOTIFY_IGNOREDND=1; shift ;;
         -remove)      NOTIFY_REMOVE="$2"; shift 2 ;;
         -list)        NOTIFY_LIST="$2"; shift 2 ;;
-        -timeout)     NOTIFY_TIMEOUT="$2"; shift 2 ;;
         -port)        NOTIFY_PORT="$2"; shift 2 ;;
-        -json)        NOTIFY_JSON=1; shift ;;
         *)            shift ;;
     esac
 done
@@ -137,15 +133,8 @@ except:
         [[ -n "$NOTIFY_APPICON" ]] && cmd+=(-appIcon "$NOTIFY_APPICON")
         [[ -n "$NOTIFY_CONTENTIMAGE" ]] && cmd+=(-contentImage "$NOTIFY_CONTENTIMAGE")
         [[ -n "$NOTIFY_IGNOREDND" ]] && cmd+=(-ignoreDnD)
-        [[ -n "$NOTIFY_TIMEOUT" ]] && cmd+=(-timeout "$NOTIFY_TIMEOUT")
 
-        if [[ -n "$NOTIFY_JSON" && -n "$NOTIFY_LIST" ]]; then
-            # JSON 输出模式
-            cmd+=(-json)
-            "${cmd[@]}" 2>/dev/null || "${cmd[@]::${#cmd[@]}-1}"
-        else
-            "${cmd[@]}"
-        fi
+        "${cmd[@]}"
     fi
 }
 
