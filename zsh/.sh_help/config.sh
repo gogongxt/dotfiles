@@ -103,6 +103,7 @@ alias mycp_parallel="rclone copy --transfers 32 --create-empty-src-dirs --progre
 alias mycp_parallel_4="rclone copy --transfers 32 --create-empty-src-dirs --progress --copy-links --multi-thread-streams=4 --local-no-check-updated"
 # alias mycp_parallel="rclone copy --transfers 32 --create-empty-src-dirs --progress --copy-links --multi-thread-streams=4 --multi-thread-chunk-size 1024M --multi-thread-write-buffer-size 512M --local-no-check-updated"
 alias mywget="aria2c -x 16 -s 16"
+export BAT_THEME="Catppuccin Macchiato"
 command -v bat &>/dev/null && alias cat="bat --style=plain"
 command -v eza &>/dev/null && {
   unset LS_COLORS
