@@ -6,7 +6,9 @@ def mark(text, args, Mark, extra_cli_args, *a):
     url_re = r'https?://[^\s<>\{\}\[\]"\'`]+'
     file_line_re = r"[a-zA-Z0-9._/~\-]+:\d+(?::\d+)?"
     # Paths: starting with ./, ~/, /, ../ or having extensions
-    path_re = r"(?:[.~]?/|\.\/)[a-zA-Z0-9._/~\-]+|[a-zA-Z0-9._\-]+\.[a-zA-Z]{1,10}"
+    # Support Chinese and other Unicode characters in paths
+    unicode_path_char = r"[\w./~\-]"
+    path_re = rf"(?:[.~]?/|\.\/){unicode_path_char}+|[\w.\-]+\.[a-zA-Z]{{1,10}}"
 
     combined = f"({url_re})|({file_line_re})|({path_re})"
 
