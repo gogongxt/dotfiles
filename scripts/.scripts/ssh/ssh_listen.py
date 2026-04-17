@@ -25,6 +25,19 @@ NOTIFY_SCRIPT = os.path.expanduser("~/.scripts/macos/notify.sh")
 
 def show_macos_notification(payload: dict):
     """使用通用通知脚本显示 macOS 通知"""
+    # 处理 contentImage 路径：将远程路径转换为本地路径
+    # 常见模式：将任何用户的 .claude 目录映射到本地
+    local_home = os.path.expanduser("~")
+    if "contentImage" in payload:
+        img_path = payload["contentImage"]
+        # 提取相对路径部分（如 .claude/claude.webp）
+        if "/.claude/" in img_path:
+            rel_path = img_path.split("/.claude/")[1]
+            payload["contentImage"] = f"{local_home}/.claude/{rel_path}"
+        elif img_path.startswith("~/.claude/"):
+            rel_path = img_path[len("~/.claude/") :]
+            payload["contentImage"] = f"{local_home}/.claude/{rel_path}"
+
     # 调用通用脚本，传递所有参数
     cmd = [NOTIFY_SCRIPT]
     for key, value in payload.items():
