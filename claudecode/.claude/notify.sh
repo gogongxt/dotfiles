@@ -53,9 +53,9 @@ fi
 MESSAGE="📂 ${PATH_FULL}"
 
 if [[ "$EVENT_TYPE" != "stop" && -n "$NOTIFICATION_TEXT" ]]; then
-    MESSAGE="${NOTIFICATION_TEXT}
-
-${MESSAGE}"
+    MESSAGE="${MESSAGE}
+    ${NOTIFICATION_TEXT}
+"
 fi
 
 # 调用通用通知脚本
