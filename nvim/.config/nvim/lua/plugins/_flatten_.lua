@@ -44,9 +44,17 @@ return {
           end,
           block_end = function()
             vim.schedule(function()
-              if saved_terminal and terminal_type == "float" then
-                -- Only reopen if it was a floating terminal
-                saved_terminal:open()
+              if saved_terminal then
+                if terminal_type == "float" then
+                  -- Only reopen if it was a floating terminal
+                  saved_terminal:open()
+                elseif terminal_type == "split" then
+                  -- For split terminals (like Claude Code), focus the terminal window
+                  if saved_terminal:is_open() and saved_terminal.window then
+                    vim.api.nvim_set_current_win(saved_terminal.window)
+                    vim.cmd "startinsert"
+                  end
+                end
                 saved_terminal = nil
               end
             end)
