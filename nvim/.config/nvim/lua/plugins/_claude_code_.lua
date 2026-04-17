@@ -36,6 +36,14 @@ local function setup_toggleterm_provider()
             -- Map Ctrl+/ to send ESC to terminal
             vim.api.nvim_buf_set_keymap(term.bufnr, "t", "<C-_>", "<Esc>", { noremap = true, silent = true })
           end
+          -- Set buffer options for better terminal rendering
+          if term.window and vim.api.nvim_win_is_valid(term.window) then
+            -- Disable wrap to prevent line break issues
+            vim.wo[term.window].wrap = false
+            -- Set scrolloff to 0 for accurate cursor positioning
+            vim.wo[term.window].scrolloff = 0
+            vim.wo[term.window].sidescrolloff = 0
+          end
           -- Start insert mode when opening
           vim.cmd "startinsert"
         end,
