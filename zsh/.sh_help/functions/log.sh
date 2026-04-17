@@ -182,3 +182,51 @@ mylog() {
     printf '\033[32mLog saved: %s\033[0m\n' "$logfile"
     return $exit_code
 }
+
+# 命令执行通知函数
+notify() {
+    [[ $# -eq 0 || "$1" == "-h" || "$1" == "--help" ]] && {
+        printf '\033[31mUsage:\033[0m notify <command> [args...]\n' >&2
+        printf '\033[36mExecute command with start/end notifications.\033[0m\n' >&2
+        return 1
+    }
+    local notify_script="$HOME/.scripts/macos/notify.sh"
+    [[ ! -x "$notify_script" ]] && {
+        printf '\033[31mError:\033[0m notify script not found: %s\n' "$notify_script" >&2
+        return 1
+    }
+    local cmd_name="$*"
+    local work_dir="$(pwd)"
+    local start_time
+    start_time=$(date +%s)
+    # 开始执行通知
+    "$notify_script" -title "🚀 开始执行" -message "$cmd_name" -subtitle "📁 $work_dir" -sound "Glass" &>/dev/null
+    # 执行命令
+    "$@"
+    local exit_code=$?
+    local end_time duration
+    end_time=$(date +%s)
+    duration=$((end_time - start_time))
+    # 格式化耗时
+    local duration_str
+    if [[ $duration -ge 3600 ]]; then
+        duration_str="$((duration / 3600))h$(((duration % 3600) / 60))m$((duration % 60))s"
+    elif [[ $duration -ge 60 ]]; then
+        duration_str="$((duration / 60))m$((duration % 60))s"
+    else
+        duration_str="${duration}s"
+    fi
+    # 完成通知
+    if [[ $exit_code -eq 0 ]]; then
+        "$notify_script" -title "✅ 执行完成" \
+            -message "$cmd_name (耗时: $duration_str)" \
+            -subtitle "📁 $work_dir" \
+            -sound "Glass" &>/dev/null
+    else
+        "$notify_script" -title "❌ 执行失败" \
+            -message "$cmd_name (退出码: $exit_code, 耗时: $duration_str)" \
+            -subtitle "📁 $work_dir" \
+            -sound "Basso" &>/dev/null
+    fi
+    return $exit_code
+}
