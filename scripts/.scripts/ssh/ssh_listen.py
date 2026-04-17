@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
 通知转发服务 - 在 macOS 本地运行，监听端口 7770
-接收来自 SSH 远程转发的通知请求并显示 macOS 通知
+接收来自 SSH 远程转发的请求：
+    - 打开网页链接
+    - 显示消息通知
 
 用法:
-    python3 notification_forwarder.py
+    python3 ssh_forward.py
 
 SSH 端口转发配置 (在远程服务器上):
     ssh -R 7770:localhost:7770 user@remote
