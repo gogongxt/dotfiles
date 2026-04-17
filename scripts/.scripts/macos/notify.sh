@@ -68,86 +68,83 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# 构建通知参数
-build_notifier_args() {
-    local args=()
-
-    # 必需或操作参数
-    [[ -n "$NOTIFY_REMOVE" ]] && args+=(-remove "$NOTIFY_REMOVE")
-    [[ -n "$NOTIFY_LIST" ]] && args+=(-list "$NOTIFY_LIST")
-
-    # 内容参数
-    [[ -n "$NOTIFY_TITLE" ]] && args+=(-title "$NOTIFY_TITLE")
-    [[ -n "$NOTIFY_SUBTITLE" ]] && args+=(-subtitle "$NOTIFY_SUBTITLE")
-    [[ -n "$NOTIFY_MESSAGE" ]] && args+=(-message "$NOTIFY_MESSAGE")
-    [[ -n "$NOTIFY_SOUND" ]] && args+=(-sound "$NOTIFY_SOUND")
-
-    # 分组和交互参数
-    [[ -n "$NOTIFY_GROUP" ]] && args+=(-group "$NOTIFY_GROUP")
-    [[ -n "$NOTIFY_ACTIVATE" ]] && args+=(-activate "$NOTIFY_ACTIVATE")
-    [[ -n "$NOTIFY_OPEN" ]] && args+=(-open "$NOTIFY_OPEN")
-    [[ -n "$NOTIFY_EXECUTE" ]] && args+=(-execute "$NOTIFY_EXECUTE")
-
-    # 高级参数
-    [[ -n "$NOTIFY_SENDER" ]] && args+=(-sender "$NOTIFY_SENDER")
-    [[ -n "$NOTIFY_APPICON" ]] && args+=(-appIcon "$NOTIFY_APPICON")
-    [[ -n "$NOTIFY_CONTENTIMAGE" ]] && args+=(-contentImage "$NOTIFY_CONTENTIMAGE")
-    [[ -n "$NOTIFY_IGNOREDND" ]] && args+=(-ignoreDnD)
-    [[ -n "$NOTIFY_TIMEOUT" ]] && args+=(-timeout "$NOTIFY_TIMEOUT")
-
-    echo "${args[@]}"
-}
-
 # 发送通知
 send_notification() {
     if [[ -n "$SSH_CONNECTION" ]]; then
         # SSH 环境：通过端口转发发送到本地
-        local payload
-        payload=$(cat <<EOF
-{
-    "title": "${NOTIFY_TITLE}",
-    "subtitle": "${NOTIFY_SUBTITLE}",
-    "message": "${NOTIFY_MESSAGE}",
-    "sound": "${NOTIFY_SOUND}",
-    "group": "${NOTIFY_GROUP}",
-    "activate": "${NOTIFY_ACTIVATE}",
-    "open": "${NOTIFY_OPEN}",
-    "execute": "${NOTIFY_EXECUTE}",
-    "sender": "${NOTIFY_SENDER}",
-    "appIcon": "${NOTIFY_APPICON}",
-    "contentImage": "${NOTIFY_CONTENTIMAGE}",
-    "ignoreDnD": ${NOTIFY_IGNOREDND:-false},
-    "remove": "${NOTIFY_REMOVE}",
-    "list": "${NOTIFY_LIST}",
-    "timeout": ${NOTIFY_TIMEOUT:-null}
-}
-EOF
-)
-        # 压缩 JSON (移除换行和多余空格)
-        payload=$(echo "$payload" | tr '\n' ' ' | sed 's/  */ /g')
+        # 导出变量供 Python 读取
+        export NOTIFY_TITLE NOTIFY_SUBTITLE NOTIFY_MESSAGE NOTIFY_SOUND
+        export NOTIFY_GROUP NOTIFY_ACTIVATE NOTIFY_OPEN NOTIFY_EXECUTE
+        export NOTIFY_SENDER NOTIFY_APPICON NOTIFY_CONTENTIMAGE NOTIFY_IGNOREDND
+        export NOTIFY_REMOVE NOTIFY_LIST
 
-        # 使用 python3 发送
+        # 使用 Python 构建和发送 JSON，避免 shell 转义问题
         python3 -c "
 import socket
-import sys
-s = socket.socket()
+import json
+import os
+
+payload = {
+    'title': os.environ.get('NOTIFY_TITLE', ''),
+    'subtitle': os.environ.get('NOTIFY_SUBTITLE', ''),
+    'message': os.environ.get('NOTIFY_MESSAGE', ''),
+    'sound': os.environ.get('NOTIFY_SOUND', 'Glass'),
+    'group': os.environ.get('NOTIFY_GROUP', ''),
+    'activate': os.environ.get('NOTIFY_ACTIVATE', ''),
+    'open': os.environ.get('NOTIFY_OPEN', ''),
+    'execute': os.environ.get('NOTIFY_EXECUTE', ''),
+    'sender': os.environ.get('NOTIFY_SENDER', ''),
+    'appIcon': os.environ.get('NOTIFY_APPICON', ''),
+    'contentImage': os.environ.get('NOTIFY_CONTENTIMAGE', ''),
+    'ignoreDnD': os.environ.get('NOTIFY_IGNOREDND', '') == '1',
+    'remove': os.environ.get('NOTIFY_REMOVE', ''),
+    'list': os.environ.get('NOTIFY_LIST', ''),
+}
+
+# 清理空值
+payload = {k: v for k, v in payload.items() if v}
+
 try:
+    s = socket.socket()
     s.connect(('localhost', ${NOTIFY_PORT}))
-    s.send('NOTIFY:${payload}'.encode('utf-8'))
+    s.send(('NOTIFY:' + json.dumps(payload)).encode('utf-8'))
     s.close()
 except:
     pass
 " &
     else
         # 本地环境：直接使用 terminal-notifier
-        local args
-        args=$(build_notifier_args)
+        local cmd=(terminal-notifier)
+
+        # 必需或操作参数
+        [[ -n "$NOTIFY_REMOVE" ]] && cmd+=(-remove "$NOTIFY_REMOVE")
+        [[ -n "$NOTIFY_LIST" ]] && cmd+=(-list "$NOTIFY_LIST")
+
+        # 内容参数
+        [[ -n "$NOTIFY_TITLE" ]] && cmd+=(-title "$NOTIFY_TITLE")
+        [[ -n "$NOTIFY_SUBTITLE" ]] && cmd+=(-subtitle "$NOTIFY_SUBTITLE")
+        [[ -n "$NOTIFY_MESSAGE" ]] && cmd+=(-message "$NOTIFY_MESSAGE")
+        [[ -n "$NOTIFY_SOUND" ]] && cmd+=(-sound "$NOTIFY_SOUND")
+
+        # 分组和交互参数
+        [[ -n "$NOTIFY_GROUP" ]] && cmd+=(-group "$NOTIFY_GROUP")
+        [[ -n "$NOTIFY_ACTIVATE" ]] && cmd+=(-activate "$NOTIFY_ACTIVATE")
+        [[ -n "$NOTIFY_OPEN" ]] && cmd+=(-open "$NOTIFY_OPEN")
+        [[ -n "$NOTIFY_EXECUTE" ]] && cmd+=(-execute "$NOTIFY_EXECUTE")
+
+        # 高级参数
+        [[ -n "$NOTIFY_SENDER" ]] && cmd+=(-sender "$NOTIFY_SENDER")
+        [[ -n "$NOTIFY_APPICON" ]] && cmd+=(-appIcon "$NOTIFY_APPICON")
+        [[ -n "$NOTIFY_CONTENTIMAGE" ]] && cmd+=(-contentImage "$NOTIFY_CONTENTIMAGE")
+        [[ -n "$NOTIFY_IGNOREDND" ]] && cmd+=(-ignoreDnD)
+        [[ -n "$NOTIFY_TIMEOUT" ]] && cmd+=(-timeout "$NOTIFY_TIMEOUT")
 
         if [[ -n "$NOTIFY_JSON" && -n "$NOTIFY_LIST" ]]; then
             # JSON 输出模式
-            terminal-notifier $args -json 2>/dev/null || terminal-notifier $args
+            cmd+=(-json)
+            "${cmd[@]}" 2>/dev/null || "${cmd[@]::${#cmd[@]}-1}"
         else
-            terminal-notifier $args
+            "${cmd[@]}"
         fi
     fi
 }

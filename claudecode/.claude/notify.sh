@@ -59,7 +59,7 @@ ${MESSAGE}"
 fi
 
 # 调用通用通知脚本
-NOTIFY_SCRIPT="~/.scripts/macos/notify.sh"
+NOTIFY_SCRIPT="$HOME/.scripts/macos/notify.sh"
 
 if [[ -x "$NOTIFY_SCRIPT" ]]; then
     "$NOTIFY_SCRIPT" \
