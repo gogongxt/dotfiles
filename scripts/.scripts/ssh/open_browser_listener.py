@@ -11,31 +11,30 @@ SSH 端口转发配置 (在远程服务器上):
 """
 
 import json
+import os
 import socket
 import subprocess
 import sys
 import threading
 
+# 通用通知脚本路径
+NOTIFY_SCRIPT = os.path.expanduser("~/.scripts/macos/notify.sh")
 
-def show_macos_notification(title: str, subtitle: str, message: str, sound: str):
-    """使用 terminal-notifier 显示 macOS 通知"""
-    cmd = [
-        "terminal-notifier",
-        "-title",
-        title,
-        "-subtitle",
-        subtitle,
-        "-message",
-        message,
-        "-sound",
-        sound,
-        "-group",
-        "com.claudecode.notification",
-    ]
+
+def show_macos_notification(payload: dict):
+    """使用通用通知脚本显示 macOS 通知"""
+    # 调用通用脚本，传递所有参数
+    cmd = [NOTIFY_SCRIPT]
+    for key, value in payload.items():
+        if value is None or value is False:
+            continue
+        if value is True:
+            cmd.append(f"-{key}")
+        else:
+            cmd.extend([f"-{key}", str(value)])
+
     try:
         subprocess.run(cmd, check=False)
-    except FileNotFoundError:
-        print("错误: terminal-notifier 未安装，请运行: brew install terminal-notifier")
     except Exception as e:
         print(f"通知发送失败: {e}")
 
@@ -56,13 +55,17 @@ def handle_client(conn: socket.socket, addr: tuple):
             payload_str = data_str[7:]  # 去掉 "NOTIFY:" 前缀
             try:
                 payload = json.loads(payload_str)
-                title = payload.get("title", "Claude Code")
-                subtitle = payload.get("subtitle", "")
-                message = payload.get("message", "")
-                sound = payload.get("sound", "Glass")
-
-                print(f"[通知] {title}: {message[:50]}...")
-                show_macos_notification(title, subtitle, message, sound)
+                # 清理 null 值
+                payload = {
+                    k: v for k, v in payload.items() if v is not None and v != ""
+                }
+                # 设置默认值
+                payload.setdefault("title", "Unknown")
+                payload.setdefault("sound", "Glass")
+                print(
+                    f"[通知] {payload.get('title', '')}: {payload.get('message', '')[:50]}..."
+                )
+                show_macos_notification(payload)
             except json.JSONDecodeError as e:
                 print(f"JSON 解析失败: {e}")
         elif data_str.startswith("http"):

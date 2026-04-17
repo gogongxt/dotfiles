@@ -58,40 +58,16 @@ if [[ "$EVENT_TYPE" != "stop" && -n "$NOTIFICATION_TEXT" ]]; then
 ${MESSAGE}"
 fi
 
-# 发送通知的函数
-send_notification() {
-    local title="$1"
-    local subtitle="$2"
-    local message="$3"
-    local sound="$4"
+# 调用通用通知脚本
+NOTIFY_SCRIPT="~/.scripts/macos/notify.sh"
 
-    if [[ -n "$SSH_CONNECTION" ]]; then
-        # SSH 环境：通过端口转发发送到本地
-        # 使用 JSON 格式传输，便于解析
-        local payload="{\"title\":\"${title}\",\"subtitle\":\"${subtitle}\",\"message\":\"${message}\",\"sound\":\"${sound}\"}"
-        # 转义换行符
-        payload=$(echo "$payload" | tr '\n' ' ')
-
-        # 使用 python3 发送 (最可靠)
-        python3 -c "
-import socket
-s = socket.socket()
-try:
-    s.connect(('localhost', 7770))
-    s.send('NOTIFY:${payload}'.encode('utf-8'))
-    s.close()
-except:
-    pass
-" &
-    else
-        # 本地环境：直接使用 terminal-notifier
-        terminal-notifier \
-            -title "$title" \
-            -subtitle "$subtitle" \
-            -message "$message" \
-            -sound "$sound" \
-            -group "com.claudecode.notification"
-    fi
-}
-
-send_notification "$TITLE" "$SUBTITLE" "$MESSAGE" "$SOUND"
+if [[ -x "$NOTIFY_SCRIPT" ]]; then
+    "$NOTIFY_SCRIPT" \
+        -title "$TITLE" \
+        -subtitle "$SUBTITLE" \
+        -message "$MESSAGE" \
+        -sound "$SOUND" \
+        -group "com.claudecode.notification"
+else
+    echo "警告: 通知脚本不存在或不可执行: $NOTIFY_SCRIPT" >&2
+fi
