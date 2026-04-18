@@ -188,8 +188,11 @@ return {
       opts.commands.smart_open = function(state)
         local node = state.tree:get_node()
         if node.type == "directory" then
-          -- For directories, toggle expand/collapse
-          require("neo-tree.sources.common.commands").toggle_node(state)
+          -- For directories, toggle expand/collapse (use filesystem's toggle_directory for unloaded dirs)
+          local cc = require("neo-tree.sources.common.commands")
+          local fs = require("neo-tree.sources.filesystem")
+          local utils = require("neo-tree.utils")
+          cc.toggle_node(state, utils.wrap(fs.toggle_directory, state))
         else
           -- For files, check number of usable windows
           local tabpage = vim.api.nvim_get_current_tabpage()
