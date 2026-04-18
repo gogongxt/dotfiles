@@ -133,286 +133,294 @@ if enable_smart_autofollow then
 end
 
 return {
-  "nvim-neo-tree/neo-tree.nvim",
-  opts = function(_, opts)
-    opts.sources = { "filesystem", "buffers", "document_symbols", "git_status" }
-    opts.source_selector = {
-      winbar = true,
-      content_layout = "center",
-      sources = {
-        { source = "filesystem", display_name = "󰉋 File" },
-        { source = "buffers", display_name = "󰈙 Bufs" },
-        { source = "document_symbols", display_name = " Outline" },
-        { source = "git_status", display_name = "󰊢 Git" },
-      },
-    }
-    opts.window = {
-      width = 30,
-      mappings = {
-        ["<S-CR>"] = "system_open",
-        y = "copy_to_clipboard", -- disable space until we figure out which-key disabling
-        -- ["<S-h>"] = "prev_source",
-        -- ["<S-l>"] = "next_source",
-        ["<a-p>"] = {
-          "toggle_preview",
-          config = {
-            use_float = true,
-            use_snacks_image = true,
-            use_image_nvim = true,
-          },
+  {
+    "nvim-neo-tree/neo-tree.nvim",
+    opts = function(_, opts)
+      opts.sources = { "filesystem", "buffers", "document_symbols", "git_status" }
+      opts.source_selector = {
+        winbar = true,
+        content_layout = "center",
+        sources = {
+          { source = "filesystem", display_name = "󰉋 File" },
+          { source = "buffers", display_name = "󰈙 Bufs" },
+          { source = "document_symbols", display_name = " Outline" },
+          { source = "git_status", display_name = "󰊢 Git" },
         },
-        -- P = false,
-        p = "paste_from_clipboard",
-        o = "system_open",
-        Y = "copy_selector",
-        h = "parent_or_close",
-        -- l = "child_or_open",
-        l = "smart_open",
-        w = "open_with_window_picker",
-        H = "prev_source",
-        L = "next_source",
-        ["<c-\\>"] = "open_vsplit",
-        ["<c-_>"] = "open_split",
-        ["d"] = "trash", -- Use 'trash' command below, instead of 'delete' command.
-        ["D"] = "delete", -- keep 'delete' command, for no-trash dir like iCloud.
-        ["u"] = "restore_trash", -- Select from 'trash-list' -> 'trash-restore'
-        ["m"] = false,
-      },
-      fuzzy_finder_mappings = { -- define keymaps for filter popup window in fuzzy_finder_mode
-        ["<C-J>"] = "move_cursor_down",
-        ["<C-K>"] = "move_cursor_up",
-      },
-    }
-    -- Smart open: if directory, toggle it; if file and only one window, open directly; if multiple windows, use window picker
-    opts.commands.smart_open = function(state)
-      local node = state.tree:get_node()
-      if node.type == "directory" then
-        -- For directories, toggle expand/collapse
-        require("neo-tree.sources.common.commands").toggle_node(state)
-      else
-        -- For files, check number of usable windows
-        local tabpage = vim.api.nvim_get_current_tabpage()
-        local wins = vim.api.nvim_tabpage_list_wins(tabpage)
-        -- Filter out neo-tree windows and special windows
-        local usable_wins = 0
-        for _, win in ipairs(wins) do
-          local buf = vim.api.nvim_win_get_buf(win)
-          local ft = vim.api.nvim_buf_get_option(buf, "filetype")
-          local bt = vim.api.nvim_buf_get_option(buf, "buftype")
-          if ft ~= "neo-tree" and bt == "" then usable_wins = usable_wins + 1 end
-        end
-        if usable_wins > 1 then
-          -- Multiple windows: use window picker
-          local success, picker = pcall(require, "window-picker")
-          if success then
-            local picked_win = picker.pick_window {}
-            if picked_win then
-              vim.api.nvim_set_current_win(picked_win)
-              vim.cmd("edit " .. vim.fn.fnameescape(node.path))
+      }
+      opts.window = {
+        width = 30,
+        mappings = {
+          ["<S-CR>"] = "system_open",
+          y = "copy_to_clipboard", -- disable space until we figure out which-key disabling
+          -- ["<S-h>"] = "prev_source",
+          -- ["<S-l>"] = "next_source",
+          ["<a-p>"] = {
+            "toggle_preview",
+            config = {
+              use_float = true,
+              use_snacks_image = true,
+              use_image_nvim = true,
+            },
+          },
+          -- P = false,
+          p = "paste_from_clipboard",
+          o = "system_open",
+          Y = "copy_selector",
+          h = "parent_or_close",
+          -- l = "child_or_open",
+          l = "smart_open",
+          w = "open_with_window_picker",
+          H = "prev_source",
+          L = "next_source",
+          ["<c-\\>"] = "open_vsplit",
+          ["<c-_>"] = "open_split",
+          ["d"] = "trash", -- Use 'trash' command below, instead of 'delete' command.
+          ["D"] = "delete", -- keep 'delete' command, for no-trash dir like iCloud.
+          ["u"] = "restore_trash", -- Select from 'trash-list' -> 'trash-restore'
+          ["m"] = false,
+        },
+        fuzzy_finder_mappings = { -- define keymaps for filter popup window in fuzzy_finder_mode
+          ["<C-J>"] = "move_cursor_down",
+          ["<C-K>"] = "move_cursor_up",
+        },
+      }
+      -- Smart open: if directory, toggle it; if file and only one window, open directly; if multiple windows, use window picker
+      opts.commands.smart_open = function(state)
+        local node = state.tree:get_node()
+        if node.type == "directory" then
+          -- For directories, toggle expand/collapse
+          require("neo-tree.sources.common.commands").toggle_node(state)
+        else
+          -- For files, check number of usable windows
+          local tabpage = vim.api.nvim_get_current_tabpage()
+          local wins = vim.api.nvim_tabpage_list_wins(tabpage)
+          -- Filter out neo-tree windows and special windows
+          local usable_wins = 0
+          for _, win in ipairs(wins) do
+            local buf = vim.api.nvim_win_get_buf(win)
+            local ft = vim.api.nvim_buf_get_option(buf, "filetype")
+            local bt = vim.api.nvim_buf_get_option(buf, "buftype")
+            if ft ~= "neo-tree" and bt == "" then usable_wins = usable_wins + 1 end
+          end
+          if usable_wins > 1 then
+            -- Multiple windows: use window picker
+            local success, picker = pcall(require, "window-picker")
+            if success then
+              local picked_win = picker.pick_window {}
+              if picked_win then
+                vim.api.nvim_set_current_win(picked_win)
+                vim.cmd("edit " .. vim.fn.fnameescape(node.path))
+              end
+            else
+              -- Fallback to normal open if window-picker not installed
+              require("neo-tree.sources.common.commands").open(state)
             end
           else
-            -- Fallback to normal open if window-picker not installed
+            -- Single window: open directly
             require("neo-tree.sources.common.commands").open(state)
           end
-        else
-          -- Single window: open directly
-          require("neo-tree.sources.common.commands").open(state)
         end
       end
-    end
 
-    -- Ref: https://github.com/nvim-neo-tree/neo-tree.nvim/issues/202#issuecomment-2996740957
-    opts.commands.trash = function(state)
-      local inputs = require "neo-tree.ui.inputs"
-      local manager = require "neo-tree.sources.manager"
-      local path = state.tree:get_node().path
-      local utils = require "neo-tree.utils"
-      local _, name = utils.split_path(path)
-      local msg = string.format("Are you sure you want to trash '%s'?", name)
-      inputs.confirm(msg, function(confirmed)
-        if not confirmed then return end
-        local success, err = pcall(function() vim.fn.system { "trash", path } end)
-        if not success or vim.v.shell_error ~= 0 then
-          local error_msg = "trash command failed."
-          if not success then error_msg = "trash command failed: " .. tostring(err) end
-          vim.notify(error_msg, vim.log.levels.ERROR, { title = "neo-tree" })
-        else
-          manager.refresh(state.name)
-        end
-      end)
-    end
-
-    opts.commands.trash_visual = function(state, selected_nodes)
-      local inputs = require "neo-tree.ui.inputs"
-      local manager = require "neo-tree.sources.manager"
-      local msg = "Are you sure you want to trash " .. #selected_nodes .. " files ?"
-      vim.cmd "startinsert"
-      inputs.confirm(msg, function(confirmed)
-        if not confirmed then return end
-        for _, node in ipairs(selected_nodes) do
-          local success, err = pcall(function() vim.fn.system { "trash", node.path } end)
+      -- Ref: https://github.com/nvim-neo-tree/neo-tree.nvim/issues/202#issuecomment-2996740957
+      opts.commands.trash = function(state)
+        local inputs = require "neo-tree.ui.inputs"
+        local manager = require "neo-tree.sources.manager"
+        local path = state.tree:get_node().path
+        local utils = require "neo-tree.utils"
+        local _, name = utils.split_path(path)
+        local msg = string.format("Are you sure you want to trash '%s'?", name)
+        inputs.confirm(msg, function(confirmed)
+          if not confirmed then return end
+          local success, err = pcall(function() vim.fn.system { "trash", path } end)
           if not success or vim.v.shell_error ~= 0 then
-            local error_msg = "trash command failed for: " .. node.path
-            if not success then error_msg = "trash command failed for " .. node.path .. ": " .. tostring(err) end
+            local error_msg = "trash command failed."
+            if not success then error_msg = "trash command failed: " .. tostring(err) end
             vim.notify(error_msg, vim.log.levels.ERROR, { title = "neo-tree" })
-          end
-        end
-        manager.refresh(state.name)
-      end)
-    end
-
-    opts.commands.restore_trash = function(state)
-      local inputs = require "neo-tree.ui.inputs"
-      local manager = require "neo-tree.sources.manager"
-      local root = vim.fn.getcwd()
-      local cmd_output = vim.fn.system "trash-list"
-      local lines = vim.split(cmd_output, "\n", { plain = true })
-      local trashed_items = {}
-      local function get_duplicated_items(items, path)
-        local duplicated_items = {}
-        for _, item in ipairs(items) do
-          if item.path == path then table.insert(duplicated_items, item) end
-        end
-        return duplicated_items
-      end
-      local function get_index(duplicated_items, dt)
-        local idx = 0
-        for id, item in ipairs(duplicated_items) do
-          if item.dt == dt then idx = id - 1 end
-        end
-        return idx
-      end
-      local function execute_restore(path, id, opts)
-        opts = opts or ""
-        id = id or 0
-        local cmd = 'echo "' .. id .. '" | trash-restore  --sort date ' .. opts .. ' "' .. path .. '"'
-        pcall(function()
-          vim.fn.system(cmd)
-          if vim.v.shell_error == 0 then
-            vim.notify("File restored\n" .. path, vim.log.levels.INFO, { title = "neo-tree" })
-            manager.refresh(state.name)
           else
-            vim.notify("Cannot restore\n" .. path, vim.log.levels.ERROR, { title = "neo-tree" })
+            manager.refresh(state.name)
           end
         end)
-        -- TODO: If the file in the path is open on the buffer, reload the buffer.
       end
-      for _, item in ipairs(lines) do
-        if item ~= "" then
-          local dt, path = item:match "^(%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d)%s+(.*)$"
-          local relpath = vim.fs.relpath(root, path)
-          if relpath ~= nil then -- Add item, if the path is in current root
-            table.insert(trashed_items, { dt = dt, path = path, relpath = relpath })
+
+      opts.commands.trash_visual = function(state, selected_nodes)
+        local inputs = require "neo-tree.ui.inputs"
+        local manager = require "neo-tree.sources.manager"
+        local msg = "Are you sure you want to trash " .. #selected_nodes .. " files ?"
+        vim.cmd "startinsert"
+        inputs.confirm(msg, function(confirmed)
+          if not confirmed then return end
+          for _, node in ipairs(selected_nodes) do
+            local success, err = pcall(function() vim.fn.system { "trash", node.path } end)
+            if not success or vim.v.shell_error ~= 0 then
+              local error_msg = "trash command failed for: " .. node.path
+              if not success then error_msg = "trash command failed for " .. node.path .. ": " .. tostring(err) end
+              vim.notify(error_msg, vim.log.levels.ERROR, { title = "neo-tree" })
+            end
+          end
+          manager.refresh(state.name)
+        end)
+      end
+
+      opts.commands.restore_trash = function(state)
+        local inputs = require "neo-tree.ui.inputs"
+        local manager = require "neo-tree.sources.manager"
+        local root = vim.fn.getcwd()
+        local cmd_output = vim.fn.system "trash-list"
+        local lines = vim.split(cmd_output, "\n", { plain = true })
+        local trashed_items = {}
+        local function get_duplicated_items(items, path)
+          local duplicated_items = {}
+          for _, item in ipairs(items) do
+            if item.path == path then table.insert(duplicated_items, item) end
+          end
+          return duplicated_items
+        end
+        local function get_index(duplicated_items, dt)
+          local idx = 0
+          for id, item in ipairs(duplicated_items) do
+            if item.dt == dt then idx = id - 1 end
+          end
+          return idx
+        end
+        local function execute_restore(path, id, opts)
+          opts = opts or ""
+          id = id or 0
+          local cmd = 'echo "' .. id .. '" | trash-restore  --sort date ' .. opts .. ' "' .. path .. '"'
+          pcall(function()
+            vim.fn.system(cmd)
+            if vim.v.shell_error == 0 then
+              vim.notify("File restored\n" .. path, vim.log.levels.INFO, { title = "neo-tree" })
+              manager.refresh(state.name)
+            else
+              vim.notify("Cannot restore\n" .. path, vim.log.levels.ERROR, { title = "neo-tree" })
+            end
+          end)
+          -- TODO: If the file in the path is open on the buffer, reload the buffer.
+        end
+        for _, item in ipairs(lines) do
+          if item ~= "" then
+            local dt, path = item:match "^(%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d)%s+(.*)$"
+            local relpath = vim.fs.relpath(root, path)
+            if relpath ~= nil then -- Add item, if the path is in current root
+              table.insert(trashed_items, { dt = dt, path = path, relpath = relpath })
+            end
           end
         end
-      end
-      if #trashed_items == 0 then
-        vim.notify("No files/dirs in `trash-list`", vim.log.levels.WARN, { title = "neo-tree" })
-        return
-      end
-      table.sort(trashed_items, function(a, b) return a.dt > b.dt end) -- Sort by date (new -> old)
-      -- This sorting is opposite from the default `trash-restore --sort date` order.
-      -- So need to reverse index later.
-      vim.ui.select(trashed_items, {
-        prompt = "Select trashed file:",
-        format_item = function(item) return item.dt .. " " .. item.relpath end,
-      }, function(choice)
-        if choice == nil then return end
-        local duplicated_items = get_duplicated_items(trashed_items, choice.path)
-        local idx = get_index(duplicated_items, choice.dt)
-        local rev_idx = #duplicated_items - idx - 1 -- Reverse index
-        local exists = vim.fn.filereadable(choice.path)
-        if exists == 1 then
-          local msg = "File already exists. Are you sure to overwrite it?"
-          inputs.confirm(msg, function(overwrite)
-            if overwrite then execute_restore(choice.path, rev_idx, "--overwrite") end
-          end)
-        else
-          execute_restore(choice.path, rev_idx)
+        if #trashed_items == 0 then
+          vim.notify("No files/dirs in `trash-list`", vim.log.levels.WARN, { title = "neo-tree" })
+          return
         end
-      end)
-    end
+        table.sort(trashed_items, function(a, b) return a.dt > b.dt end) -- Sort by date (new -> old)
+        -- This sorting is opposite from the default `trash-restore --sort date` order.
+        -- So need to reverse index later.
+        vim.ui.select(trashed_items, {
+          prompt = "Select trashed file:",
+          format_item = function(item) return item.dt .. " " .. item.relpath end,
+        }, function(choice)
+          if choice == nil then return end
+          local duplicated_items = get_duplicated_items(trashed_items, choice.path)
+          local idx = get_index(duplicated_items, choice.dt)
+          local rev_idx = #duplicated_items - idx - 1 -- Reverse index
+          local exists = vim.fn.filereadable(choice.path)
+          if exists == 1 then
+            local msg = "File already exists. Are you sure to overwrite it?"
+            inputs.confirm(msg, function(overwrite)
+              if overwrite then execute_restore(choice.path, rev_idx, "--overwrite") end
+            end)
+          else
+            execute_restore(choice.path, rev_idx)
+          end
+        end)
+      end
 
-    opts.filesystem = {
-      use_libuv_file_watcher = true, -- use the OS level file watchers to detect changes
-      follow_current_file = {
-        enabled = true,
-        leave_dirs_open = false,
-      },
-      hijack_netrw_behavior = "open_current",
-      filtered_items = {
-        -- set always show hidden file
-        visible = true,
-      },
-      window = {
-        mappings = {
-          ["<a-h>"] = "toggle_hidden",
+      opts.filesystem = {
+        use_libuv_file_watcher = true, -- use the OS level file watchers to detect changes
+        follow_current_file = {
+          enabled = true,
+          leave_dirs_open = false,
         },
-      },
-    }
-    -- Disable file-system-specific mappings for document_symbols source
-    opts.document_symbols = {
-      follow_cursor = false,
-      follow_tree_cursor = false, -- Automatically show symbol location when moving cursor in the tree
-      window = {
-        mappings = {
-          ["y"] = false,
-          ["p"] = false,
-          ["D"] = false,
-          ["<C-r>"] = false, -- Use uppercase C to match default mapping
+        hijack_netrw_behavior = "open_current",
+        filtered_items = {
+          -- set always show hidden file
+          visible = true,
         },
-      },
-    }
+        window = {
+          mappings = {
+            ["<a-h>"] = "toggle_hidden",
+          },
+        },
+      }
+      -- Disable file-system-specific mappings for document_symbols source
+      opts.document_symbols = {
+        follow_cursor = false,
+        follow_tree_cursor = false, -- Automatically show symbol location when moving cursor in the tree
+        window = {
+          mappings = {
+            ["y"] = false,
+            ["p"] = false,
+            ["D"] = false,
+            ["<C-r>"] = false, -- Use uppercase C to match default mapping
+          },
+        },
+      }
 
-    -- Override git_status mappings: change gg to goto top instead of git_commit_and_push
-    opts.git_status = {
-      window = {
-        mappings = {
-          ["gg"] = function()
-            vim.cmd "normal! gg" -- Jump to the first line (goto top)
-          end,
+      -- Override git_status mappings: change gg to goto top instead of git_commit_and_push
+      opts.git_status = {
+        window = {
+          mappings = {
+            ["gg"] = function()
+              vim.cmd "normal! gg" -- Jump to the first line (goto top)
+            end,
+          },
         },
-      },
-    }
+      }
 
-    -- Add markdown fallback support for document_symbols
-    -- We need to patch after the plugin loads, so use a VeryLazy autocmd
-    vim.api.nvim_create_autocmd("User", {
-      pattern = "LazyLoad",
-      callback = function(event)
-        if event.data == "neo-tree.nvim" then
-          local symbols_utils = require "neo-tree.sources.document_symbols.lib.symbols_utils"
-          local original_render = symbols_utils.render_symbols
-          symbols_utils.render_symbols = function(state, callback)
-            local bufnr = state.lsp_bufnr
-            if bufnr then
-              local ft = vim.api.nvim_buf_get_option(bufnr, "filetype")
-              if ft == "markdown" then
-                -- Check for LSP client
-                local get_clients = vim.lsp.get_clients or vim.lsp.get_active_clients
-                local has_lsp = false
-                for _, client in pairs(get_clients { bufnr = bufnr }) do
-                  if client.server_capabilities.documentSymbolProvider then
-                    has_lsp = true
-                    break
+      -- Add markdown fallback support for document_symbols
+      -- We need to patch after the plugin loads, so use a VeryLazy autocmd
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "LazyLoad",
+        callback = function(event)
+          if event.data == "neo-tree.nvim" then
+            local symbols_utils = require "neo-tree.sources.document_symbols.lib.symbols_utils"
+            local original_render = symbols_utils.render_symbols
+            symbols_utils.render_symbols = function(state, callback)
+              local bufnr = state.lsp_bufnr
+              if bufnr then
+                local ft = vim.api.nvim_buf_get_option(bufnr, "filetype")
+                if ft == "markdown" then
+                  -- Check for LSP client
+                  local get_clients = vim.lsp.get_clients or vim.lsp.get_active_clients
+                  local has_lsp = false
+                  for _, client in pairs(get_clients { bufnr = bufnr }) do
+                    if client.server_capabilities.documentSymbolProvider then
+                      has_lsp = true
+                      break
+                    end
+                  end
+                  -- Use markdown provider if no LSP
+                  if not has_lsp then
+                    local md_ok, md_provider = pcall(require, "utils.neo-tree-markdown-provider")
+                    if md_ok then return md_provider.render_symbols(state, callback) end
                   end
                 end
-                -- Use markdown provider if no LSP
-                if not has_lsp then
-                  local md_ok, md_provider = pcall(require, "utils.neo-tree-markdown-provider")
-                  if md_ok then return md_provider.render_symbols(state, callback) end
-                end
               end
+
+              return original_render(state, callback)
             end
 
-            return original_render(state, callback)
+            return true -- Remove the autocmd after execution
           end
+        end,
+      })
 
-          return true -- Remove the autocmd after execution
-        end
-      end,
-    })
-
-    return opts
-  end,
+      return opts
+    end,
+  },
+  {
+    "s1n7ax/nvim-window-picker",
+    opts = {
+      selection_chars = "HJKL;'FDSA",
+    },
+  },
 }
