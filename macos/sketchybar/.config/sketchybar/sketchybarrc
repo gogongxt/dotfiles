@@ -12,7 +12,7 @@ PLUGIN_DIR="$CONFIG_DIR/plugins"
 # If you are looking for other colors, see the color picker:
 # https://felixkratz.github.io/SketchyBar/config/tricks#color-picker
 
-sketchybar --bar position=bottom height=30 blur_radius=20 color=0x40000000
+sketchybar --bar position=top height=30 blur_radius=20 color=0x40000000
 
 ##### Changing Defaults #####
 # We now change some default values, which are applied to all further items.
@@ -40,6 +40,7 @@ sketchybar --default "${default[@]}"
 
 # for i in 5 4 3 2 1 6 7 8 9
 # SPACE_ICONS=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "15")
+SPACE_POS=left
 N=15
 # 动态设置每屏显示的块数：单显示器显示10块，多显示器显示5块
 DISPLAY_COUNT=$(yabai -m query --displays | jq length)
@@ -55,12 +56,11 @@ for i in $(seq 1 $N)
 # for i in "${SPACE_ICONS[@]}"
 do
     ITEM_ID="space.${i}"
-    POS=center
     # 计算当前 space 'i' 属于哪个组 (组索引从 0 开始)
     #    例如 i=1..5, K=5 => GROUP_INDEX=0
     #    例如 i=6..10, K=5 => GROUP_INDEX=1
     GROUP_INDEX=$(( (i - 1) / K ))
-    sketchybar --add item $ITEM_ID $POS \
+    sketchybar --add item $ITEM_ID $SPACE_POS \
         --set $ITEM_ID space=$i \
         icon=$(( (i - 1) % K + 1 )) \
         space=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20] \
@@ -78,28 +78,36 @@ do
         label.font.size=20 \
         click_script="/opt/homebrew/bin/yabai -m space --focus $i" \
         background.corner_radius=10
-    sketchybar --add item space.${i}.spacer $POS \
+    sketchybar --add item space.${i}.spacer $SPACE_POS \
         --set space.${i}.spacer \
-            padding_left=2.5 \
-            padding_right=2.5
+            padding_left=0.5 \
+            padding_right=0.5
 done
 
 # Single global event handler
-sketchybar --add item space_handler left
+sketchybar --add item space_handler $SPACE_POS
 sketchybar --set space_handler \
     drawing=off \
-    script="python3 $HOME/.config/sketchybar/plugins/space_handler.py"
+    script="SPACE_POS=$SPACE_POS python3 $HOME/.config/sketchybar/plugins/space_handler.py"
 sketchybar --subscribe space_handler space_change space_windows_change display_change
 
 ##### Adding Left Items #####
 # We add some regular items to the left side of the bar, where
 # only the properties deviating from the current defaults need to be set
 
+MUSIC_POS=center
+# Music font options - uncomment one to use
+# MUSIC_FONT="SF Pro Text"
+# MUSIC_FONT="SF Pro Display"
+MUSIC_FONT="PingFang SC"
+# MUSIC_FONT="Hack Nerd Font"
+# MUSIC_FONT="Helvetica Neue"
+# MUSIC_FONT="Menlo"
 # Music artwork - shows album cover
 # Click to toggle between showing lyric text or just the icon
 pkill -f "NeteaseCloudMusicApi" 2>/dev/null
 PORT=3123 npx NeteaseCloudMusicApi >/dev/null 2>&1 &
-sketchybar --add item music_artwork left \
+sketchybar --add item music_artwork $MUSIC_POS \
     --set music_artwork \
         icon.drawing=off \
         label.drawing=off \
@@ -115,31 +123,31 @@ sketchybar --add item music_artwork left \
         width=20 \
         click_script="python3 \"$PLUGIN_DIR/lyric.py\" --click"
 # Song title - shows current playing song name
-sketchybar --add item song_title left \
+sketchybar --add item song_title $MUSIC_POS \
     --set song_title \
         label="" \
         icon.drawing=off \
-        label.font="Hack Nerd Font:Bold:12.0" \
+        label.font="$MUSIC_FONT:Bold:12.0" \
         label.color=0xdd00ff00 \
         padding_left=-10 \
         padding_right=0 \
         click_script="python3 \"$PLUGIN_DIR/lyric.py\" --click"
 # Lyric display - shows current playing song lyrics
-sketchybar --add item lyric left \
+sketchybar --add item lyric $MUSIC_POS \
     --set lyric \
         label=">" \
         icon.drawing=off \
-        label.font="Hack Nerd Font:Bold:14.0" \
+        label.font="$MUSIC_FONT:Bold:14.0" \
         label.color=0xddffffff \
         padding_left=0 \
         padding_right=0 \
         click_script="python3 \"$PLUGIN_DIR/lyric.py\" --click"
 # Lyric next - shows next lyric line with dimmed color
-sketchybar --add item lyric_next left \
+sketchybar --add item lyric_next $MUSIC_POS \
     --set lyric_next \
         label="" \
         icon.drawing=off \
-        label.font="Hack Nerd Font:Bold:14.0" \
+        label.font="$MUSIC_FONT:Bold:14.0" \
         label.color=0x80ffffff \
         padding_left=10 \
         padding_right=0 \

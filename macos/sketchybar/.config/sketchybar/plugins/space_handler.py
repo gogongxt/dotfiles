@@ -10,6 +10,9 @@ from typing import Any, Dict, List
 exclude_title = ["scratchpad"]
 exclude_app = ["WeChat", "D-Chat", "ripdrag", "NetEaseMusic"]
 
+# Get position from environment variable (set by sketchybarrc)
+SPACE_POS = os.environ.get("SPACE_POS", "center")
+
 
 def get_display_grouping_factor() -> int:
     """Get the number of spaces per display based on current monitor count.
@@ -112,7 +115,7 @@ def add_window_items(
                 "--add",
                 "item",
                 item_id,
-                "center",
+                SPACE_POS,
                 "--set",
                 item_id,
                 f"icon.color={'0xffffffff' if selected else '0x80ffffff'}",
