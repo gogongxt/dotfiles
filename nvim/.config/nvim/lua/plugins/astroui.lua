@@ -172,7 +172,7 @@ return {
       custom_highlights = function(colors)
         return {
           -- LineNr = { fg = colors.surface2 }, -- line number color
-          -- CursorLineNr = { fg = colors.yellow, style = { "bold" } }, -- current line number color
+          CursorLineNr = { fg = colors.peach }, -- current line number color (orange)
           -- Visual = { bg = colors.overlay0 },
           Search = { bg = colors.blue, fg = colors.base },
           IncSearch = { bg = colors.pink, fg = colors.base },
