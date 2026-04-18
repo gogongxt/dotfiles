@@ -300,6 +300,7 @@ return {
               ["\\"] = { "edit_vsplit", mode = { "n" } },
               ["<c-\\>"] = { "edit_vsplit", mode = { "i", "n" } },
               ["-"] = { "edit_split", mode = { "n" } },
+              ["<C-/>"] = { "edit_split", mode = { "i", "n" } },
               ["<C-_>"] = { "edit_split", mode = { "i", "n" } },
               ["<a-e>"] = { "toggle_exclude", mode = { "i", "n" } },
               ["<a-d>"] = { "toggle_docs", mode = { "i", "n" } },

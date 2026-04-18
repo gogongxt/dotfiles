@@ -33,7 +33,8 @@ local function setup_toggleterm_provider()
           -- Set up terminal-specific keymaps if needed
           if term.bufnr then
             vim.api.nvim_buf_set_var(term.bufnr, "toggle_number", term.id)
-            -- Map Ctrl+/ to send ESC to terminal
+            -- Map Ctrl+/ and Ctrl+_ to send ESC to terminal (they produce same byte in terminal)
+            vim.api.nvim_buf_set_keymap(term.bufnr, "t", "<C-/>", "<Esc>", { noremap = true, silent = true })
             vim.api.nvim_buf_set_keymap(term.bufnr, "t", "<C-_>", "<Esc>", { noremap = true, silent = true })
           end
           -- Set buffer options for better terminal rendering
