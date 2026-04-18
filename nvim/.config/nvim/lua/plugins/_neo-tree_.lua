@@ -166,7 +166,9 @@ return {
         o = "system_open",
         Y = "copy_selector",
         h = "parent_or_close",
-        l = "child_or_open",
+        -- l = "child_or_open",
+        l = "smart_open",
+        w = "open_with_window_picker",
         H = "prev_source",
         L = "next_source",
         ["<c-\\>"] = "open_vsplit",
@@ -181,6 +183,44 @@ return {
         ["<C-K>"] = "move_cursor_up",
       },
     }
+    -- Smart open: if directory, toggle it; if file and only one window, open directly; if multiple windows, use window picker
+    opts.commands.smart_open = function(state)
+      local node = state.tree:get_node()
+      if node.type == "directory" then
+        -- For directories, toggle expand/collapse
+        require("neo-tree.sources.common.commands").toggle_node(state)
+      else
+        -- For files, check number of usable windows
+        local tabpage = vim.api.nvim_get_current_tabpage()
+        local wins = vim.api.nvim_tabpage_list_wins(tabpage)
+        -- Filter out neo-tree windows and special windows
+        local usable_wins = 0
+        for _, win in ipairs(wins) do
+          local buf = vim.api.nvim_win_get_buf(win)
+          local ft = vim.api.nvim_buf_get_option(buf, "filetype")
+          local bt = vim.api.nvim_buf_get_option(buf, "buftype")
+          if ft ~= "neo-tree" and bt == "" then usable_wins = usable_wins + 1 end
+        end
+        if usable_wins > 1 then
+          -- Multiple windows: use window picker
+          local success, picker = pcall(require, "window-picker")
+          if success then
+            local picked_win = picker.pick_window {}
+            if picked_win then
+              vim.api.nvim_set_current_win(picked_win)
+              vim.cmd("edit " .. vim.fn.fnameescape(node.path))
+            end
+          else
+            -- Fallback to normal open if window-picker not installed
+            require("neo-tree.sources.common.commands").open(state)
+          end
+        else
+          -- Single window: open directly
+          require("neo-tree.sources.common.commands").open(state)
+        end
+      end
+    end
+
     -- Ref: https://github.com/nvim-neo-tree/neo-tree.nvim/issues/202#issuecomment-2996740957
     opts.commands.trash = function(state)
       local inputs = require "neo-tree.ui.inputs"
