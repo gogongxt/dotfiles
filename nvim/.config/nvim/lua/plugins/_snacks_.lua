@@ -308,6 +308,16 @@ return {
               -- ["<c-->"] = { "edit_split", mode = { "i", "n" } }, -- cannot map ctrl--
             },
           },
+          list = {
+            keys = {
+              ["<a-p>"] = { "cycle_preview_layout", mode = { "n" } },
+            },
+          },
+          preview = {
+            keys = {
+              ["<a-p>"] = { "cycle_preview_layout", mode = { "n" } },
+            },
+          },
         },
       },
       scroll = {
