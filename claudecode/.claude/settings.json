@@ -1,4 +1,8 @@
 {
+  "env": {
+    "__CLAUDE_CODE_NO_FLICKER": "1",
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"
+  },
   "permissions": {
     "allow": [
       "Read(/)",
