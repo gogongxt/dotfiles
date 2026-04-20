@@ -25,15 +25,10 @@ SSH连接示例：
   - gx 映射：光标处 URL 会被发送到本地监听的浏览器脚本 (同上端口)
 ======================================================
 --]]
+local mkdp_port = "0" -- default: auto port
 if os.getenv "SSH_CONNECTION" ~= nil then
-  local mkdp_port = os.getenv "NVIM_MKDP_PORT" or "7771"
+  mkdp_port = os.getenv "NVIM_MKDP_PORT" or "7771"
   local mkdp_url_port = os.getenv "NVIM_MKDP_URL_PORT" or "7770"
-  vim.g.mkdp_open_ip = "127.0.0.1"
-  vim.g.mkdp_port = mkdp_port
-  vim.g.mkdp_url_port = mkdp_url_port
-  vim.g.mkdp_open_to_the_world = 1
-  vim.g.mkdp_echo_preview_url = 1
-  vim.g.mkdp_auto_close = 0
 
   -- 定义通用函数：发送URL到指定本地端口
   vim.api.nvim_exec(
@@ -58,18 +53,6 @@ if os.getenv "SSH_CONNECTION" ~= nil then
     false
   )
 
-  -- markdown-preview 的 URL 发送逻辑
-  vim.cmd(string.format(
-    [[
-    let g:mkdp_browserfunc = 'OpenMarkdownPreview'
-    function! OpenMarkdownPreview(url)
-      call SendUrlToLocalhost(a:url, %s)
-      lua vim.notify("🪄 Opening preview: " .. vim.fn.expand("<afile>"), vim.log.levels.INFO)
-    endfunction
-  ]],
-    mkdp_url_port
-  ))
-
   -- gx 映射（发送当前URL到相同端口）
   vim.cmd(string.format(
     [[
@@ -90,12 +73,17 @@ end
 
 return {
   {
-    -- 可以再浏览器中预览markdown文件
-    -- 如果打不开可以手动安装，执行: cd ~/.local/share/nvim/lazy/markdown-preview.nvim/app/ && ./install.sh
-    "iamcco/markdown-preview.nvim",
-    ft = { "markdown" },
-    build = "cd app && bash ./install.sh",
-    config = function() vim.g.mkdp_filetypes = { "markdown" } end,
+    "selimacerbas/markdown-preview.nvim",
+    dependencies = { "selimacerbas/live-server.nvim" },
+    config = function()
+      require("markdown_preview").setup {
+        -- all optional; sane defaults shown
+        instance_mode = "takeover", -- "takeover" (one tab) or "multi" (tab per instance)
+        port = tonumber(mkdp_port),
+        open_browser = os.getenv "SSH_CONNECTION" == nil, -- only auto-open in local mode
+        debounce_ms = 300,
+      }
+    end,
   },
   {
     "MeanderingProgrammer/render-markdown.nvim",
