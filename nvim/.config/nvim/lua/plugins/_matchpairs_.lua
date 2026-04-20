@@ -7,7 +7,7 @@ vim.opt.matchpairs:append "<:>"
 vim.o.matchpairs = vim.o.matchpairs .. ",《:》,「:」,『:』,（:）,［:］,【:】"
 
 return {
-  "andymass/vim-matchup",
+  "gogongxt/vim-matchup",
   init = function()
     require("match-up").setup {
       treesitter = {
