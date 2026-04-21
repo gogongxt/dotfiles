@@ -161,6 +161,32 @@ mappings.set_mappings {
       toggle_render,
       desc = "Toggle Render",
     },
+    -- treesitter class navigation
+    ["]c"] = {
+      function() require("nvim-treesitter-textobjects.move").goto_next_start("@class.outer", "textobjects") end,
+      desc = "Next class start",
+    },
+    ["]C"] = {
+      function() require("nvim-treesitter-textobjects.move").goto_next_end("@class.outer", "textobjects") end,
+      desc = "Next class end",
+    },
+    ["[c"] = {
+      function() require("nvim-treesitter-textobjects.move").goto_previous_start("@class.outer", "textobjects") end,
+      desc = "Prev class start",
+    },
+    ["[C"] = {
+      function() require("nvim-treesitter-textobjects.move").goto_previous_end("@class.outer", "textobjects") end,
+      desc = "Prev class end",
+    },
+    -- treesitter class swap
+    [">C"] = {
+      function() require("nvim-treesitter-textobjects.swap").swap_next("@class.outer", "textobjects") end,
+      desc = "Swap next class",
+    },
+    ["<C"] = {
+      function() require("nvim-treesitter-textobjects.swap").swap_previous("@class.outer", "textobjects") end,
+      desc = "Swap prev class",
+    },
     ["gn"] = {
       make_repeatable(function() Snacks.words.jump(1, true) end),
       expr = true,

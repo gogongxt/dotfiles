@@ -13,6 +13,57 @@
 | `[]w`  | lsp warning   |
 | `[]i`  | current scope |
 
+## treesitter textobjects move
+
+> plugin: nvim-treesitter-textobjects (由 AstroNvim 内置配置)
+
+| keymap | usage             |
+| ------ | ----------------- |
+| `]f`   | 下一个函数起始    |
+| `]F`   | 下一个函数结束    |
+| `[f`   | 上一个函数起始    |
+| `[F`   | 上一个函数结束    |
+| `]c`   | 下一个 class 起始 |
+| `]C`   | 下一个 class 结束 |
+| `[c`   | 上一个 class 起始 |
+| `[C`   | 上一个 class 结束 |
+| `]k`   | 下一个 block 起始 |
+| `]K`   | 下一个 block 结束 |
+| `[k`   | 上一个 block 起始 |
+| `[K`   | 上一个 block 结束 |
+| `]a`   | 下一个参数起始    |
+| `]A`   | 下一个参数结束    |
+| `[a`   | 上一个参数起始    |
+| `[A`   | 上一个参数结束    |
+
+> 规律：小写=起始，大写=结束；f=function, c=class, k=block, a=argument
+
+## treesitter textobjects select
+
+> 可视模式选择，`a`=外层(around)，`i`=内层(inner)
+
+| keymap  | usage           |
+| ------- | --------------- |
+| `af/if` | 选中外/内层函数 |
+| `ac/ic` | 选中外/内层类   |
+| `ak/ik` | 选中外/内层块   |
+| `a?/i?` | 选中外/内层条件 |
+| `ao/io` | 选中外/内层循环 |
+| `aa/ia` | 选中外/内层参数 |
+
+## treesitter textobjects swap
+
+| keymap | usage               |
+| ------ | ------------------- |
+| `>F`   | 与下一个函数交换    |
+| `<F`   | 与上一个函数交换    |
+| `>C`   | 与下一个 class 交换 |
+| `<C`   | 与上一个 class 交换 |
+| `>K`   | 与下一个 block 交换 |
+| `<K`   | 与上一个 block 交换 |
+| `>A`   | 与下一个参数交换    |
+| `<A`   | 与上一个参数交换    |
+
 ## keymap
 
 | keymap       | usage            |
