@@ -9,5 +9,5 @@
 # @raycast.icon /Applications/kitty.app/Contents/Resources/kitty.icns
 
 
-open -na Kitty
+open -na Kitty --args --single-instance -d ~ --title "kitty"
 
