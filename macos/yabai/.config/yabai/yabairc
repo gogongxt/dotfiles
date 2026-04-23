@@ -65,18 +65,6 @@ yabai -m rule --add app="^iDock$" manage=off
 yabai -m rule --add app="^kitty$" opacity=1.0
 
 # signals
-# yabai -m signal --add event=window_destroyed active=yes action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse &> /dev/null || yabai -m window --focus \$(yabai -m query --windows --space | jq .[0].id) &> /dev/null"
-# yabai -m signal --add event=window_minimized active=yes action="if \$(yabai -m query --windows --window \$YABAI_WINDOW_ID | jq -r '.\"is-floating\"'); then yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse &> /dev/null || yabai -m window --focus \$(yabai -m query --windows --space | jq .[0].id) &> /dev/null; fi"
-
-# yabai -m signal --add event=window_created \
-#     action="python3 $HOME/.config/sketchybar/yabai.py >> $HOME/.config/yabai/log.log"
-# yabai -m signal --add event=window_destroyed \
-#     action="python3 $HOME/.config/sketchybar/yabai.py >> $HOME/.config/yabai/log.log"
-# yabai -m signal --add event=window_focused \
-#     action="python3 $HOME/.config/sketchybar/yabai.py >> $HOME/.config/yabai/log.log"
-# yabai -m signal --add event=window_moved \
-#     action="python3 $HOME/.config/sketchybar/yabai.py >> $HOME/.config/yabai/log.log"
-
 # yabai -m signal --add event=window_created action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
 # yabai -m signal --add event=window_destroyed action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
 # yabai -m signal --add event=window_minimized action="python3 $HOME/.config/sketchybar/plugins/space_poller.py >> $HOME/.config/yabai/log.log"
