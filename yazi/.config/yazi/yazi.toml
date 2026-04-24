@@ -1,16 +1,16 @@
 [[plugin.prepend_fetchers]]
 id = "git"
-name = "*"
+url = "*"
 run = "git"
 
 [[plugin.prepend_fetchers]]
 id = "git"
-name = "*/"
+url = "*/"
 run = "git"
 
 # TODO: eza preview not working
 # [[plugin.prepend_previewers]]
-# name = "*/"
+# url = "*/"
 # run = "eza-preview"
 
 [preview]
@@ -19,13 +19,13 @@ max_width = 2000
 max_height = 2000
 
 [[plugin.prepend_previewers]]
-name = "*.md"
+url = "*.md"
 run = 'piper -- CLICOLOR_FORCE=1 glow -w=$w -s=dark "$1"'
 
 # preview directory with eva tree
 # [[plugin.prepend_previewers]]
-# name = "*/"
+# url = "*/"
 # run  = 'piper -- eza -TL=3 --color=always --icons=always --group-directories-first --no-quotes "$1"'
 
 [open]
-prepend_rules = [{ name = "*.drawio", use = "open" }]
+prepend_rules = [{ url = "*.drawio", use = "open" }]
