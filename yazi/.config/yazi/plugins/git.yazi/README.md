@@ -15,33 +15,43 @@ ya pkg add yazi-rs/plugins:git
 Add the following to your `~/.config/yazi/init.lua`:
 
 ```lua
-require("git"):setup()
+require("git"):setup {
+	-- Order of status signs showing in the linemode
+	order = 1500,
+}
 ```
 
 And register it as fetchers in your `~/.config/yazi/yazi.toml`:
 
 ```toml
 [[plugin.prepend_fetchers]]
-id   = "git"
-name = "*"
-run  = "git"
+id    = "git" # Remove if Yazi > v26.1.22
+url   = "*"
+run   = "git"
+group = "git"
 
 [[plugin.prepend_fetchers]]
-id   = "git"
-name = "*/"
-run  = "git"
+id    = "git" # Remove if Yazi > v26.1.22
+url   = "*/"
+run   = "git"
+group = "git"
 ```
 
 ## Advanced
 
+> [!NOTE]
+> The following configuration must be put before `require("git"):setup()`
+
 You can customize the [Style](https://yazi-rs.github.io/docs/plugins/layout#style) of the status sign with:
 
-- `th.git.modified`
-- `th.git.added`
-- `th.git.untracked`
-- `th.git.ignored`
-- `th.git.deleted`
-- `th.git.updated`
+- `th.git.unknown` - status cannot/not yet determined
+- `th.git.modified` - modified file
+- `th.git.added` - added file
+- `th.git.untracked` - untracked file
+- `th.git.ignored` - ignored file
+- `th.git.deleted` - deleted file
+- `th.git.updated` - updated file
+- `th.git.clean` - clean file
 
 For example:
 
@@ -54,20 +64,24 @@ th.git.deleted = ui.Style():fg("red"):bold()
 
 You can also customize the text of the status sign with:
 
-- `th.git.modified_sign`
-- `th.git.added_sign`
-- `th.git.untracked_sign`
-- `th.git.ignored_sign`
-- `th.git.deleted_sign`
-- `th.git.updated_sign`
+- `th.git.unknown_sign` - status cannot/not yet determined
+- `th.git.modified_sign` - modified file
+- `th.git.added_sign` - added file
+- `th.git.untracked_sign` - untracked file
+- `th.git.ignored_sign` - ignored file
+- `th.git.deleted_sign` - deleted file
+- `th.git.updated_sign` - updated file
+- `th.git.clean_sign` - clean file
 
 For example:
 
 ```lua
 -- ~/.config/yazi/init.lua
 th.git = th.git or {}
+th.git.unknown_sign = " "
 th.git.modified_sign = "M"
 th.git.deleted_sign = "D"
+th.git.clean_sign = "✔"
 ```
 
 ## License
