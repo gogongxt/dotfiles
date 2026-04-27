@@ -68,7 +68,7 @@ if [[ -x "$NOTIFY_SCRIPT" ]]; then
         -message "$MESSAGE" \
         -sound "$SOUND" \
         -group "com.claudecode.notification" \
-        -contentImage "$HOME/.claude/claude.webp"
+        -contentImage "~/.claude/claude.webp"
 else
     echo "警告: 通知脚本不存在或不可执行: $NOTIFY_SCRIPT" >&2
 fi

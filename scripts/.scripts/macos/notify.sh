@@ -74,36 +74,42 @@ send_notification() {
         export NOTIFY_SENDER NOTIFY_APPICON NOTIFY_CONTENTIMAGE NOTIFY_IGNOREDND
         export NOTIFY_REMOVE NOTIFY_LIST
 
-        # 使用 Python 构建和发送 JSON，避免 shell 转义问题
+        # 构建命令并发送到本地执行
+        local cmd=(terminal-notifier)
+
+        # 必需或操作参数
+        [[ -n "$NOTIFY_REMOVE" ]] && cmd+=(-remove "$NOTIFY_REMOVE")
+        [[ -n "$NOTIFY_LIST" ]] && cmd+=(-list "$NOTIFY_LIST")
+
+        # 内容参数
+        [[ -n "$NOTIFY_TITLE" ]] && cmd+=(-title "$NOTIFY_TITLE")
+        [[ -n "$NOTIFY_SUBTITLE" ]] && cmd+=(-subtitle "$NOTIFY_SUBTITLE")
+        [[ -n "$NOTIFY_MESSAGE" ]] && cmd+=(-message "$NOTIFY_MESSAGE")
+        [[ -n "$NOTIFY_SOUND" ]] && cmd+=(-sound "$NOTIFY_SOUND")
+
+        # 分组和交互参数
+        [[ -n "$NOTIFY_GROUP" ]] && cmd+=(-group "$NOTIFY_GROUP")
+        [[ -n "$NOTIFY_ACTIVATE" ]] && cmd+=(-activate "$NOTIFY_ACTIVATE")
+        [[ -n "$NOTIFY_OPEN" ]] && cmd+=(-open "$NOTIFY_OPEN")
+        [[ -n "$NOTIFY_EXECUTE" ]] && cmd+=(-execute "$NOTIFY_EXECUTE")
+
+        # 高级参数
+        [[ -n "$NOTIFY_SENDER" ]] && cmd+=(-sender "$NOTIFY_SENDER")
+        [[ -n "$NOTIFY_APPICON" ]] && cmd+=(-appIcon "$NOTIFY_APPICON")
+        [[ -n "$NOTIFY_CONTENTIMAGE" ]] && cmd+=(-contentImage "$NOTIFY_CONTENTIMAGE")
+        [[ -n "$NOTIFY_IGNOREDND" ]] && cmd+=(-ignoreDnD)
+
+        # 发送命令（正确转义带空格的参数）
+        local escaped_cmd=""
+        for arg in "${cmd[@]}"; do
+            escaped_cmd+=" $(printf '%q' "$arg")"
+        done
         python3 -c "
 import socket
-import json
-import os
-
-payload = {
-    'title': os.environ.get('NOTIFY_TITLE', ''),
-    'subtitle': os.environ.get('NOTIFY_SUBTITLE', ''),
-    'message': os.environ.get('NOTIFY_MESSAGE', ''),
-    'sound': os.environ.get('NOTIFY_SOUND', 'Glass'),
-    'group': os.environ.get('NOTIFY_GROUP', ''),
-    'activate': os.environ.get('NOTIFY_ACTIVATE', ''),
-    'open': os.environ.get('NOTIFY_OPEN', ''),
-    'execute': os.environ.get('NOTIFY_EXECUTE', ''),
-    'sender': os.environ.get('NOTIFY_SENDER', ''),
-    'appIcon': os.environ.get('NOTIFY_APPICON', ''),
-    'contentImage': os.environ.get('NOTIFY_CONTENTIMAGE', ''),
-    'ignoreDnD': os.environ.get('NOTIFY_IGNOREDND', '') == '1',
-    'remove': os.environ.get('NOTIFY_REMOVE', ''),
-    'list': os.environ.get('NOTIFY_LIST', ''),
-}
-
-# 清理空值
-payload = {k: v for k, v in payload.items() if v}
-
 try:
     s = socket.socket()
     s.connect(('localhost', ${NOTIFY_PORT}))
-    s.send(('NOTIFY:' + json.dumps(payload)).encode('utf-8'))
+    s.send(('CMD:${escaped_cmd}').encode())
     s.close()
 except:
     pass

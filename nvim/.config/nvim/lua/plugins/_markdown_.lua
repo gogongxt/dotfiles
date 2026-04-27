@@ -30,26 +30,19 @@ if os.getenv "SSH_CONNECTION" ~= nil then
   mkdp_port = os.getenv "NVIM_MKDP_PORT" or "7771"
   local mkdp_url_port = os.getenv "NVIM_MKDP_URL_PORT" or "7770"
 
-  -- 定义通用函数：发送URL到指定本地端口
+  -- 定义通用函数：发送 shell 命令到本地端口执行
   vim.api.nvim_exec(
-    string.format(
-      [[
+    [[
+    function! SendCmdToLocalhost(cmd, port)
+      " 使用环境变量传递命令，避免 shell 转义问题
+      let $SSH_CMD = a:cmd
+      call system("python3 -c \"import socket,os; s=socket.socket(); s.connect(('localhost'," . a:port . ")); s.send(('CMD:' + os.environ['SSH_CMD']).encode()); s.close()\" &")
+    endfunction
     function! SendUrlToLocalhost(url, port)
       let l:url = substitute(a:url, '0\.0\.0\.0', 'localhost', 'g')
-      let l:cmd = ''
-      if executable('nc')
-        let l:cmd = "echo '" . l:url . "' | nc localhost " . a:port . " &"
-      elseif executable('python3')
-        let l:cmd = "python3 -c \"import socket; s=socket.socket(); s.connect(('localhost'," . a:port . ")); s.send(b'" . l:url . "'); s.close()\" &"
-      else
-        lua vim.notify("❌ No suitable tool found (nc or python3 required)", vim.log.levels.ERROR)
-        return
-      endif
-      call system(l:cmd)
+      call SendCmdToLocalhost('open ' . shellescape(l:url), a:port)
     endfunction
   ]],
-      false
-    ),
     false
   )
 
