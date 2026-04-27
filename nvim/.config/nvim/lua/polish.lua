@@ -43,6 +43,29 @@ vim.opt.fillchars = vim.tbl_extend("force", fillchars, {
 
 -- toggle snacks image show
 -- Ref: https://github.com/folke/snacks.nvim/issues/1739#issuecomment-3413850508
+--
+-- NOTE: The on_lines callback from vim.api.nvim_buf_attach is NOT an autocmd,
+-- so clearing augroups doesn't stop it. We monkey-patch Snacks.image.placement.new
+-- to respect snacks_disabled flag.
+--
+-- Store original placement.new function
+local original_placement_new = nil
+local dummy_id = 0
+-- Create a dummy placement object that satisfies inline.lua's expectations
+local function create_dummy_placement(src)
+  dummy_id = dummy_id + 1
+  return {
+    id = dummy_id,
+    eids = {},
+    img = { src = src },
+    opts = {},
+    closed = true,
+    close = function(self) end,
+    update = function(self) end,
+    show = function(self) end,
+    hide = function(self) end,
+  }
+end
 local disable_snacks_image = function()
   -- Some group names depend on image ID so we find them based on their events
   local events = {
@@ -80,12 +103,22 @@ local disable_snacks_image = function()
   for group, _ in pairs(group_set) do
     vim.api.nvim_create_augroup(group, { clear = true })
   end
+  -- Monkey-patch placement.new to block new image creation
+  if not original_placement_new then
+    original_placement_new = Snacks.image.placement.new
+    Snacks.image.placement.new = function(buf, src, opts)
+      if _G.snacks_disabled then return create_dummy_placement(src) end
+      return original_placement_new(buf, src, opts)
+    end
+  end
   -- For toggle
   _G.snacks_disabled = true
 end
 -- Re-enable snacks.image after it was disabled
 -- The function re-creates all autocmds and then re-attaches all buffers that were attached
 local enable_snacks_image = function()
+  -- Restore original placement.new
+  if original_placement_new then Snacks.image.placement.new = original_placement_new end
   -- Re-create the groups
   for group, _ in pairs(image_augroups) do
     vim.api.nvim_create_augroup(group, { clear = true })
