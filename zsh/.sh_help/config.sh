@@ -4,8 +4,8 @@ zsh | bash) ;;
 *) echo "Unsupported shell: $CURRENT_SHELL" >&2 ;;
 esac
 
-export PATH="$HOME/.local/bin":$PATH
-export PATH="$HOME/.cargo/bin":$PATH
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"
 
 #🔽🔽🔽
 #git
