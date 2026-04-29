@@ -186,6 +186,12 @@ mappings.set_mappings {
       noremap = true,
       silent = true,
     },
+    ["<leader>ln"] = {
+      "<cmd>lua require('plugins.user.my_funcs.insert_blank_lines').insert_blank_lines()<cr>",
+      desc = "Insert Blank Lines",
+      noremap = true,
+      silent = true,
+    },
     ["<C-/>"] = {
       toggle_render,
       desc = "Toggle Render",
@@ -368,6 +374,12 @@ mappings.set_mappings {
     ["<leader>ld"] = {
       "<cmd>lua require('plugins.user.my_funcs.delete_comments').delete_comments('v')<cr>",
       desc = "Delete Comments",
+      noremap = true,
+      silent = true,
+    },
+    ["<leader>ln"] = {
+      "<cmd>lua require('plugins.user.my_funcs.insert_blank_lines').insert_blank_lines('v')<cr>",
+      desc = "Insert Blank Lines",
       noremap = true,
       silent = true,
     },
