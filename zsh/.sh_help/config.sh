@@ -124,7 +124,8 @@ command -v eza &>/dev/null && {
 alias c="/usr/bin/clear"
 alias b="btop"
 alias h="htop"
-alias nv="watch -d -n 1 nvidia-smi"
+command -v nvidia-smi &>/dev/null && alias nv="watch -d -n 1 nvidia-smi"
+command -v npu-smi &>/dev/null && alias nv="watch -d -n 1 'npu-smi info'"
 #🔼🔼🔼
 
 #🔽🔽🔽
