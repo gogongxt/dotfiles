@@ -104,13 +104,14 @@ local disable_snacks_image = function()
     vim.api.nvim_create_augroup(group, { clear = true })
   end
   -- Monkey-patch placement.new to block new image creation
-  if not original_placement_new then
-    original_placement_new = Snacks.image.placement.new
-    Snacks.image.placement.new = function(buf, src, opts)
-      if _G.snacks_disabled then return create_dummy_placement(src) end
-      return original_placement_new(buf, src, opts)
-    end
+  -- Always save the current function in case it was restored by enable
+  original_placement_new = Snacks.image.placement.new
+  Snacks.image.placement.new = function(buf, src, opts)
+    if _G.snacks_disabled then return create_dummy_placement(src) end
+    return original_placement_new(buf, src, opts)
   end
+  -- Set config.enabled so doc.attach guard blocks new attachments
+  Snacks.image.config.enabled = false
   -- For toggle
   _G.snacks_disabled = true
 end
@@ -119,6 +120,8 @@ end
 local enable_snacks_image = function()
   -- Restore original placement.new
   if original_placement_new then Snacks.image.placement.new = original_placement_new end
+  -- Restore config.enabled so doc.attach works again
+  Snacks.image.config.enabled = true
   -- Re-create the groups
   for group, _ in pairs(image_augroups) do
     vim.api.nvim_create_augroup(group, { clear = true })
@@ -126,15 +129,24 @@ local enable_snacks_image = function()
   -- Re-create autocmds. Some keys need to be cleared or modified
   -- so that format from get_autocmds works with create_autocmd
   for _, autocmd in ipairs(image_autocmds) do
-    autocmd.group = autocmd.group_name
-    if autocmd.command == "" then autocmd.command = nil end
-    autocmd.group_name = nil
-    local event = autocmd.event
-    autocmd.event = nil
-    autocmd.id = nil
-    if autocmd.buflocal then autocmd.pattern = nil end
-    autocmd.buflocal = nil
-    vim.api.nvim_create_autocmd(event, autocmd)
+    -- Copy to avoid mutating stored autocmds (needed for toggle re-enable)
+    local ac = {}
+    for k, v in pairs(autocmd) do
+      ac[k] = v
+    end
+    ac.group = ac.group_name
+    if ac.command == "" then ac.command = nil end
+    ac.group_name = nil
+    local event = ac.event
+    ac.event = nil
+    ac.id = nil
+    if ac.buflocal then
+      ac.pattern = nil
+      ac.buffer = ac.buf
+    end
+    ac.buf = nil
+    ac.buflocal = nil
+    if event then vim.api.nvim_create_autocmd(event, ac) end
   end
   -- Loop over buffers and enable those with compatible filetype
   local bufs = vim.api.nvim_list_bufs()
