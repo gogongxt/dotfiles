@@ -24,6 +24,7 @@ local get_current_file = ya.sync(function(state)
 	local is_dir = hovered.cha.is_dir
 	local basename = hovered.name:match("^(.+)%..+$") or hovered.name
 	local extension = hovered.name:match("%.([^%.]+)$") or ""
+	local link_to = hovered.link_to and tostring(hovered.link_to) or nil
 
 	return {
 		path_str = path_str,
@@ -31,19 +32,17 @@ local get_current_file = ya.sync(function(state)
 		basename = basename,
 		extension = extension,
 		is_dir = is_dir,
+		link_to = link_to,
 	}
 end)
 
 -- 计算相对于启动路径的相对路径
 local function calculate_relative_path(file_path, startup_path)
 	if file_path:find(startup_path, 1, true) == 1 and #file_path > #startup_path + 1 then
-		-- 如果file_path以startup_path开头，并且后面还有内容
-		return file_path:sub(#startup_path + 2) -- 跳过 startup_path + "/"
+		return file_path:sub(#startup_path + 2)
 	elseif file_path == startup_path then
-		-- 如果file_path就是startup_path本身
 		return "."
 	else
-		-- 如果不在startup_path下，直接使用完整路径作为相对路径
 		return file_path
 	end
 end
@@ -53,15 +52,13 @@ local function truncate_for_display(text, max_length)
 	if #text <= max_length then
 		return text
 	end
-	return ya.truncate(text, { max = max_length, rtl = false })
+	return ui.truncate(text, { max = max_length, rtl = false })
 end
 
 return {
 	entry = function()
-		-- 首先初始化启动路径
 		local stored_startup_path = init_plugin()
 
-		-- 使用 sync 函数获取当前文件信息
 		local file_info = get_current_file()
 		if not file_info then
 			ya.notify({
@@ -73,34 +70,21 @@ return {
 			return
 		end
 
-		-- 计算相对于启动路径的相对路径
 		local relative_path = calculate_relative_path(file_info.path_str, stored_startup_path)
 
-		-- 调试信息（已注释）
-		-- ya.notify({
-		-- 	title = "Debug Info",
-		-- 	content = "Path: "
-		-- 			.. file_info.path_str
-		-- 			.. "\nStartup: "
-		-- 			.. stored_startup_path
-		-- 			.. "\nRelative: "
-		-- 			.. relative_path,
-		-- 	timeout = 5,
-		-- 	level = "info",
-		-- })
-
-		-- 根据文件/文件夹类型创建不同的选项列表
+		-- 根据文件/文件夹类型创建选项列表，软链接时追加 Symlink target 选项
 		local cands = {}
 
 		if file_info.is_dir then
-			-- 文件夹选项：完整路径、文件夹名、相对路径
 			cands = {
 				{ on = "1", desc = "Full path: " .. file_info.path_str },
 				{ on = "2", desc = "Folder name: " .. file_info.name },
 				{ on = "3", desc = "Relative path: " .. relative_path },
 			}
+			if file_info.link_to then
+				cands[#cands + 1] = { on = "4", desc = "Symlink target: " .. file_info.link_to }
+			end
 		else
-			-- 文件选项：完整路径、文件名、基础名、扩展名、相对路径
 			cands = {
 				{ on = "1", desc = "Full path: " .. file_info.path_str },
 				{ on = "2", desc = "Filename: " .. file_info.name },
@@ -108,6 +92,9 @@ return {
 				{ on = "4", desc = "Extension: " .. file_info.extension },
 				{ on = "5", desc = "Relative path: " .. relative_path },
 			}
+			if file_info.link_to then
+				cands[#cands + 1] = { on = "6", desc = "Symlink target: " .. file_info.link_to }
+			end
 		end
 
 		local choice = ya.which({
@@ -119,7 +106,6 @@ return {
 		local content_type = ""
 
 		if file_info.is_dir then
-			-- 文件夹选项处理
 			if choice == 1 then
 				copied_content = file_info.path_str
 				content_type = "Full path"
@@ -127,8 +113,11 @@ return {
 				copied_content = file_info.name
 				content_type = "Folder name"
 			elseif choice == 3 then
-				copied_content = relative_path -- 使用计算出的相对路径
+				copied_content = relative_path
 				content_type = "Relative path"
+			elseif choice == 4 and file_info.link_to then
+				copied_content = file_info.link_to
+				content_type = "Symlink target"
 			else
 				ya.notify({
 					title = "Cancelled",
@@ -138,7 +127,6 @@ return {
 				return
 			end
 		else
-			-- 文件选项处理
 			if choice == 1 then
 				copied_content = file_info.path_str
 				content_type = "Full path"
@@ -152,8 +140,11 @@ return {
 				copied_content = file_info.extension
 				content_type = "Extension"
 			elseif choice == 5 then
-				copied_content = relative_path -- 使用计算出的相对路径
+				copied_content = relative_path
 				content_type = "Relative path"
+			elseif choice == 6 and file_info.link_to then
+				copied_content = file_info.link_to
+				content_type = "Symlink target"
 			else
 				ya.notify({
 					title = "Cancelled",
