@@ -25,3 +25,6 @@ dark = "catppuccin-macchiato"
 [tabs]
 active   = { fg = "#c52984", bg = "#eed49f", bold = true }
 inactive = { fg = "#eed49f", bg = "#363a4f" }
+
+[which]
+cols = 1
