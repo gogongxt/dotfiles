@@ -96,6 +96,8 @@ LYRIC_FILTER_PATTERNS = [
     ":",
     "：",
     "版权",
+    "【",
+    "】",
 ]
 
 
