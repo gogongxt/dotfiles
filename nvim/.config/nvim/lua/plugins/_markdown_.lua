@@ -26,9 +26,10 @@ SSH连接示例：
 ======================================================
 --]]
 local mkdp_port = "0" -- default: auto port
+local mkdp_url_port = "0"
 if os.getenv "SSH_CONNECTION" ~= nil then
   mkdp_port = os.getenv "NVIM_MKDP_PORT" or "7771"
-  local mkdp_url_port = os.getenv "NVIM_MKDP_URL_PORT" or "7770"
+  mkdp_url_port = os.getenv "NVIM_MKDP_URL_PORT" or "7770"
 
   -- 定义通用函数：发送 shell 命令到本地端口执行
   vim.api.nvim_exec(
@@ -66,15 +67,40 @@ end
 
 return {
   {
-    "selimacerbas/markdown-preview.nvim",
+    "gogongxt/markdown-preview.nvim",
     dependencies = { "selimacerbas/live-server.nvim" },
     config = function()
       require("markdown_preview").setup {
         -- all optional; sane defaults shown
         instance_mode = "takeover", -- "takeover" (one tab) or "multi" (tab per instance)
         port = tonumber(mkdp_port),
-        open_browser = os.getenv "SSH_CONNECTION" == nil, -- only auto-open in local mode
+        -- use user hook to manage open browser
+        open_browser = false,
+        -- open_browser = os.getenv "SSH_CONNECTION" == nil, -- only auto-open in local mode
         debounce_ms = 300,
+        theme = "light",
+        hooks = {
+          on_start = function(url)
+            vim.notify("预览已打开/聚焦: " .. url, vim.log.levels.INFO)
+            -- 将 0.0.0.0 统一替换为 localhost 以便 Chrome 标签页精确匹配
+            local target_url = url:gsub("0%.0%.0%.0", "localhost"):gsub("127%.0%.0%.1", "localhost")
+            -- 构建 AppleScript 单行命令控制 Chrome
+            -- 逻辑: 遍历所有窗口的所有 tab -> 匹配 URL -> 若匹配则 focus 并激活窗口 -> 若都不匹配则新建 tab 打开
+            local cmd = string.format(
+              [[osascript -e 'tell application "Google Chrome"' -e 'set targetURL to "%s"' -e 'set found to false' -e 'repeat with w in windows' -e 'set i to 1' -e 'repeat with t in tabs of w' -e 'if URL of t starts with targetURL then' -e 'set active tab index of w to i' -e 'set index of w to 1' -e 'set found to true' -e 'exit repeat' -e 'end if' -e 'set i to i + 1' -e 'end repeat' -e 'if found then exit repeat' -e 'end repeat' -e 'if not found then' -e 'open location targetURL' -e 'end if' -e 'activate' -e 'end tell']],
+              target_url
+            )
+            -- 判断是否为 SSH 环境
+            if os.getenv "SSH_CONNECTION" ~= nil then
+              -- 调用顶层通过 vim.api.nvim_exec 预定义的 vimscript 接口发送命令
+              vim.fn.SendCmdToLocalhost(cmd, mkdp_url_port)
+            else
+              -- 本地 macOS 环境直接在后台执行该 AppleScript
+              os.execute(cmd .. " &")
+            end
+          end,
+          on_stop = function() vim.notify("预览已关闭", vim.log.levels.INFO) end,
+        },
       }
     end,
   },
