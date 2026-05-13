@@ -89,7 +89,8 @@ alias v="myvim"
 alias vim="myvim"
 export EDITOR="$MY_VIM_CMD"
 # export EDITOR='nvim'
-export VISUAL="$EDITOR --cmd 'let g:flatten_wait=1'"
+# export VISUAL="$EDITOR --cmd 'let g:flatten_wait=1'"
+export VISUAL=""
 #🔼🔼🔼
 
 #🔽🔽🔽

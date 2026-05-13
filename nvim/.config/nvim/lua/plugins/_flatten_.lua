@@ -17,6 +17,12 @@ return {
           open = "alternate",
         },
         hooks = {
+          should_block = function(argv)
+            for _, arg in ipairs(argv) do
+              if arg:find "claude%-prompt.*%.md$" then return true end
+            end
+            return false
+          end,
           pre_open = function()
             local term = require "toggleterm.terminal"
             local termid = term.get_focused_id()
