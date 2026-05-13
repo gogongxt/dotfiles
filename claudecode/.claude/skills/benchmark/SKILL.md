@@ -79,6 +79,8 @@ ssh <host> "pip show sglang 2>/dev/null | head -2; pip show vllm 2>/dev/null | h
 ssh <host> "docker exec <CONTAINER> bash -c 'pip show sglang 2>/dev/null | head -2; pip show vllm 2>/dev/null | head -2'"
 ```
 
+If exist two framework at the same time, please use the sglang framework.
+
 The framework determines the launch command:
 
 ### SGLang
@@ -130,15 +132,15 @@ max_concurrency = floor(total_kv_cache_tokens / (input_len + output_len))
 ```bash
 # For sglang, look for a line like:
 # "[2026-05-12 20:19:43] KV Cache is allocated. #tokens: 309031, K size: 21.22 GB, V size: 21.22 GB"
+#
+# For vllm, look for a line like:
+# "(EngineCore pid=3931606) INFO 05-13 18:08:50 [kv_cache_utils.py:1316] GPU KV cache size: 82,304 tokens"
+#
 # Try broader pattern first, then fall back to exact pattern
-ssh <host> "grep -i 'kv.*cache.*token\|tokens\|kv cache' <service_log> | tail -5"
+ssh <host> "grep -i 'kv cache\|tokens' <service_log> | tail -5"
 ```
 
 If the grep returns no results, try checking the full log for any line mentioning capacity or allocation:
-
-```bash
-ssh <host> "grep -i 'allocat\|capacity\|cache' <service_log> | tail -20"
-```
 
 If KV cache info still cannot be found, report to the user — do not guess the max concurrency.
 
@@ -252,18 +254,15 @@ Report the error. Optionally retry once (kill the process and restart).
 After the service is healthy, extract KV cache capacity from the log:
 
 ```bash
-# Without container — try broader pattern, fall back to exact
-ssh <host> "grep -i 'kv.*cache.*token\|tokens\|kv cache' <LOG_DIR>/serve-<timestamp>-<model>-tp<tp>.log | tail -5"
+# Without container — sglang: "KV Cache is allocated. #tokens: 309031"
+#                      vllm:  "GPU KV cache size: 82,304 tokens"
+ssh <host> "grep -i 'kv cache\|tokens' <LOG_DIR>/serve-<timestamp>-<model>-tp<tp>.log | tail -5"
 
 # With container
-ssh <host> "docker exec <CONTAINER> grep -i 'kv.*cache.*token\|tokens\|kv cache' <LOG_DIR>/serve-<timestamp>-<model>-tp<tp>.log | tail -5"
+ssh <host> "docker exec <CONTAINER> grep -i 'kv cache\|tokens' <LOG_DIR>/serve-<timestamp>-<model>-tp<tp>.log | tail -5"
 ```
 
-If the grep returns no results, try a broader search:
-
-```bash
-ssh <host> "grep -i 'allocat\|capacity\|cache' <LOG_DIR>/serve-<timestamp>-<model>-tp<tp>.log | tail -20"
-```
+If the grep returns no results, try checking the full log for any line mentioning capacity or allocation:
 
 If KV cache info still cannot be found, report to the user — do not guess the max concurrency.
 
