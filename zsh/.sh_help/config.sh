@@ -187,19 +187,23 @@ alias documents='python3 ~/.scripts/code/documents.py'
 alias specstory_clean='python3 ~/.scripts/code/specstory_clean.py'
 if command -v claude >/dev/null 2>&1; then
   claude() {
+    local args=("$@")
     (
+      set --
       source ~/.zshrc
       proxy off >/dev/null 2>&1
       CMD=("${CLAUDE_CMD[@]:-claude}")
       if command -v specstory >/dev/null 2>&1; then
         # specstory run claude -c 'ccr code' --no-cloud-sync "$@"
-        specstory run claude -c "${CMD[*]}" --no-cloud-sync "$@"
+        local quoted_args=("${(@qq)args}")
+        specstory run claude --no-cloud-sync -c "${CMD[*]} ${quoted_args[*]}"
       else
-        command "${CMD[@]}" "$@"
+        command "${CMD[@]}" "${args[@]}"
       fi
     )
   }
 fi
+alias claude_init='claude -p "/init"'
 #🔼🔼🔼
 
 # enable cmake generate compile json file
