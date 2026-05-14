@@ -3,7 +3,7 @@
     "__CLAUDE_CODE_NO_FLICKER": "1",
     "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
     "CLAUDE_CODE_BLOCKING_LIMIT_OVERRIDE": "1000000",
-    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": 64000
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "64000"
   },
   "permissions": {
     "allow": [
@@ -33,25 +33,6 @@
     ],
     "defaultMode": "bypassPermissions"
   },
-  "statusLine": {
-    "type": "command",
-    "command": "npx ccsp@latest"
-  },
-  "enabledPlugins": {
-    "sentry-skills@sentry-skills": true
-  },
-  "extraKnownMarketplaces": {
-    "sentry-skills": {
-      "source": {
-        "source": "github",
-        "repo": "getsentry/skills"
-      }
-    }
-  },
-  "skipWebFetchPreflight": true,
-  "syntaxHighlightingDisabled": true,
-  "alwaysThinkingEnabled": false,
-  "skipDangerousModePermissionPrompt": true,
   "hooks": {
     "Stop": [
       {
@@ -74,5 +55,25 @@
         ]
       }
     ]
-  }
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/scripts/statusline.sh"
+  },
+  "enabledPlugins": {
+    "sentry-skills@sentry-skills": true
+  },
+  "extraKnownMarketplaces": {
+    "sentry-skills": {
+      "source": {
+        "source": "github",
+        "repo": "getsentry/skills"
+      }
+    }
+  },
+  "skipWebFetchPreflight": true,
+  "syntaxHighlightingDisabled": true,
+  "alwaysThinkingEnabled": false,
+  "skipDangerousModePermissionPrompt": true,
+  "effortLevel": "medium"
 }
