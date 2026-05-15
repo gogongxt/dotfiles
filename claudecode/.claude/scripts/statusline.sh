@@ -4,7 +4,8 @@
 
 # Ensure jq is available
 if ! command -v jq >/dev/null 2>&1; then
-  echo "jq not found" >&2; exit 1
+  echo "jq not found" >&2
+  exit 1
 fi
 # Colors
 readonly RST='\033[0m'
@@ -34,13 +35,18 @@ readonly SEP=" | "
 input=$(cat)
 
 model=$(echo "$input" | jq -r '.model.display_name // ""')
-remaining=$(echo "$input" | jq -r '.context_window.remaining_percentage // ""')
-used_tokens=$(echo "$input" | jq -r '.context_window.current_usage.input_tokens // empty')
+used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // ""')
+used_tokens=$(echo "$input" | jq -r '
+  (.context_window.current_usage.input_tokens // 0) +
+  (.context_window.current_usage.cache_creation_input_tokens // 0) +
+  (.context_window.current_usage.cache_read_input_tokens // 0) +
+  (.context_window.current_usage.output_tokens // 0)
+')
 total_tokens=$(echo "$input" | jq -r '.context_window.context_window_size // empty')
 effort=$(echo "$input" | jq -r '.effort.level // empty')
 session_id=$(echo "$input" | jq -r '.session_id // empty')
 current_dir=$(echo "$input" | jq -r '.workspace.current_dir // ""')
-original_repo_dir=$(echo "$input" | jq -r '.worktree.original_repo_dir // empty')
+original_cwd=$(echo "$input" | jq -r '.worktree.original_cwd // empty')
 output_style=$(echo "$input" | jq -r '.output_style.name // empty')
 cost_usd=$(echo "$input" | jq -r '.cost.total_cost_usd // empty')
 worktree_name=$(echo "$input" | jq -r '.worktree.name // empty')
@@ -50,7 +56,7 @@ worktree_branch=$(echo "$input" | jq -r '.worktree.branch // empty')
 is_worktree=0
 if [ -n "$worktree_name" ]; then
   is_worktree=1
-elif [ -n "$current_dir" ] && git -C "$current_dir" --no-optional-locks rev-parse --git-dir > /dev/null 2>&1; then
+elif [ -n "$current_dir" ] && git -C "$current_dir" --no-optional-locks rev-parse --git-dir >/dev/null 2>&1; then
   _gd=$(git -C "$current_dir" --no-optional-locks rev-parse --git-dir 2>/dev/null)
   _gcd=$(git -C "$current_dir" --no-optional-locks rev-parse --git-common-dir 2>/dev/null)
   if [ -n "$_gd" ] && [ -n "$_gcd" ] && [ "$_gd" != "$_gcd" ]; then
@@ -61,7 +67,7 @@ elif [ -n "$current_dir" ] && git -C "$current_dir" --no-optional-locks rev-pars
       worktree_name=$(basename "$_parent")
       # Fall back to current dir basename if parent is a generic bucket
       case "$worktree_name" in
-        worktrees|wt|.codex|.claude) worktree_name=$(basename "$current_dir") ;;
+      worktrees | wt | .codex | .claude) worktree_name=$(basename "$current_dir") ;;
       esac
     fi
   fi
@@ -70,45 +76,44 @@ fi
 # Git branch (prefer worktree.branch from input, fall back to git CLI)
 git_branch="$worktree_branch"
 git_dirty=0
-if [ -n "$current_dir" ] && git -C "$current_dir" --no-optional-locks rev-parse --git-dir > /dev/null 2>&1; then
+if [ -n "$current_dir" ] && git -C "$current_dir" --no-optional-locks rev-parse --git-dir >/dev/null 2>&1; then
   if [ -z "$git_branch" ]; then
     git_branch=$(git -C "$current_dir" --no-optional-locks branch --show-current 2>/dev/null)
   fi
   if [ -n "$git_branch" ]; then
-    if ! git -C "$current_dir" --no-optional-locks diff --quiet 2>/dev/null || \
-       ! git -C "$current_dir" --no-optional-locks diff --cached --quiet 2>/dev/null; then
+    if ! git -C "$current_dir" --no-optional-locks diff --quiet 2>/dev/null ||
+      ! git -C "$current_dir" --no-optional-locks diff --cached --quiet 2>/dev/null; then
       git_dirty=1
     fi
   fi
 fi
 
-# # Shorten directory (prefer original repo when in a worktree)
+# # Shorten directory (prefer original cwd when in a worktree)
 # short_dir=""
-# if [ -n "$original_repo_dir" ]; then
-#   short_dir=$(basename "$original_repo_dir")
+# if [ -n "$original_cwd" ]; then
+#   short_dir=$(basename "$original_cwd")
 # elif [ -n "$current_dir" ]; then
 #   short_dir=$(basename "$current_dir")
 # fi
 
-# Progress bar (color scales with remaining context)
+# Progress bar (color scales with context usage)
 bar=""
-if [ -n "$remaining" ]; then
-  used=$((100 - remaining))
-  filled=$((used * 10 / 100))
+if [ -n "$used_pct" ]; then
+  filled=$((used_pct * 10 / 100))
   empty=$((10 - filled))
-  if [ "$remaining" -lt 20 ]; then
+  if [ "$used_pct" -gt 80 ]; then
     ctx_color="$C_CTX_LOW"
-  elif [ "$remaining" -lt 50 ]; then
+  elif [ "$used_pct" -gt 50 ]; then
     ctx_color="$C_CTX_WARN"
   else
     ctx_color="$C_CTX_OK"
   fi
   bar="${C_SEP}[${RST}"
-  for ((i=0; i<filled; i++)); do bar+="${ctx_color}█${RST}"; done
-  for ((i=0; i<empty; i++)); do bar+="${C_BAR_EMPTY}░${RST}"; done
+  for ((i = 0; i < filled; i++)); do bar+="${ctx_color}█${RST}"; done
+  for ((i = 0; i < empty; i++)); do bar+="${C_BAR_EMPTY}░${RST}"; done
   # Format token counts (e.g. 30.3k/200k)
   ctx_label=""
-  if [ -n "$used_tokens" ] && [ "$used_tokens" != "null" ] && [ -n "$total_tokens" ] && [ "$total_tokens" != "null" ]; then
+  if [ -n "$used_tokens" ] && [ "$used_tokens" != "null" ] && [ "$total_tokens" ] && [ "$total_tokens" != "null" ] && [ "$used_tokens" -gt 0 ]; then
     if [ "$used_tokens" -ge 1000 ]; then
       used_k=$(awk -v v="$used_tokens" 'BEGIN { printf "%.1fk", v/1000 }')
     else
@@ -121,7 +126,7 @@ if [ -n "$remaining" ]; then
     fi
     ctx_label=" ${ctx_color}${used_k}/${total_k}${RST}"
   else
-    ctx_label=" ${ctx_color}${used}%${RST}"
+    ctx_label=" ${ctx_color}${used_pct}%${RST}"
   fi
   bar+="${C_SEP}]${RST}${ctx_label}"
 fi
@@ -153,10 +158,10 @@ fi
 # Color effort by level (max/xhigh/high share the bold-red pressure tier)
 if [ -n "$effort" ]; then
   case "$effort" in
-    max|MAX|Max|xhigh|XHIGH|XHigh|high|High|HIGH)  effort_color="$C_EFFORT_HIGH" ;;
-    medium|Medium|MEDIUM)                          effort_color="$C_EFFORT_MED" ;;
-    low|Low|LOW|xlow|XLow|XLOW|minimal|Minimal)    effort_color="$C_EFFORT_LOW" ;;
-    *)                                             effort_color="$C_EFFORT_OFF" ;;
+  max | MAX | Max | xhigh | XHIGH | XHigh | high | High | HIGH) effort_color="$C_EFFORT_HIGH" ;;
+  medium | Medium | MEDIUM) effort_color="$C_EFFORT_MED" ;;
+  low | Low | LOW | xlow | XLow | XLOW | minimal | Minimal) effort_color="$C_EFFORT_LOW" ;;
+  *) effort_color="$C_EFFORT_OFF" ;;
   esac
   parts+=("${effort_color} ${effort}${RST}")
 fi
