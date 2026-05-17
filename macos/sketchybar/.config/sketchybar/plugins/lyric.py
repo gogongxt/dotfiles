@@ -13,6 +13,8 @@ import time
 
 API_BASE = "http://localhost:3123"
 STATE_FILE = os.path.expanduser("~/.cache/sketchybar/lyric.state")
+TITLE_HIDDEN_FILE = os.path.expanduser("~/.cache/sketchybar/title_hidden.state")
+LYRIC_SINGLE_FILE = os.path.expanduser("~/.cache/sketchybar/lyric_single.state")
 LYRIC_CACHE_DIR = os.path.expanduser("~/.cache/sketchybar/lyrics")
 ARTWORK_CACHE_DIR = os.path.expanduser("~/.cache/sketchybar/cover")
 TIME_INTERVAL_S = 0.1
@@ -36,27 +38,81 @@ def set_collapsed(collapsed):
         f.write("collapsed" if collapsed else "expanded")
 
 
+def get_title_hidden():
+    """Get title hidden state (right-click on song_title toggles)"""
+    if os.path.exists(TITLE_HIDDEN_FILE):
+        with open(TITLE_HIDDEN_FILE, "r") as f:
+            return f.read().strip() == "hidden"
+    return False
+
+
+def set_title_hidden(hidden):
+    """Save title hidden state to file"""
+    with open(TITLE_HIDDEN_FILE, "w") as f:
+        f.write("hidden" if hidden else "shown")
+
+
+def get_lyric_single():
+    """Get lyric single-line state (right-click on lyric toggles)"""
+    if os.path.exists(LYRIC_SINGLE_FILE):
+        with open(LYRIC_SINGLE_FILE, "r") as f:
+            return f.read().strip() == "single"
+    return False
+
+
+def set_lyric_single(single):
+    """Save lyric single-line state to file"""
+    with open(LYRIC_SINGLE_FILE, "w") as f:
+        f.write("single" if single else "double")
+
+
 def handle_click():
-    """Toggle collapsed state when clicked"""
+    """Handle click based on button and item name"""
     state_dir = os.path.dirname(STATE_FILE)
     if not os.path.exists(state_dir):
         os.makedirs(state_dir)
 
-    collapsed = get_collapsed()
-    set_collapsed(not collapsed)
-    print(f"Toggled to: {'collapsed' if not collapsed else 'expanded'}")
+    button = os.environ.get("BUTTON", "left")
+    name = os.environ.get("NAME", "")
+
+    if button == "right":
+        if name in ("song_title", "music_artwork"):
+            hidden = get_title_hidden()
+            set_title_hidden(not hidden)
+            print(f"Title toggled to: {'hidden' if not hidden else 'shown'}")
+        elif name in ("lyric", "lyric_next"):
+            single = get_lyric_single()
+            set_lyric_single(not single)
+            print(f"Lyric mode toggled to: {'single' if not single else 'double'}")
+        else:
+            # Right click on other items: same as left click
+            collapsed = get_collapsed()
+            set_collapsed(not collapsed)
+            print(f"Toggled to: {'collapsed' if not collapsed else 'expanded'}")
+    else:
+        # Left click: toggle collapsed (original behavior)
+        collapsed = get_collapsed()
+        set_collapsed(not collapsed)
+        print(f"Toggled to: {'collapsed' if not collapsed else 'expanded'}")
+
     sys.exit(0)
 
 
-# Ensure the directory and file exist
+# Ensure the directory and files exist
 def ensure_state_file():
-    """Create directory and state file if they don't exist"""
+    """Create directory and state files if they don't exist"""
     state_dir = os.path.dirname(STATE_FILE)
     if not os.path.exists(state_dir):
         os.makedirs(state_dir)
     if not os.path.exists(STATE_FILE):
         with open(STATE_FILE, "w") as f:
             f.write("expanded")
+    if not os.path.exists(TITLE_HIDDEN_FILE):
+        with open(TITLE_HIDDEN_FILE, "w") as f:
+            f.write("shown")
+    if not os.path.exists(LYRIC_SINGLE_FILE):
+        with open(LYRIC_SINGLE_FILE, "w") as f:
+            f.write("double")
 
 
 ensure_state_file()
@@ -75,6 +131,7 @@ if args.click:
 defaults = {
     "title": "No Music",
     "artist": "",
+    "album": "",
     "timestampEpochMicros": int(time.time() * 1000000),
     "elapsedTimeMicros": 0,
     "playing": False,
@@ -93,7 +150,7 @@ last_bundle_identifier = None  # 缓存上一次的bundleIdentifier，用于diff
 
 # Lyric filter patterns - lines containing these will not be displayed
 LYRIC_FILTER_PATTERNS = [
-    ":",
+    # ":", # some english will use
     "：",
     "版权",
     "【",
@@ -145,22 +202,22 @@ def filter_lyrics(lyrics):
     return [(time, text) for time, text in lyrics if not is_lyric_filtered(text)]
 
 
-def get_cache_file_path(title, artist):
-    """Get the cache file path for a song based on title and artist"""
-    # Create a safe filename from title and artist
-    safe_name = f"{title}_{artist}".replace("/", "_").replace("\\", "_")
+def get_cache_file_path(title, artist, album=""):
+    """Get the cache file path for a song based on title, artist and album"""
+    # Create a safe filename from title, artist and album
+    safe_name = f"{title}_{artist}_{album}".replace("/", "_").replace("\\", "_")
     safe_name = "".join(c for c in safe_name if c.isalnum() or c in " _-").strip()
     # Limit filename length
     safe_name = safe_name[:100]
     return os.path.join(LYRIC_CACHE_DIR, f"{safe_name}.lrc")
 
 
-def load_lyric_from_cache(title, artist):
+def load_lyric_from_cache(title, artist, album=""):
     """Load lyrics from cache file if exists"""
     if not title or title == "?" or not artist or artist == "?":
         return None
 
-    cache_file = get_cache_file_path(title, artist)
+    cache_file = get_cache_file_path(title, artist, album)
     if os.path.exists(cache_file):
         try:
             with open(cache_file, "r") as f:
@@ -172,7 +229,7 @@ def load_lyric_from_cache(title, artist):
     return None
 
 
-def save_lyric_to_cache(title, artist, lrc_text):
+def save_lyric_to_cache(title, artist, lrc_text, album=""):
     """Save lyrics to cache file"""
     if not title or title == "?" or not artist or artist == "?":
         return
@@ -182,20 +239,20 @@ def save_lyric_to_cache(title, artist, lrc_text):
         if not os.path.exists(LYRIC_CACHE_DIR):
             os.makedirs(LYRIC_CACHE_DIR)
 
-        cache_file = get_cache_file_path(title, artist)
+        cache_file = get_cache_file_path(title, artist, album)
         with open(cache_file, "w") as f:
             f.write(lrc_text)
     except Exception as e:
         print(f"Failed to save lyric to cache: {e}", file=sys.stderr)
 
 
-def load_artwork_from_cache(title, artist):
+def load_artwork_from_cache(title, artist, album=""):
     """Load artwork from cache if exists (uses same index as lyric cache)"""
     if not title or title == "?" or not artist or artist == "?":
         return None
 
     # Use same naming logic as lyric cache, but in artwork_cache directory
-    safe_name = f"{title}_{artist}".replace("/", "_").replace("\\", "_")
+    safe_name = f"{title}_{artist}_{album}".replace("/", "_").replace("\\", "_")
     safe_name = "".join(c for c in safe_name if c.isalnum() or c in " _-").strip()
     safe_name = safe_name[:100]
 
@@ -207,7 +264,7 @@ def load_artwork_from_cache(title, artist):
     return None
 
 
-def fetch_lyric(title, artist):
+def fetch_lyric(title, artist, album=""):
     """Fetch lyrics from cache or NetEase cloud API"""
     global current_song_id, current_lyric, lyric_index, lyric_index_song_id
 
@@ -221,10 +278,10 @@ def fetch_lyric(title, artist):
         return None
 
     # First check cache
-    cached_lyric = load_lyric_from_cache(title, artist)
+    cached_lyric = load_lyric_from_cache(title, artist, album)
     if cached_lyric is not None:
         # Only update if it's a different song (not same cached song)
-        cache_song_id = f"cached_{title}_{artist}"
+        cache_song_id = f"cached_{title}_{artist}_{album}"
         if current_song_id != cache_song_id:
             current_lyric = cached_lyric
             current_song_id = cache_song_id
@@ -233,7 +290,7 @@ def fetch_lyric(title, artist):
         return current_lyric
 
     # If not in cache, fetch from API
-    keywords = f"{title} {artist}"
+    keywords = f"{title} {artist} {album}"
 
     search_cmd = [
         "curl",
@@ -311,7 +368,7 @@ def fetch_lyric(title, artist):
     lrc_text = lyric_data.get("lrc", {}).get("lyric", "")
 
     # Save to cache
-    save_lyric_to_cache(title, artist, lrc_text)
+    save_lyric_to_cache(title, artist, lrc_text, album)
 
     current_lyric = filter_lyrics(parse_lrc(lrc_text))
     lyric_index = 0
@@ -375,21 +432,23 @@ def stream():
                 live.update(p)
                 # Handle artwork data - decode and save to file
                 if "artworkData" in p and p["artworkData"]:
-                    # Use live dict to get the latest title/artist (handles diff updates)
+                    # Use live dict to get the latest title/artist/album (handles diff updates)
                     title = live.get("title", "")
                     artist = live.get("artist", "")
+                    album = live.get("album", "")
                     save_artwork(
                         p["artworkData"],
                         p.get("artworkMimeType", "image/jpeg"),
                         title,
                         artist,
+                        album,
                     )
             # Ignore messages from other apps
         except (json.JSONDecodeError, KeyError):
             pass
 
 
-def save_artwork(artwork_base64, mime_type, title="", artist=""):
+def save_artwork(artwork_base64, mime_type, title="", artist="", album=""):
     """Save artwork base64 data to cache directory"""
     try:
         import base64
@@ -401,7 +460,7 @@ def save_artwork(artwork_base64, mime_type, title="", artist=""):
 
         # Only save to cache if we have title and artist
         if title and artist and title != "?" and artist != "?":
-            safe_name = f"{title}_{artist}".replace("/", "_").replace("\\", "_")
+            safe_name = f"{title}_{artist}_{album}".replace("/", "_").replace("\\", "_")
             safe_name = "".join(
                 c for c in safe_name if c.isalnum() or c in " _-"
             ).strip()
@@ -420,10 +479,12 @@ def save_artwork(artwork_base64, mime_type, title="", artist=""):
         return None
 
 
-def update_sketchybar(lyric_text, next_lyric_text, playing, title, artist):
+def update_sketchybar(lyric_text, next_lyric_text, playing, title, artist, album=""):
     """Update sketchybar items with current and next lyric"""
-    # Check collapsed state
+    # Check states
     collapsed = get_collapsed()
+    title_hidden = get_title_hidden()
+    lyric_single = get_lyric_single()
 
     # Format the display text
     if playing:
@@ -438,10 +499,16 @@ def update_sketchybar(lyric_text, next_lyric_text, playing, title, artist):
         song_title_text = ""
     else:
         # Show full lyric with length limit
-        display_text = lyric_text[:50] if lyric_text else "..."
-        next_display_text = next_lyric_text[:50] if next_lyric_text else "..."
-        # Show song title (truncated)
-        if title and title != "?" and title != "No Music":
+        display_text = lyric_text[:1000] if lyric_text else "..."
+        # Single mode: hide next lyric; double mode: show it
+        if lyric_single:
+            next_display_text = ""
+        else:
+            next_display_text = next_lyric_text[:1000] if next_lyric_text else "..."
+        # Show song title (truncated or hidden)
+        if title_hidden:
+            song_title_text = "..."
+        elif title and title != "?" and title != "No Music":
             song_title_text = title[:30]
         else:
             song_title_text = ""
@@ -452,10 +519,17 @@ def update_sketchybar(lyric_text, next_lyric_text, playing, title, artist):
     # Update artwork item - only use cached artwork
     artwork_cmd = ["sketchybar", "--set", "music_artwork"]
 
-    # Try to load cached artwork
+    # Try to load cached artwork (skip when title is hidden)
     cached_artwork = None
-    if title and title != "?" and title != "No Music" and artist and artist != "?":
-        cached_artwork = load_artwork_from_cache(title, artist)
+    if (
+        not title_hidden
+        and title
+        and title != "?"
+        and title != "No Music"
+        and artist
+        and artist != "?"
+    ):
+        cached_artwork = load_artwork_from_cache(title, artist, album)
 
     if cached_artwork and os.path.exists(cached_artwork):
         artwork_cmd.extend([f"background.image={cached_artwork}"])
@@ -519,6 +593,8 @@ def main():
     last_lyric = None
     last_update = 0
     last_collapsed = get_collapsed()
+    last_title_hidden = get_title_hidden()
+    last_lyric_single = get_lyric_single()
 
     while True:
         # Calculate current playback time
@@ -526,11 +602,12 @@ def main():
 
         title = live.get("title", "?")
         artist = live.get("artist", "?")
+        album = live.get("album", "")
         playing = live["playing"]
 
         # Fetch new lyrics when song changes or starts playing
         if playing and title != "?" and artist != "?":
-            fetch_lyric(title, artist)
+            fetch_lyric(title, artist, album)
 
         # Update lyric index (incremental: O(1) since time always increases)
         global lyric_index, lyric_index_song_id
@@ -543,19 +620,25 @@ def main():
         next_text = get_next_lyric_line(current_lyric, lyric_index)
         print(current_text)
 
-        # Check collapsed state change
+        # Check state changes
         current_collapsed = get_collapsed()
+        current_title_hidden = get_title_hidden()
+        current_lyric_single = get_lyric_single()
 
-        # Update if: lyric changed, collapsed state changed, or every 5 seconds
+        # Update if: lyric changed, any state changed, or every 5 seconds
         current_time = time.time()
         if (
             current_text != last_lyric
             or current_collapsed != last_collapsed
+            or current_title_hidden != last_title_hidden
+            or current_lyric_single != last_lyric_single
             or (current_time - last_update) > 5
         ):
-            update_sketchybar(current_text, next_text, playing, title, artist)
+            update_sketchybar(current_text, next_text, playing, title, artist, album)
             last_lyric = current_text
             last_collapsed = current_collapsed
+            last_title_hidden = current_title_hidden
+            last_lyric_single = current_lyric_single
             last_update = current_time
 
         # Update lyric index if needed

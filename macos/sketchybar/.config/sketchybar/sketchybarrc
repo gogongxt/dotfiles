@@ -83,7 +83,6 @@ do
             padding_left=0.5 \
             padding_right=0.5
 done
-
 # Single global event handler
 sketchybar --add item space_handler $SPACE_POS
 sketchybar --set space_handler \
@@ -121,7 +120,8 @@ sketchybar --add item music_artwork $MUSIC_POS \
         padding_left=-20 \
         padding_right=0 \
         width=20 \
-        click_script="python3 \"$PLUGIN_DIR/lyric.py\" --click"
+        script="python3 \"$PLUGIN_DIR/lyric.py\" --click" \
+    --subscribe music_artwork mouse.clicked
 # Song title - shows current playing song name
 sketchybar --add item song_title $MUSIC_POS \
     --set song_title \
@@ -131,7 +131,8 @@ sketchybar --add item song_title $MUSIC_POS \
         label.color=0xdd00ff00 \
         padding_left=-10 \
         padding_right=0 \
-        click_script="python3 \"$PLUGIN_DIR/lyric.py\" --click"
+        script="python3 \"$PLUGIN_DIR/lyric.py\" --click" \
+    --subscribe song_title mouse.clicked
 # Lyric display - shows current playing song lyrics
 sketchybar --add item lyric $MUSIC_POS \
     --set lyric \
@@ -141,7 +142,8 @@ sketchybar --add item lyric $MUSIC_POS \
         label.color=0xddffffff \
         padding_left=0 \
         padding_right=0 \
-        click_script="python3 \"$PLUGIN_DIR/lyric.py\" --click"
+        script="python3 \"$PLUGIN_DIR/lyric.py\" --click" \
+    --subscribe lyric mouse.clicked
 # Lyric next - shows next lyric line with dimmed color
 sketchybar --add item lyric_next $MUSIC_POS \
     --set lyric_next \
@@ -151,7 +153,8 @@ sketchybar --add item lyric_next $MUSIC_POS \
         label.color=0x80ffffff \
         padding_left=10 \
         padding_right=0 \
-        click_script="python3 \"$PLUGIN_DIR/lyric.py\" --click"
+        script="python3 \"$PLUGIN_DIR/lyric.py\" --click" \
+    --subscribe lyric_next mouse.clicked
 # Launch the lyric plugin in background
 pkill -f lyric.py
 python3 "$PLUGIN_DIR/lyric.py" &
