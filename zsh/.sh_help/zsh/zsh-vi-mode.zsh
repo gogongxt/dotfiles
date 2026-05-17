@@ -2,7 +2,7 @@
 unset zle_bracketed_paste
 
 # Command line editing (vv in normal mode)
-export ZVM_VI_EDITOR="${VISUAL:-$EDITOR --cmd 'let g:flatten_wait=1'}"
+export ZVM_VI_EDITOR=$([[ "$EDITOR" == "nvim" ]] && echo "nvim --cmd 'let g:flatten_wait=1'" || echo "$EDITOR")
 
 # Clipboard handling functions
 function _get_clipboard_cache_file() {

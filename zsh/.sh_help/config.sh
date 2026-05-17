@@ -90,7 +90,7 @@ alias vim="myvim"
 export EDITOR="$MY_VIM_CMD"
 # export EDITOR='nvim'
 # export VISUAL="$EDITOR --cmd 'let g:flatten_wait=1'"
-export VISUAL=""
+# export VISUAL="" # not set to null string otherwise cause git edit problem
 #🔼🔼🔼
 
 #🔽🔽🔽
