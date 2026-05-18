@@ -53,6 +53,11 @@ use = "gogongxt/copy-path"
 rev = "3288d45"
 hash = "bc79f5cfe2baa37c7b1c8578f19f4c83"
 
+[[plugin.deps]]
+use = "gogongxt/initial-cwd"
+rev = "cc7c980"
+hash = "2a7fc9d8da46c064d6718db02444f16a"
+
 [[flavor.deps]]
 use = "yazi-rs/flavors:catppuccin-macchiato"
 rev = "0670801"

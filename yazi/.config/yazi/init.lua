@@ -37,6 +37,9 @@ require("starship"):setup()
 -- yazi linemode show lines plugin
 require("lines-linemode"):setup()
 
+-- yazi initial-cwd plugin
+require("initial-cwd"):setup()
+
 -- NOTE: show user and host name in the header line
 -- Header:children_add(function()
 -- 	if ya.target_family() ~= "unix" then
