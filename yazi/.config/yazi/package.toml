@@ -55,8 +55,8 @@ hash = "bc79f5cfe2baa37c7b1c8578f19f4c83"
 
 [[plugin.deps]]
 use = "gogongxt/initial-cwd"
-rev = "cc7c980"
-hash = "2a7fc9d8da46c064d6718db02444f16a"
+rev = "3716bc6"
+hash = "e0313ff82434070c7c15d51c326ac28f"
 
 [[flavor.deps]]
 use = "yazi-rs/flavors:catppuccin-macchiato"
