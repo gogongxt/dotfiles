@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# pystow - Python reimplementation of GNU Stow
+# Always runs main.py from the same directory as this script
+SELF="$(readlink -f "$0" 2>/dev/null || readlink "$0" 2>/dev/null || echo "$0")"
+exec "$(dirname "$SELF")/pystow/main.py" "$@"
