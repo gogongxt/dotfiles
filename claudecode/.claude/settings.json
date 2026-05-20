@@ -74,5 +74,6 @@
   "skipWebFetchPreflight": true,
   "syntaxHighlightingDisabled": true,
   "alwaysThinkingEnabled": false,
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "effortLevel": "xhigh"
 }
