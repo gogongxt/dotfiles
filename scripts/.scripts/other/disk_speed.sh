@@ -23,7 +23,11 @@ DIR="."
 THREADS=4
 BLOCK_SIZE="1G"
 COUNT=1
-MODE="both" # 可选: write | read | both
+MODE="both" # 可选: write | read | both | latency | all
+
+# 延迟测试参数
+LATENCY_COUNT=100 # 延迟测试 IO 次数
+LATENCY_BS="4K"   # 延迟测试块大小（小块模拟随机 IO）
 
 # 结果变量
 SINGLE_WRITE_SPEED=""
@@ -32,6 +36,13 @@ MULTI_WRITE_TOTAL=0
 MULTI_READ_TOTAL=0
 WRITE_DURATION=0
 READ_DURATION=0
+WRITE_LATENCY_AVG=""
+WRITE_LATENCY_MIN=""
+WRITE_LATENCY_MAX=""
+READ_LATENCY_AVG=""
+READ_LATENCY_MIN=""
+READ_LATENCY_MAX=""
+OPEN_LATENCY_AVG=""
 
 # 打印帮助信息
 usage() {
@@ -43,11 +54,14 @@ usage() {
   -t, --threads <数量>      并发线程数 (默认: 4)
   -b, --block-size <大小>   单块大小 (默认: 1G)
   -c, --count <数量>        每线程块数量 (默认: 1)
-  -m, --mode <模式>         测试模式: write | read | both (默认: both)
+  -m, --mode <模式>         测试模式: write | read | both | latency | all (默认: both)
+  -n, --latency-count <次数> 延迟测试 IO 次数 (默认: 100)
   -h, --help                显示此帮助信息
 
 示例:
   $0 --dir /data --threads 8 --block-size 512M --count 2
+  $0 --dir /mnt/nfs --mode latency --latency-count 200
+  $0 --dir /mnt/nfs --mode all
 EOF
     exit 0
 }
@@ -75,6 +89,10 @@ while [[ $# -gt 0 ]]; do
             MODE="$2"
             shift 2
             ;;
+        -n | --latency-count)
+            LATENCY_COUNT="$2"
+            shift 2
+            ;;
         -h | --help) usage ;;
         *)
             echo "未知参数: $1"
@@ -98,6 +116,10 @@ echo "线程数: $THREADS"
 echo "块大小: $BLOCK_SIZE"
 echo "块数量: $COUNT"
 echo "测试模式: $MODE"
+if [[ "$MODE" == "latency" || "$MODE" == "all" ]]; then
+    echo "延迟测试块大小: $LATENCY_BS"
+    echo "延迟测试次数: $LATENCY_COUNT"
+fi
 echo "====================="
 
 # 函数：单位换算为 MB/s
@@ -196,7 +218,8 @@ create_test_files() {
 
 # 清理测试文件
 cleanup_test_files() {
-    rm -f "$DIR"/dd_test_file_* /tmp/dd_write_*.txt /tmp/dd_read_*.txt 2>/dev/null || true
+    rm -f "$DIR"/dd_test_file_* "$DIR"/dd_latency_test \
+        /tmp/dd_write_*.txt /tmp/dd_read_*.txt /tmp/dd_latency_times.txt 2>/dev/null || true
 }
 
 # 显示测试结果汇总
@@ -238,15 +261,28 @@ show_summary() {
         fi
     fi
 
+    if [[ "$MODE" == "latency" || "$MODE" == "all" ]]; then
+        echo "延迟性能 (块大小: $LATENCY_BS，次数: $LATENCY_COUNT):"
+        if [ -n "$WRITE_LATENCY_AVG" ]; then
+            echo "  • 写延迟:      avg ${WRITE_LATENCY_AVG} ms  |  min ${WRITE_LATENCY_MIN} ms  |  max ${WRITE_LATENCY_MAX} ms"
+        fi
+        if [ -n "$READ_LATENCY_AVG" ]; then
+            echo "  • 读延迟:      avg ${READ_LATENCY_AVG} ms  |  min ${READ_LATENCY_MIN} ms  |  max ${READ_LATENCY_MAX} ms"
+        fi
+        if [ -n "$OPEN_LATENCY_AVG" ]; then
+            echo "  • stat 延迟:   avg ${OPEN_LATENCY_AVG} ms"
+        fi
+    fi
+
     # 并发效率分析
-    if [[ "$MODE" == "both" && -n "$SINGLE_WRITE_SPEED" && "$MULTI_WRITE_TOTAL" != "0" ]]; then
+    if [[ ("$MODE" == "both" || "$MODE" == "all") && -n "$SINGLE_WRITE_SPEED" && "$MULTI_WRITE_TOTAL" != "0" ]]; then
         local write_efficiency=$(awk "BEGIN {printf \"%.1f\", ($MULTI_WRITE_TOTAL / $SINGLE_WRITE_SPEED / $THREADS) * 100}")
         echo "-------------------------------------------"
         echo "并发效率分析:"
         echo "  • 写入并发效率: ${write_efficiency}% (相对单线程)"
     fi
 
-    if [[ "$MODE" == "both" && -n "$SINGLE_READ_SPEED" && "$MULTI_READ_TOTAL" != "0" ]]; then
+    if [[ ("$MODE" == "both" || "$MODE" == "all") && -n "$SINGLE_READ_SPEED" && "$MULTI_READ_TOTAL" != "0" ]]; then
         local read_efficiency=$(awk "BEGIN {printf \"%.1f\", ($MULTI_READ_TOTAL / $SINGLE_READ_SPEED / $THREADS) * 100}")
         echo "  • 读取并发效率: ${read_efficiency}% (相对单线程)"
     fi
@@ -285,6 +321,83 @@ single_thread_test() {
     fi
 
     rm -f "$file"
+}
+
+# 延迟测试：逐次同步 IO，统计每次耗时（单位 ms）
+latency_test() {
+    echo ""
+    echo ">>> [延迟测试] 块大小: $LATENCY_BS，次数: $LATENCY_COUNT"
+
+    local file="$DIR/dd_latency_test"
+    local tmp_times="/tmp/dd_latency_times.txt"
+    rm -f "$tmp_times"
+
+    # 写延迟：每次写一个小块，用 oflag=direct 绕过 page cache
+    echo "测量写延迟..."
+    local dd_write_params="oflag=direct"
+    if [[ "$OS" == "linux" ]]; then
+        dd_write_params="oflag=direct status=none"
+    fi
+
+    for i in $(seq 1 "$LATENCY_COUNT"); do
+        local t_start t_end elapsed
+        t_start=$(date +%s%N)
+        dd if=/dev/zero of="$file" bs="$LATENCY_BS" count=1 $dd_write_params 2>/dev/null
+        t_end=$(date +%s%N)
+        elapsed=$(awk "BEGIN {printf \"%.3f\", ($t_end - $t_start) / 1000000}")
+        echo "$elapsed" >>"$tmp_times"
+    done
+
+    # 计算写延迟统计
+    local stats
+    stats=$(awk 'BEGIN{min=999999; max=0; sum=0; n=0}
+         {v=$1+0; if(v<min)min=v; if(v>max)max=v; sum+=v; n++}
+         END{printf "%.3f %.3f %.3f", min, max, sum/n}' "$tmp_times")
+    read -r WRITE_LATENCY_MIN WRITE_LATENCY_MAX WRITE_LATENCY_AVG <<<"$stats"
+    echo "  写延迟 — avg: ${WRITE_LATENCY_AVG} ms  min: ${WRITE_LATENCY_MIN} ms  max: ${WRITE_LATENCY_MAX} ms"
+
+    # 读延迟：先确保文件存在，然后每次读一个小块
+    local dd_read_params="iflag=direct"
+    if [[ "$OS" == "linux" ]]; then
+        dd_read_params="iflag=direct status=none"
+    fi
+    rm -f "$tmp_times"
+
+    echo "测量读延迟..."
+    for i in $(seq 1 "$LATENCY_COUNT"); do
+        local t_start t_end elapsed
+        t_start=$(date +%s%N)
+        dd if="$file" of=/dev/null bs="$LATENCY_BS" count=1 $dd_read_params 2>/dev/null
+        t_end=$(date +%s%N)
+        elapsed=$(awk "BEGIN {printf \"%.3f\", ($t_end - $t_start) / 1000000}")
+        echo "$elapsed" >>"$tmp_times"
+    done
+
+    stats=$(awk 'BEGIN{min=999999; max=0; sum=0; n=0}
+         {v=$1+0; if(v<min)min=v; if(v>max)max=v; sum+=v; n++}
+         END{printf "%.3f %.3f %.3f", min, max, sum/n}' "$tmp_times")
+    read -r READ_LATENCY_MIN READ_LATENCY_MAX READ_LATENCY_AVG <<<"$stats"
+    echo "  读延迟 — avg: ${READ_LATENCY_AVG} ms  min: ${READ_LATENCY_MIN} ms  max: ${READ_LATENCY_MAX} ms"
+
+    # open/stat 延迟：模拟 NFS 元数据操作
+    echo "测量 open/stat 延迟..."
+    rm -f "$tmp_times"
+    for i in $(seq 1 "$LATENCY_COUNT"); do
+        local t_start t_end elapsed
+        t_start=$(date +%s%N)
+        stat "$file" >/dev/null 2>&1
+        t_end=$(date +%s%N)
+        elapsed=$(awk "BEGIN {printf \"%.3f\", ($t_end - $t_start) / 1000000}")
+        echo "$elapsed" >>"$tmp_times"
+    done
+
+    stats=$(awk 'BEGIN{min=999999; max=0; sum=0; n=0}
+         {v=$1+0; if(v<min)min=v; if(v>max)max=v; sum+=v; n++}
+         END{printf "%.3f %.3f %.3f", min, max, sum/n}' "$tmp_times")
+    read -r _ _ OPEN_LATENCY_AVG <<<"$stats"
+    echo "  stat 延迟 — avg: ${OPEN_LATENCY_AVG} ms"
+
+    rm -f "$file" "$tmp_times"
 }
 
 # 多线程测试
@@ -342,6 +455,16 @@ multi_thread_test() {
 trap cleanup_test_files EXIT INT TERM
 
 # 主逻辑
-single_thread_test
-multi_thread_test
+if [[ "$MODE" == "latency" ]]; then
+    latency_test
+else
+    if [[ "$MODE" == "all" ]]; then
+        single_thread_test
+        multi_thread_test
+        latency_test
+    else
+        single_thread_test
+        multi_thread_test
+    fi
+fi
 show_summary

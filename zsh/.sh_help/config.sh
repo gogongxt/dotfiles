@@ -183,6 +183,7 @@ alias words_to_mp3='python3 ~/.scripts/english_helper/generate_mp3_from_words.py
 # alias myssh='python3 ~/.scripts/ssh/myssh_password.py'
 # alias myssh_plain='python3 ~/.scripts/ssh/myssh_plain_password.py'
 alias myssh='python3 ~/.scripts/ssh/myssh.py'
+alias disk_speed='bash ~/.scripts/other/disk_speed.sh'
 alias password='python3 ~/.scripts/ssh/password.py'
 alias documents='python3 ~/.scripts/code/documents.py'
 alias specstory_clean='python3 ~/.scripts/code/specstory_clean.py'
