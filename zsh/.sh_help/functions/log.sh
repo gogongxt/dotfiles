@@ -31,8 +31,45 @@
 
 mylog() {
     [[ $# -eq 0 || "$1" == "-h" || "$1" == "--help" ]] && {
-        printf '\033[31mUsage:\033[0m mylog <command> [args...]\n' >&2
-        printf '\033[31mUsage:\033[0m mylog -- <logfile> -- <command> [args...]\n' >&2
+        printf '\033[1;33mmylog\033[0m — run a command and save its output to a timestamped log file\n\n' >&2
+        printf '\033[1mUSAGE\033[0m\n' >&2
+        printf '  mylog <command> [args...]                          # basic mode\n' >&2
+        printf '  mylog -- [logfile] -- <command> [args...]          # custom log path\n' >&2
+        printf '  mylog -- --nohup [logfile] -- <command> [args...]  # background mode\n' >&2
+        printf '\n\033[1mMODES\033[0m\n' >&2
+        printf '  \033[36mbasic\033[0m      Log file is auto-named: ~/logs/YYYYMMDD_HHmmSS_mmm_<cmd>.log\n' >&2
+        printf '             Output is shown in terminal AND saved to the log file.\n' >&2
+        printf '             ANSI color codes are stripped from the log (requires ansi2txt).\n' >&2
+        printf '\n' >&2
+        printf '  \033[36mcustom\033[0m     Wrap args with -- ... -- to set a custom log file path.\n' >&2
+        printf '             If no path is given, auto-naming is used but without cmd suffix.\n' >&2
+        printf '\n' >&2
+        printf '  \033[36m--nohup\033[0m    Run the command in the background (detached, like nohup).\n' >&2
+        printf '             Output is NOT shown in terminal; only written to the log file.\n' >&2
+        printf '             Prints the background PID immediately.\n' >&2
+        printf '\n\033[1mOPTIONS\033[0m\n' >&2
+        printf '  --nohup    Background mode (must appear between the two -- separators)\n' >&2
+        printf '  -h/--help  Show this help\n' >&2
+        printf '\n\033[1mEXAMPLES\033[0m\n' >&2
+        printf '  \033[90m# Basic: auto-named log, output mirrored to terminal\033[0m\n' >&2
+        printf '  mylog make build\n' >&2
+        printf '\n' >&2
+        printf '  \033[90m# Custom log path\033[0m\n' >&2
+        printf '  mylog -- /tmp/build.log -- make build\n' >&2
+        printf '\n' >&2
+        printf '  \033[90m# Auto-named log (no cmd suffix), still foreground\033[0m\n' >&2
+        printf '  mylog -- -- make build\n' >&2
+        printf '\n' >&2
+        printf '  \033[90m# Background mode: detach, write to auto-named log\033[0m\n' >&2
+        printf '  mylog -- --nohup -- python train.py\n' >&2
+        printf '\n' >&2
+        printf '  \033[90m# Background mode with custom log path\033[0m\n' >&2
+        printf '  mylog -- --nohup /tmp/train.log -- python train.py\n' >&2
+        printf '\n\033[1mNOTES\033[0m\n' >&2
+        printf '  • Logs are saved to ~/logs/ by default\n' >&2
+        printf '  • If the log file already exists, you will be prompted before overwriting\n' >&2
+        printf '  • Ctrl+C during foreground execution still saves the log\n' >&2
+        printf '  • ansi2txt (colorized-logs) strips ANSI codes from saved files\n' >&2
         return 1
     }
 
