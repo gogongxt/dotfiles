@@ -220,6 +220,70 @@ mylog() {
     return $exit_code
 }
 
+# Strip ANSI escape sequences from stdin, write plain text to stdout.
+# Covers: CSI (ESC[...m), OSC (ESC]...BEL/ST), single-char escapes, bare BEL.
+# Drop-in replacement for the ansi2txt binary when it's not installed.
+ansi2txt() {
+    sed $'s/\033\\[[0-9;?]*[A-Za-z]//g;'$'s/\033][^\007]*\007//g;'$'s/\033][^\033]*\033\\\\//g;'$'s/\033.//g;'$'s/\007//g'
+}
+ansi2txt_test() {
+    local pass=0 fail=0
+    _assert() {
+        local desc="$1" expected="$2" actual="$3"
+        if [[ "$actual" == "$expected" ]]; then
+            printf '  \033[32m✓\033[0m %s\n' "$desc"
+            ((pass++))
+        else
+            printf '  \033[31m✗\033[0m %s\n' "$desc"
+            printf '    expected: %q\n' "$expected"
+            printf '    actual:   %q\n' "$actual"
+            ((fail++))
+        fi
+    }
+    printf '\033[1mansi2txt test suite\033[0m\n'
+    _assert "SGR colors stripped" \
+        "green bold normal red" \
+        "$(printf '\033[1;32mgreen bold\033[0m normal \033[31mred\033[0m' | ansi2txt)"
+    _assert "SGR reset only (ESC[m)" \
+        "plain" \
+        "$(printf '\033[mplain' | ansi2txt)"
+    _assert "256-color fg/bg" \
+        "text" \
+        "$(printf '\033[38;5;196mtext\033[0m' | ansi2txt)"
+    _assert "truecolor (ESC[38;2;r;g;bm)" \
+        "orange" \
+        "$(printf '\033[38;2;255;128;0morange\033[0m' | ansi2txt)"
+    _assert "CSI cursor movement (ESC[A)" \
+        " up" \
+        "$(printf '\033[A up' | ansi2txt)"
+    _assert "CSI with ? param (ESC[?25l hide cursor)" \
+        "text" \
+        "$(printf '\033[?25ltext\033[?25h' | ansi2txt)"
+    _assert "CSI clear screen (ESC[2J)" \
+        " ok" \
+        "$(printf '\033[2J ok' | ansi2txt)"
+    _assert "OSC window title with BEL terminator" \
+        " after" \
+        "$(printf '\033]0;title\007 after' | ansi2txt)"
+    _assert "OSC hyperlink with ST terminator (ESC\\\\)" \
+        "link text" \
+        "$(printf '\033]8;;https://example.com\033\\link text\033]8;;\033\\' | ansi2txt)"
+    _assert "single-char escape (ESC M reverse index)" \
+        " text" \
+        "$(printf '\033M text' | ansi2txt)"
+    _assert "bare BEL removed" \
+        "no bell" \
+        "$(printf '\007no bell' | ansi2txt)"
+    _assert "plain text unchanged" \
+        "hello world 123 !@#" \
+        "$(printf 'hello world 123 !@#' | ansi2txt)"
+    _assert "multi-line input" \
+        $'line1\nline2' \
+        "$(printf '\033[32mline1\033[0m\n\033[31mline2\033[0m' | ansi2txt)"
+    printf '\n\033[1mResults:\033[0m %d passed, %d failed\n' "$pass" "$fail"
+    [[ $fail -eq 0 ]]
+}
+
 # 命令执行通知函数
 notify() {
     [[ $# -eq 0 || "$1" == "-h" || "$1" == "--help" ]] && {
