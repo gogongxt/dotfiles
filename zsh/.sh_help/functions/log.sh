@@ -37,7 +37,7 @@ mylog() {
         printf '  mylog -- [logfile] -- <command> [args...]          # custom log path\n' >&2
         printf '  mylog -- --nohup [logfile] -- <command> [args...]  # background mode\n' >&2
         printf '\n\033[1mMODES\033[0m\n' >&2
-        printf '  \033[36mbasic\033[0m      Log file is auto-named: ~/logs/YYYYMMDD_HHmmSS_mmm_<cmd>.log\n' >&2
+        printf '  \033[36mbasic\033[0m      Log file is auto-named: ~/logs/log_YYYYMMDD_HHmmSS_mmm_<cmd>.log\n' >&2
         printf '             Output is shown in terminal AND saved to the log file.\n' >&2
         printf '             ANSI color codes are stripped from the log (requires ansi2txt).\n' >&2
         printf '\n' >&2
@@ -130,7 +130,7 @@ mylog() {
         if [[ -z "$logfile" ]]; then
             local log_dir="$HOME/logs"
             mkdir -p "$log_dir"
-            logfile="$log_dir/$(date +%Y%m%d_%H%M%S)_${ms}.log"
+            logfile="$log_dir/log_$(date +%Y%m%d_%H%M%S)_${ms}.log"
         else
             mkdir -p "$(dirname "$logfile")"
         fi
@@ -145,7 +145,7 @@ mylog() {
         # 默认模式：自动生成文件名
         local log_dir="$HOME/logs"
         mkdir -p "$log_dir"
-        logfile="$log_dir/$(date +%Y%m%d_%H%M%S)_${ms}_${1##*/}.log"
+        logfile="$log_dir/log_$(date +%Y%m%d_%H%M%S)_${ms}_${1##*/}.log"
         cmd=("$@")
     fi
 
@@ -165,17 +165,20 @@ mylog() {
     fi
 
     # 设置 trap 以捕获 Ctrl+C，确保打印日志位置
-    trap 'printf "\n\033[32mLog saved: %s\033[0m\n" "$logfile"; return 130' INT
+    local latest_link
+    latest_link="$(dirname "$logfile")/log_latest.log"
+    trap 'ln -sf "$logfile" "$latest_link"; printf "\n\033[32mLog saved: %s\033[0m\n         → %s\n" "$logfile" "$latest_link"; return 130' INT
 
     # 构建日志头部
     local log_header
-    log_header=$(printf '%s\n%s\n\n%s\n%s\n%s\n%s\n' \
+    log_header=$(printf '%s\n%s\n\n%s\n%s\n%s\n%s\n%s\n' \
         "========= Command Logger =========" \
         "Time: $(date '+%F %T').${ms}" \
         "Command: ${cmd[*]}" \
         "User: $(whoami)" \
         "Directory: $(pwd)" \
-        "Log saved: $logfile")
+        "Log saved: $logfile" \
+        "         → $latest_link")
 
     if [[ "$nohup_mode" == true ]]; then
         # nohup 模式: 后台运行，不输出到终端，日志写入文件
@@ -216,7 +219,8 @@ mylog() {
     fi
 
     trap - INT # 清除 trap
-    printf '\033[32mLog saved: %s\033[0m\n' "$logfile"
+    ln -sf "$logfile" "$latest_link"
+    printf '\033[32mLog saved: %s\033[0m\n         \033[32m→ %s\033[0m\n' "$logfile" "$latest_link"
     return $exit_code
 }
 
