@@ -21,6 +21,25 @@ tmux_choose_window() {
         command tmux choose-window
     fi
 }
+# Start a new detached tmux session, then send cd command separately so the
+# working directory path never appears in the tmux server process's argv
+# (which would cause `pkill -f <dirname>` to kill the tmux server).
+_tmux_new_session() {
+    local session_flag=() name="$1" dir="$2"
+    [[ -n "$name" ]] && session_flag=(-s "$name")
+    local tmux_bin
+    tmux_bin="$(command -v tmux)"
+    TMUX_WORKING_DIR="$dir"
+    TERM=xterm-256color "$tmux_bin" -u new-session "${session_flag[@]}" -d
+    command tmux set-environment TMUX_WORKING_DIR "$dir"
+    command tmux send-keys -t "${name:-}" "cd '$dir' && /usr/bin/clear" Enter
+    if [[ -n "$TMUX" ]]; then
+        command tmux switch-client -t "${name:-}"
+    else
+        command tmux attach-session -t "${name:-}"
+    fi
+}
+
 tmux() {
     case "$1" in
         --)
@@ -31,7 +50,7 @@ tmux() {
             shift
             command tmux kill-session -t "$@"
             ;;
-        ls|l|ll)
+        ls | l | ll)
             shift
             command tmux ls
             ;;
@@ -90,10 +109,7 @@ tmux() {
                 return
             fi
             if [[ $# -eq 0 ]]; then
-                TMUX_WORKING_DIR="$(pwd)"
-                env TERM=xterm-256color "$(command -v tmux)" -u new-session -c "$HOME" \; \
-                    set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
-                    send-keys "cd '$TMUX_WORKING_DIR' && /usr/bin/clear" Enter
+                _tmux_new_session "" "$(pwd)"
                 return
             fi
             local session_name="$1"
@@ -103,15 +119,9 @@ tmux() {
                     command tmux switch-client -t "$session_name"
                 else
                     if [[ -n "$start_directory" ]]; then
-                        TMUX_WORKING_DIR="${start_directory}"
-                        env TERM=xterm-256color "$(command -v tmux)" -u new-session -s "$session_name" -c "$HOME" \; \
-                            set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
-                            send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
+                        _tmux_new_session "$session_name" "$start_directory"
                     else
-                        TMUX_WORKING_DIR="$(pwd)"
-                        env TERM=xterm-256color "$(command -v tmux)" -u new-session -s "$session_name" -c "$HOME" \; \
-                            set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
-                            send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
+                        _tmux_new_session "$session_name" "$(pwd)"
                     fi
                 fi
             else
@@ -121,22 +131,9 @@ tmux() {
                 else
                     # If attach fails, the session doesn't exist, so create it.
                     if [[ -n "$start_directory" ]]; then
-                        # command tmux new-session -s "$session_name" -c "$HOME" \; \
-                        #     set-environment TMUX_WORKING_DIR "${start_directory}" \; \
-                        #     send-keys "cd ${start_directory} && /usr/bin/clear" Enter
-                        TMUX_WORKING_DIR="${start_directory}"
-                        env TERM=xterm-256color "$(command -v tmux)" -u new-session -s "$session_name" -c "$HOME" \; \
-                            set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
-                            send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
+                        _tmux_new_session "$session_name" "$start_directory"
                     else
-                        # command tmux -u new-session -s "$session_name" -c "$HOME" # use $HOME will speed up tmux operation
-                        # command tmux -u new-session -s "$session_name" -c "$HOME" \; \
-                        #     set-environment TMUX_WORKING_DIR "$(pwd)" \; \
-                        #     send-keys "cd $(pwd) && /usr/bin/clear" Enter
-                        TMUX_WORKING_DIR="$(pwd)"
-                        env TERM=xterm-256color "$(command -v tmux)" -u new-session -s "$session_name" -c "$HOME" \; \
-                            set-environment TMUX_WORKING_DIR "$TMUX_WORKING_DIR" \; \
-                            send-keys "cd ${TMUX_WORKING_DIR} && /usr/bin/clear" Enter
+                        _tmux_new_session "$session_name" "$(pwd)"
                     fi
                 fi
             fi
