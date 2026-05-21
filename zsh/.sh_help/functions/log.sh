@@ -287,8 +287,28 @@ ansi2txt_test() {
 # 命令执行通知函数
 notify() {
     [[ $# -eq 0 || "$1" == "-h" || "$1" == "--help" ]] && {
-        printf '\033[31mUsage:\033[0m notify <command> [args...]\n' >&2
-        printf '\033[36mExecute command with start/end notifications.\033[0m\n' >&2
+        printf '\033[1;33mnotify\033[0m — run a command with macOS start/end notifications\n\n' >&2
+        printf '\033[1mUSAGE\033[0m\n' >&2
+        printf '  notify <command> [args...]\n' >&2
+        printf '\n\033[1mBEHAVIOR\033[0m\n' >&2
+        printf '  1. Sends a \033[36m"🚀 开始执行"\033[0m notification before running the command\n' >&2
+        printf '  2. Runs the command in the foreground (stdin/stdout/stderr are passed through)\n' >&2
+        printf '  3. On success: sends \033[32m"✅ 执行完成"\033[0m with elapsed time\n' >&2
+        printf '  4. On failure: sends \033[31m"❌ 执行失败"\033[0m with exit code and elapsed time\n' >&2
+        printf '  5. Returns the original exit code of the command\n' >&2
+        printf '\n\033[1mNOTES\033[0m\n' >&2
+        printf '  • Requires ~/.scripts/macos/notify.sh to be present and executable\n' >&2
+        printf '  • Elapsed time is formatted as Xh Xm Xs (hours/minutes omitted if zero)\n' >&2
+        printf '  • Notification sound: Glass (success) / Basso (failure)\n' >&2
+        printf '\n\033[1mEXAMPLES\033[0m\n' >&2
+        printf '  \033[90m# Notify when a long build finishes\033[0m\n' >&2
+        printf '  notify make build\n' >&2
+        printf '\n' >&2
+        printf '  \033[90m# Notify on a slow test suite\033[0m\n' >&2
+        printf '  notify pytest tests/\n' >&2
+        printf '\n' >&2
+        printf '  \033[90m# Combine with mylog to get both a log file and a notification\033[0m\n' >&2
+        printf '  notify mylog make build\n' >&2
         return 1
     }
     local notify_script="$HOME/.scripts/macos/notify.sh"
