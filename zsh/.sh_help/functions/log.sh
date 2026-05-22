@@ -179,7 +179,7 @@ mylog() {
         "User: $(whoami)" \
         "Directory: $(pwd)" \
         "Log saved: $logfile" \
-        "         → $latest_link")
+        "    link → $latest_link")
 
     if [[ "$nohup_mode" == true ]]; then
         # nohup 模式: 后台运行，不输出到终端，日志写入文件
