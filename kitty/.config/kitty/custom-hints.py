@@ -4,11 +4,11 @@ import re
 def mark(text, args, Mark, extra_cli_args, *a):
     # Match URLs, paths with line numbers, and regular paths
     url_re = r'https?://[^\s<>\{\}\[\]"\'`]+'
-    file_line_re = r"[a-zA-Z0-9._/~\-]+:\d+(?::\d+)?"
-    # Paths: starting with ./, ~/, /, ../ or having extensions
+    file_line_re = r"(?:\$[A-Za-z_][A-Za-z0-9_]*)?[a-zA-Z0-9._/~\-]+:\d+(?::\d+)?"
+    # Paths: starting with ./, ~/, /, ../, or $VAR
     # Support Chinese and other Unicode characters in paths
     unicode_path_char = r"[\w./~\-]"
-    path_re = rf"(?:[.~]?/|\.\/){unicode_path_char}+|[\w.\-]+\.[a-zA-Z][a-zA-Z0-9]{{0,9}}"
+    path_re = rf"\$[A-Za-z_][A-Za-z0-9_]*(?:[/\\]{unicode_path_char}*)*|(?:[.~]?/|\.\/){unicode_path_char}+|[\w.\-]+\.[a-zA-Z][a-zA-Z0-9]{{0,9}}"
 
     # Datetime: ISO 8601 / full datetime first (most specific)
     datetime_re = r"\d{4}[-/]\d{2}[-/]\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?"
