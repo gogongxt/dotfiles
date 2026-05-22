@@ -172,6 +172,13 @@ def get_server_details(config_file, server_name):
         if prompts:
             pwd_manager = None
             for item in prompts:
+                # prompt_interact: 匹配后进入交互模式，无自动响应
+                if "prompt_interact" in item:
+                    processed_prompts.append(
+                        {"prompt": item["prompt_interact"], "interact": True}
+                    )
+                    continue
+
                 prompt = item.get("prompt", "")
                 response = item.get("response", "")
 
@@ -191,7 +198,9 @@ def get_server_details(config_file, server_name):
                         print(f"字段解密失败 ({prompt}): {e}", file=sys.stderr)
                         sys.exit(1)
 
-                processed_prompts.append({"prompt": prompt, "response": response})
+                processed_prompts.append(
+                    {"prompt": prompt, "response": response, "interact": False}
+                )
 
         details = {
             "host": found_server["host"],
@@ -316,8 +325,15 @@ def connect_to_server(server_details, auto_command=None):
 
             # 处理认证提示（动态部分）
             if index < auth_count:
-                # 匹配到某个配置的认证提示
-                child.sendline(str(auth_prompts[index]["response"]))
+                matched = auth_prompts[index]
+                if matched.get("interact"):
+                    result = handle_dynamic_code()
+                    if result == "break":
+                        break
+                    elif result == "continue":
+                        continue
+                else:
+                    child.sendline(str(matched["response"]))
 
             # 处理系统提示
             else:
