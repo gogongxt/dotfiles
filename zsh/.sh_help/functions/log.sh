@@ -167,7 +167,8 @@ mylog() {
     # 设置 trap 以捕获 Ctrl+C，确保打印日志位置
     local latest_link
     latest_link="$(dirname "$logfile")/log_latest.log"
-    trap 'ln -sf "$(basename "$logfile")" "$latest_link"; printf "\n\033[32mLog saved: %s\033[0m\n         → %s\n" "$logfile" "$latest_link"; return 130' INT
+    ln -sf "$(basename "$logfile")" "$latest_link"
+    trap 'printf "\n\033[32mLog saved: %s\033[0m\n         → %s\n" "$logfile" "$latest_link"; return 130' INT
 
     # 构建日志头部
     local log_header
@@ -219,7 +220,6 @@ mylog() {
     fi
 
     trap - INT # 清除 trap
-    ln -sf "$(basename "$logfile")" "$latest_link"
     printf '\033[32mLog saved: %s\033[0m\n         \033[32m→ %s\033[0m\n' "$logfile" "$latest_link"
     return $exit_code
 }
