@@ -228,8 +228,47 @@ mylog() {
 # Strip ANSI escape sequences from stdin, write plain text to stdout.
 # Covers: CSI (ESC[...m), OSC (ESC]...BEL/ST), single-char escapes, bare BEL.
 # Drop-in replacement for the ansi2txt binary when it's not installed.
+# ansi2txt() {
+#     sed -u $'s/\033\\[[0-9;?]*[A-Za-z]//g;'$'s/\033][^\007]*\007//g;'$'s/\033][^\033]*\033\\\\//g;'$'s/\033.//g;'$'s/\007//g'
+# }
+# Strip ANSI escape sequences from stdin, write plain text to stdout.
+# Covers: CSI (ESC[...m), OSC (ESC]...BEL/ST), single-char escapes, bare BEL.
+# Drop-in replacement for the ansi2txt binary when it's not installed.
 ansi2txt() {
-    sed -u $'s/\033\\[[0-9;?]*[A-Za-z]//g;'$'s/\033][^\007]*\007//g;'$'s/\033][^\033]*\033\\\\//g;'$'s/\033.//g;'$'s/\007//g'
+    # 放弃 sed 改用 perl：sed 会等待 \n 导致 \r 进度条被阻塞。
+    # perl 配合 $|=1 和 sysread 可以实现真正的底层数据块实时无缓冲转发。
+    perl -e '
+    $| = 1; # 开启无缓冲实时输出 (Auto-flush)
+    my $buf = "";
+    # 每次读取可用数据块，最大 8192 字节，无须等待换行符
+    while (sysread(STDIN, my $chunk, 8192)) {
+        $buf .= $chunk;
+        
+        # 1. 过滤标准 CSI 序列 (如 \033[31m, \033[?25l)
+        $buf =~ s/\e\[[\d;?]*[A-Za-z]//g;
+        # 2. 过滤带 BEL(\a) 结尾的 OSC 序列 (如 \033]0;title\007)
+        $buf =~ s/\e\][^\a]*\a//g;
+        # 3. 过滤带 ST(\e\\) 结尾的 OSC 序列
+        $buf =~ s/\e\][^\e]*\e\\//g;
+        # 4. 过滤 2 字节控制码 (如 \eM)，注意排除掉 [ 和 ] 防止误伤还没读全的序列
+        $buf =~ s/\e[^\[\]]//g;
+        # 5. 过滤孤立的 BEL
+        $buf =~ s/\a//g;
+
+        # 处理网络延迟/管道造成的 ANSI 码截断（即 \e 被切在数据块尾部的情况）
+        # 如果缓存中还有 \e，说明有个序列还没接收完，暂时扣留在 $buf 中等下个 chunk
+        my $idx = index($buf, "\e");
+        if ($idx >= 0) {
+            print substr($buf, 0, $idx);    # 打印 \e 前面的安全内容
+            $buf = substr($buf, $idx);      # 扣留 \e 开始的部分
+        } else {
+            print $buf;
+            $buf = "";
+        }
+    }
+    # 打印收尾时遗留的数据
+    print $buf if $buf ne "";
+    '
 }
 ansi2txt_test() {
     local pass=0 fail=0
