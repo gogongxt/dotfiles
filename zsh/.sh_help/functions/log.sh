@@ -164,11 +164,11 @@ mylog() {
         esac
     fi
 
-    # 设置 trap 以捕获 Ctrl+C，确保打印日志位置
     local latest_link
     latest_link="$(dirname "$logfile")/log_latest.log"
     ln -sf "$(basename "$logfile")" "$latest_link"
-    trap 'printf "\n\033[32mLog saved: %s\033[0m\n         → %s\n" "$logfile" "$latest_link"; return 130' INT
+    local _mylog_printed=false
+    trap '[[ "$_mylog_printed" == false ]] && printf "\033[90m================================\033[0m\n\033[32mLog saved: %s\033[0m\n    \033[32mlink → %s\033[0m\n" "$logfile" "$latest_link"' EXIT
 
     # 构建日志头部
     local log_header
@@ -206,21 +206,22 @@ mylog() {
         {
             printf '\033[90m%s\033[0m\n' "$log_header"
             printf '\033[90m================================\033[0m\n'
-            "${cmd[@]}" 2>&1
+            PYTHONUNBUFFERED=1 "${cmd[@]}" 2>&1
             printf '\033[90m================================\033[0m\n'
             printf '\033[90mExit code: %d\033[0m\n' "$?"
         } | {
             if command -v ansi2txt &>/dev/null; then
                 tee >(ansi2txt >"$logfile")
             else
-                tee -a "$logfile"
+                tee "$logfile"
             fi
         }
         local exit_code=$?
     fi
 
-    trap - INT # 清除 trap
-    printf '\033[32mLog saved: %s\033[0m\n         \033[32m→ %s\033[0m\n' "$logfile" "$latest_link"
+    trap - EXIT
+    _mylog_printed=true
+    printf "\033[90m================================\033[0m\n\033[32mLog saved: %s\033[0m\n    \033[32mlink → %s\033[0m\n" "$logfile" "$latest_link"
     return $exit_code
 }
 
