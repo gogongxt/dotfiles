@@ -167,7 +167,7 @@ mylog() {
     # 设置 trap 以捕获 Ctrl+C，确保打印日志位置
     local latest_link
     latest_link="$(dirname "$logfile")/log_latest.log"
-    trap 'ln -sf "$logfile" "$latest_link"; printf "\n\033[32mLog saved: %s\033[0m\n         → %s\n" "$logfile" "$latest_link"; return 130' INT
+    trap 'ln -sf "$(basename "$logfile")" "$latest_link"; printf "\n\033[32mLog saved: %s\033[0m\n         → %s\n" "$logfile" "$latest_link"; return 130' INT
 
     # 构建日志头部
     local log_header
@@ -219,7 +219,7 @@ mylog() {
     fi
 
     trap - INT # 清除 trap
-    ln -sf "$logfile" "$latest_link"
+    ln -sf "$(basename "$logfile")" "$latest_link"
     printf '\033[32mLog saved: %s\033[0m\n         \033[32m→ %s\033[0m\n' "$logfile" "$latest_link"
     return $exit_code
 }
@@ -228,7 +228,7 @@ mylog() {
 # Covers: CSI (ESC[...m), OSC (ESC]...BEL/ST), single-char escapes, bare BEL.
 # Drop-in replacement for the ansi2txt binary when it's not installed.
 ansi2txt() {
-    sed $'s/\033\\[[0-9;?]*[A-Za-z]//g;'$'s/\033][^\007]*\007//g;'$'s/\033][^\033]*\033\\\\//g;'$'s/\033.//g;'$'s/\007//g'
+    sed -u $'s/\033\\[[0-9;?]*[A-Za-z]//g;'$'s/\033][^\007]*\007//g;'$'s/\033][^\033]*\033\\\\//g;'$'s/\033.//g;'$'s/\007//g'
 }
 ansi2txt_test() {
     local pass=0 fail=0
