@@ -208,11 +208,6 @@ fi
 alias claude_init='claude -p "/init"'
 #🔼🔼🔼
 
-# enable cmake generate compile json file
-#🔽🔽🔽
-export CMAKE_EXPORT_COMPILE_COMMANDS=1
-#🔼🔼🔼
-
 # rust cargo
 #🔽🔽🔽
 command -v sccache &>/dev/null && export RUSTC_WRAPPER="`which sccache`"
@@ -220,6 +215,7 @@ command -v sccache &>/dev/null && export RUSTC_WRAPPER="`which sccache`"
 
 # cmake
 #🔽🔽🔽
+export CMAKE_EXPORT_COMPILE_COMMANDS=1 # enable cmake generate compile json file
 alias cmake_build='cmake -S. -Bbuild && cmake --build build -j'
 alias cmake_build_debug='cmake -S. -Bbuild/debug -DCMAKE_BUILD_TYPE=Debug && cmake --build build/debug -j'
 alias cmake_build_release='cmake -S. -Bbuild/release -DCMAKE_BUILD_TYPE=Release && cmake --build build/release -j'
@@ -342,4 +338,26 @@ function conda() {
   # 例如，你输入 "conda activate base"，"$@" 就是 "activate base"
   conda "$@"
 }
+#🔼🔼🔼
+
+#🔽🔽🔽
+# Custom ctrl+w / ctrl+shift+w backward delete word
+if [ -n "$ZSH_VERSION" ]; then
+  ## keep default
+  # WORDCHARS=''
+  # my-backward-delete-word() {
+  #   zle backward-delete-word
+  # }
+  # zle -N my-backward-delete-word
+  # bindkey '^W' my-backward-delete-word
+  my-backward-delete-whole-word() {
+    local WORDCHARS='*?_-.[]~=/&;!#$%^(){}<>:'
+    zle backward-delete-word
+  }
+  zle -N my-backward-delete-whole-word
+  # default CSIu keymap for c-s-w
+  bindkey "\e[119;6u" my-backward-delete-whole-word
+  # hack with kitty set keymap
+  bindkey "\e[500~" my-backward-delete-whole-word
+fi
 #🔼🔼🔼
