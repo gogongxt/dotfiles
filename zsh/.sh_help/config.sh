@@ -14,7 +14,18 @@ alias serie="serie -p kitty"
 alias gg="serie"
 alias gs="git status"
 alias gr="git remote -v"
-alias gt="git tag"
+alias gt='
+tag=$(
+  git tag --sort=-creatordate | fzf \
+    --ansi \
+    --preview "git --no-pager log --color=always --pretty=format:\"%C(auto)%h %C(cyan)(%cd) %C(green)%cn %C(reset)%s\" --date=format:\"%Y-%m-%d %H:%M:%S\" -80 {}" \
+    --preview-window=down:70%
+)
+if [ -n "$tag" ]; then
+  echo -e "\033[33m❯ git checkout $tag\033[0m"
+  git checkout "$tag"
+fi
+'
 alias gb='
 current=$(git branch --show-current)
 branch=$(
@@ -23,7 +34,7 @@ branch=$(
     git branch --format="%(refname:short)" | grep -v "^$current$"
   } | fzf \
     --ansi \
-    --preview "git --no-pager log --color=always --pretty=format:\"%C(auto)%h %C(cyan)(%cd) %C(green)%cn %C(reset)%s\" --date=format:\"%Y-%m-%d %H:%M:%S\" -40 {}" \
+    --preview "git --no-pager log --color=always --pretty=format:\"%C(auto)%h %C(cyan)(%cd) %C(green)%cn %C(reset)%s\" --date=format:\"%Y-%m-%d %H:%M:%S\" -80 {}" \
     --preview-window=down:70%
 )
 if [ -z "$branch" ]; then
@@ -31,6 +42,7 @@ if [ -z "$branch" ]; then
 elif [ "$branch" = "$current" ]; then
   echo "Already on branch: $current"
 else
+  echo -e "\033[33m❯ git checkout $branch\033[0m"
   git checkout "$branch"
 fi
 '
