@@ -68,6 +68,7 @@ end
 return {
   {
     "gogongxt/markdown-preview.nvim",
+    branch = "feat/add-user-hook",
     dependencies = { "selimacerbas/live-server.nvim" },
     config = function()
       require("markdown_preview").setup {
@@ -78,7 +79,7 @@ return {
         open_browser = false,
         -- open_browser = os.getenv "SSH_CONNECTION" == nil, -- only auto-open in local mode
         debounce_ms = 300,
-        theme = "light",
+        default_theme = "light",
         hooks = {
           on_start = function(url)
             vim.notify("预览已打开/聚焦: " .. url, vim.log.levels.INFO)
