@@ -115,8 +115,8 @@ tmux() {
             local session_name="$1"
             local start_directory="$2"
             if [[ -n "$TMUX" ]]; then
-                if command tmux has-session -t "$session_name" 2>/dev/null; then
-                    command tmux switch-client -t "$session_name"
+                if command tmux has-session -t "=$session_name" 2>/dev/null; then
+                    command tmux switch-client -t "=$session_name"
                 else
                     if [[ -n "$start_directory" ]]; then
                         _tmux_new_session "$session_name" "$start_directory"
@@ -125,7 +125,7 @@ tmux() {
                     fi
                 fi
             else
-                if command tmux -u attach-session -t "$session_name" 2>/dev/null; then
+                if command tmux -u attach-session -t "=$session_name" 2>/dev/null; then
                     # On success, do nothing.
                     :
                 else
