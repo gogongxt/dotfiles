@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Generate TMUX_HOST_NAME: <device>-<hostname>-<ip>
+# Generate TMUX_HOST_NAME: <device>_<hostname>_<ip>
 # Used by tmux status bar when TMUX_HOST_NAME is not set in shell environment
 
 # Get device name (GPU/NPU)
@@ -22,7 +22,10 @@ get_ip_address() {
     if [ "$(uname -s)" = "Darwin" ]; then
         ip=$(ifconfig 2>/dev/null | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | head -n1)
     else
-        ip=$(hostname -I 2>/dev/null | cut -d' ' -f1)
+        ip=$(hostname -i 2>/dev/null | grep -v '127.0.0.1' | awk '{print $1}')
+        if [ -z "$ip" ] || [ "$ip" = "127.0.0.1" ]; then
+            ip=$(hostname -I 2>/dev/null | cut -d' ' -f1)
+        fi
         if [ -z "$ip" ] || [ "$ip" = "127.0.0.1" ]; then
             ip=$(ip route get 1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") print $(i+1)}')
         fi
