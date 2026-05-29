@@ -1,6 +1,6 @@
 ---
 name: github
-description: One-stop GitHub operations - connectivity check, fork repos, manage proxy, and common gh workflows
+description: One-stop GitHub operations - connectivity check, fork repos, manage proxy, common gh workflows, and issue search/management
 user-invocable: true
 ---
 
@@ -92,6 +92,87 @@ Each command below requires `source ~/.zshrc && proxy on &&` prefix when network
 | Create a gist   | `gh gist create <file>`          |
 | View issue      | `gh issue view <number>`         |
 
+## Issue Search and Management
+
+Use this section when the user describes a bug, feature request, question, or any problem and wants to find related GitHub issues.
+
+### Step 1: Identify the repo
+
+If the user doesn't specify a repo, ask. The target repo is required for all issue commands. Format: `owner/repo` (e.g. `sgl-project/sglang`).
+
+### Step 2: Extract search keywords
+
+From the user's description, extract the most specific keywords: error messages, function names, flag names, concepts. Avoid stop words. Example: "SGLang crashes with CUDA OOM when batch size > 32" → keywords: `CUDA OOM batch size`.
+
+### Step 3: Search issues
+
+Always search with proxy. Use multiple targeted queries if the first returns no useful results.
+
+```bash
+# Full-text search across open issues
+source ~/.zshrc && proxy on && gh issue list --repo <owner/repo> --search "<keywords>" --limit 20 --state open
+
+# Also search closed issues (may have resolutions)
+source ~/.zshrc && proxy on && gh issue list --repo <owner/repo> --search "<keywords>" --limit 10 --state closed
+
+# Filter by label (common labels: bug, enhancement, question, help wanted)
+source ~/.zshrc && proxy on && gh issue list --repo <owner/repo> --search "<keywords>" --label bug --limit 10
+
+# Search via GitHub API for richer results (returns title, number, state, url)
+source ~/.zshrc && proxy on && gh api "search/issues?q=<keywords>+repo:<owner/repo>&per_page=10" --jq '.items[] | {number: .number, title: .title, state: .state, url: .html_url, comments: .comments}'
+```
+
+`gh issue list --search` uses GitHub's search syntax. Useful qualifiers:
+
+| Qualifier               | Example               | Meaning             |
+| ----------------------- | --------------------- | ------------------- |
+| `is:open` / `is:closed` | `is:open`             | Filter by state     |
+| `label:<name>`          | `label:bug`           | Filter by label     |
+| `author:<user>`         | `author:octocat`      | Issues by a user    |
+| `assignee:<user>`       | `assignee:octocat`    | Assigned to a user  |
+| `comments:>5`           | `comments:>5`         | At least 5 comments |
+| `created:>2024-01-01`   | `created:>2024-01-01` | Created after date  |
+
+### Step 4: Read a specific issue
+
+```bash
+# View issue body and metadata
+source ~/.zshrc && proxy on && gh issue view <number> --repo <owner/repo>
+
+# View with comments (full discussion)
+source ~/.zshrc && proxy on && gh issue view <number> --repo <owner/repo> --comments
+```
+
+### Step 5: Present findings
+
+After searching, summarize for the user:
+
+1. **Exact matches** — issues that describe the same problem (link + title + state)
+2. **Related issues** — adjacent problems or partial overlaps
+3. **Workarounds** — if any closed issue has a known fix, surface it
+4. **Verdict** — is this a known issue? Open/closed? Has a fix been merged?
+
+If no issues found: try broader keywords, then suggest the user may have hit an unreported bug and offer to help draft a new issue.
+
+### Step 6: Create a new issue (only when asked)
+
+**Never create an issue without explicit user approval.** Before running `gh issue create`, show the user:
+
+- Proposed title
+- Proposed body (steps to reproduce, expected vs actual behavior, environment info)
+
+Wait for confirmation, then:
+
+```bash
+source ~/.zshrc && proxy on && gh issue create \
+  --repo <owner/repo> \
+  --title "<title>" \
+  --body "<body>" \
+  --label bug
+```
+
+For a feature request, use `--label enhancement` instead of `bug`.
+
 ## Notes
 
 - **Every Bash call is a new shell** — always chain `source ~/.zshrc && proxy on &&` before network commands
@@ -101,3 +182,4 @@ Each command below requires `source ~/.zshrc && proxy on &&` prefix when network
 - When forking, `--clone=true` will clone the fork; use `--clone=false` if you only want the remote fork
 - Always clone repos to `~/Projects/` directory
 - **IMPORTANT:** Never submit a PR directly. Before running `gh pr create`, always present the PR title, body, and full diff to the user and wait for explicit confirmation
+- **IMPORTANT:** Never create or comment on issues without explicit user approval
