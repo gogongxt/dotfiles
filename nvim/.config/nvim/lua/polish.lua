@@ -300,13 +300,23 @@ mappings.set_mappings {
     },
 
     ["<c-g>"] = {
-      function()
-        local full_path = vim.fn.expand "%:p"
-        local total_lines = vim.fn.line "$"
-        local current_line = vim.fn.line "."
-        local percent = math.modf((current_line / total_lines) * 100)
-        vim.notify(string.format('"%s" %d lines --%d%%--', full_path, total_lines, percent), vim.log.levels.INFO)
-      end,
+      (function()
+        local last_press = 0
+        return function()
+          local now = vim.uv.now()
+          local full_path = vim.fn.expand "%:p"
+          if now - last_press < 500 then
+            vim.fn.setreg("+", full_path)
+            vim.notify("Path copied!", vim.log.levels.INFO)
+          else
+            local total_lines = vim.fn.line "$"
+            local current_line = vim.fn.line "."
+            local percent = math.modf((current_line / total_lines) * 100)
+            vim.notify(string.format('"%s" %d lines --%d%%--', full_path, total_lines, percent), vim.log.levels.INFO)
+          end
+          last_press = now
+        end
+      end)(),
       noremap = true,
       silent = true,
     },
