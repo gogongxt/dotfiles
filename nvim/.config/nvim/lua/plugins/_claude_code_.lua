@@ -157,11 +157,21 @@ end
 
 local claude_cmd = "source ~/.zshrc && claude"
 
--- Claude API vendors defined in ~/.user.sh
-local claude_vendors = { "xiaomi", "zhipu", "didi", "ali", "user", "none" }
+-- Claude API vendors parsed from ~/.user.sh case labels
+local function get_claude_vendors()
+  local handle = io.popen "grep -E '^\\s+\\w+\\)$' ~/.user.sh | sed 's/)//;s/^[[:space:]]*//' 2>/dev/null"
+  if not handle then return { "none" } end
+  local result = handle:read "*a"
+  handle:close()
+  local vendors = {}
+  for v in result:gmatch "%S+" do
+    vendors[#vendors + 1] = v
+  end
+  return #vendors > 0 and vendors or { "none" }
+end
 
 local function select_claude_vendor()
-  vim.ui.select(claude_vendors, {
+  vim.ui.select(get_claude_vendors(), {
     prompt = "Select Claude Vendor:",
   }, function(choice)
     if choice then
