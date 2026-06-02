@@ -93,7 +93,7 @@ mylog() {
         done
 
         # 必须有至少一个 -- 用于分隔 mylog 选项和命令
-        [[ $last_dash_idx -eq 0 || $last_dash_idx -le 2 ]] && {
+        [[ $last_dash_idx -eq 0 || $last_dash_idx -lt 2 ]] && {
             printf '\033[31mUsage:\033[0m mylog -- [options] -- <command> [args...]\n' >&2
             printf '\033[31mOptions:\033[0m --nohup (do not output to terminal)\n' >&2
             return 1
@@ -189,8 +189,12 @@ mylog() {
             print "Running in background with nohup..."
         } > "$logfile"
 
-        # 使用 nohup 后台运行，输出重定向到日志文件
-        nohup "${cmd[@]}" >> "$logfile" 2>&1 &
+        # 使用 nohup 后台运行，输出通过 ansi2txt 过滤后写入日志文件
+        if command -v ansi2txt &>/dev/null; then
+            nohup "${cmd[@]}" 2>&1 | ansi2txt >> "$logfile" &
+        else
+            nohup "${cmd[@]}" >> "$logfile" 2>&1 &
+        fi
         local bg_pid=$!
 
         {
