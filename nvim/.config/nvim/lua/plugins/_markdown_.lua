@@ -46,24 +46,34 @@ if os.getenv "SSH_CONNECTION" ~= nil then
   ]],
     false
   )
-
-  -- gx 映射（发送当前URL到相同端口）
-  vim.cmd(string.format(
-    [[
-    function! OpenLinkWithLocalBrowser()
-      let l:url = expand('<cfile>')
-      if l:url !~? '^https\?://'
-        lua vim.notify("⚠️ Not a valid URL under cursor", vim.log.levels.WARN)
-        return
-      endif
-      call SendUrlToLocalhost(l:url, %s)
-      lua vim.notify("🔗 Sent to local browser: " .. vim.fn.expand('<cfile>'), vim.log.levels.INFO)
-    endfunction
-    nnoremap gx :call OpenLinkWithLocalBrowser()<CR>
-  ]],
-    mkdp_url_port
-  ))
 end
+
+-- gx 映射：从当前行提取 URL 并打开（SSH 时转发到本地，否则直接 open）
+local function extract_url_under_cursor()
+  local line = vim.api.nvim_get_current_line()
+  local col = vim.api.nvim_win_get_cursor(0)[2] + 1 -- 1-indexed
+  for start, url in line:gmatch "()(https?://%S+)" do
+    local finish = start + #url - 1
+    if col >= start and col <= finish then
+      return url:gsub("[%p]+$", "") -- 去除尾部标点
+    end
+  end
+  return nil
+end
+vim.keymap.set("n", "gx", function()
+  local url = extract_url_under_cursor()
+  if not url then
+    vim.notify("⚠️ Not a valid URL under cursor", vim.log.levels.WARN)
+    return
+  end
+  if os.getenv "SSH_CONNECTION" ~= nil then
+    vim.fn.SendUrlToLocalhost(url, mkdp_url_port)
+    vim.notify("🔗 Sent to local browser: " .. url, vim.log.levels.INFO)
+  else
+    vim.ui.open(url)
+    vim.notify("🔗 Opened: " .. url, vim.log.levels.INFO)
+  end
+end, { desc = "Open URL under cursor" })
 
 return {
   {
