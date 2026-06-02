@@ -157,6 +157,21 @@ end
 
 local claude_cmd = "source ~/.zshrc && claude"
 
+-- Claude API vendors defined in ~/.user.sh
+local claude_vendors = { "xiaomi", "zhipu", "didi", "ali", "user", "none" }
+
+local function select_claude_vendor()
+  vim.ui.select(claude_vendors, {
+    prompt = "Select Claude Vendor:",
+  }, function(choice)
+    if choice then
+      vim.env.CLAUDE_CODE_VENDOR = choice
+      vim.cmd "ClaudeCode"
+      vim.notify("Claude vendor: " .. choice, vim.log.levels.INFO)
+    end
+  end)
+end
+
 return {
   "coder/claudecode.nvim",
   dependencies = { "akinsho/toggleterm.nvim" },
@@ -180,14 +195,15 @@ return {
   },
   config = true,
   keys = {
-    { "<leader>a", nil, desc = "AI/Claude Code" },
-    { "<leader>ac", "<cmd>ClaudeCode<cr>", desc = "Toggle Claude" },
-    { "<leader>af", "<cmd>ClaudeCodeFocus<cr>", desc = "Focus Claude" },
-    { "<leader>ar", "<cmd>ClaudeCode --resume<cr>", desc = "Resume Claude" },
-    { "<leader>aC", "<cmd>ClaudeCode --continue<cr>", desc = "Continue Claude" },
+    { "<leader>a",  nil,                              desc = "AI/Claude Code" },
+    { "<leader>ac", "<cmd>ClaudeCode<cr>",            desc = "Toggle Claude" },
+    { "<leader>aC", select_claude_vendor,             desc = "Select Claude Vendor" },
+    { "<leader>af", "<cmd>ClaudeCodeFocus<cr>",       desc = "Focus Claude" },
+    { "<leader>ar", "<cmd>ClaudeCode --resume<cr>",   desc = "Resume Claude" },
+    -- { "<leader>aC", "<cmd>ClaudeCode --continue<cr>", desc = "Continue Claude" },
     { "<leader>am", "<cmd>ClaudeCodeSelectModel<cr>", desc = "Select Claude model" },
-    { "<leader>as", "<cmd>ClaudeCodeAdd %<cr>", mode = "n", desc = "Add current buffer" },
-    { "<leader>as", "<cmd>ClaudeCodeSend<cr>", mode = "v", desc = "Send to Claude" },
+    { "<leader>as", "<cmd>ClaudeCodeAdd %<cr>",       mode = "n",                   desc = "Add current buffer" },
+    { "<leader>as", "<cmd>ClaudeCodeSend<cr>",        mode = "v",                   desc = "Send to Claude" },
     {
       "<leader>as",
       "<cmd>ClaudeCodeTreeAdd<cr>",
@@ -196,6 +212,6 @@ return {
     },
     -- Diff management
     { "<leader>aa", "<cmd>ClaudeCodeDiffAccept<cr>", desc = "Accept diff" },
-    { "<leader>ad", "<cmd>ClaudeCodeDiffDeny<cr>", desc = "Deny diff" },
+    { "<leader>ad", "<cmd>ClaudeCodeDiffDeny<cr>",   desc = "Deny diff" },
   },
 }
