@@ -157,15 +157,23 @@ end
 
 local claude_cmd = "source ~/.zshrc && claude"
 
--- Claude API vendors parsed from ~/.user.sh case labels
+-- Claude API vendors parsed from ~/.user.sh delimited block
 local function get_claude_vendors()
-  local handle = io.popen "grep -E '^\\s+\\w+\\)$' ~/.user.sh | sed 's/)//;s/^[[:space:]]*//' 2>/dev/null"
-  if not handle then return { "none" } end
-  local result = handle:read "*a"
-  handle:close()
+  local f = io.open(vim.fn.expand "~/.user.sh", "r")
+  if not f then return { "none" } end
+  local content = f:read "*a"
+  f:close()
+
+  local block = content:match "# >>> gogongxt claudecode config >>>(.-)# <<< gogongxt claudecode config <<<"
+  if not block then return { "none" } end
+
   local vendors = {}
-  for v in result:gmatch "%S+" do
-    vendors[#vendors + 1] = v
+  local seen = {}
+  for v in block:gmatch "%s+(%w+)%s*%)" do
+    if not seen[v] and v ~= "case" and v ~= "esac" then
+      seen[v] = true
+      vendors[#vendors + 1] = v
+    end
   end
   return #vendors > 0 and vendors or { "none" }
 end
