@@ -28,6 +28,9 @@ end, 500, Status.RIGHT)
 -- 	type = ui.Border.ROUNDED,
 -- })
 
+-- yazi session plugin (cross-instance yank support)
+require("session"):setup({ sync_yanked = true })
+
 -- yazi git plugin
 require("git"):setup()
 
