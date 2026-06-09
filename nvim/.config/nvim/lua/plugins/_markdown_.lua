@@ -558,4 +558,26 @@ return {
       }
     end,
   },
+  {
+    "bullets-vim/bullets.vim",
+    ft = {
+      "markdown",
+      "text",
+      "gitcommit",
+      "txt",
+      "scratch",
+    }, -- Lazy load for these filetypes
+    init = function()
+      -- Enable bullets in empty buffers (for new notes)
+      vim.g.bullets_enable_in_empty_buffers = 1
+      -- Restrict to specific filetypes
+      vim.g.bullets_enabled_file_types = {
+        "markdown",
+        "text",
+        "gitcommit",
+        "txt",
+        "scratch",
+      }
+    end,
+  },
 }
