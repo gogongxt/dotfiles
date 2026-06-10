@@ -1,0 +1,4 @@
+keybinding:
+  universal:
+    gotoTop: g
+    gotoBottom: G
