@@ -18,17 +18,6 @@ This outputs the full default config with all supported keys, including `gui`, `
 - **customCommands** - User-defined commands
 - **services** - External service integrations (e.g. GitHub)
 
-## Current Customizations
-
-```yaml
-keybinding:
-  universal:
-    gotoTop: g
-    gotoBottom: G
-```
-
-Overrides default `<`/`>` with vim-style `g`/`G`.
-
 ## Keybinding Sections
 
 Each `keybinding` subsection maps to a lazygit view:
