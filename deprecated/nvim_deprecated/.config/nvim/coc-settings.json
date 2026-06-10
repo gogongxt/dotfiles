@@ -1,7 +1,0 @@
-{
-    "clangd.enabled": true,
-    "[cpp]": {
-        "inlayHint.enable": false,
-        "semanticTokens.enable": true
-    }
-}
