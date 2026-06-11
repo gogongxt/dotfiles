@@ -14,6 +14,11 @@
 	helper = 
 	helper = !gh auth git-credential
 [credential "https://gist.github.com"]
-	helper = 
+	helper =
 	helper = !gh auth git-credential
-
+[delta]
+	dark = true
+	minus-style = "#E78284" "#4A2E32"
+	plus-style = syntax "#496F4A"
+	minus-emph-style = "#ff0000" "#cccccc" bold
+	plus-emph-style = "#ff0000" "#cccccc" bold
