@@ -4,8 +4,8 @@
 
 # Ensure jq is available
 if ! command -v jq >/dev/null 2>&1; then
-  echo "jq not found" >&2
-  exit 1
+    echo "jq not found" >&2
+    exit 1
 fi
 # Colors
 readonly RST='\033[0m'
@@ -44,14 +44,14 @@ used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // ""')
 
 # Fall back to cached percentage if current value is 0 or empty (transient during generation)
 if [ -z "$used_pct" ] || [ "$used_pct" = "0" ] || [ "$used_pct" = "null" ]; then
-  if [ -f "$CACHE_FILE" ]; then
-    cached=$(cat "$CACHE_FILE" 2>/dev/null)
-    if [ -n "$cached" ] && [ "$cached" != "0" ]; then
-      used_pct="$cached"
+    if [ -f "$CACHE_FILE" ]; then
+        cached=$(cat "$CACHE_FILE" 2>/dev/null)
+        if [ -n "$cached" ] && [ "$cached" != "0" ]; then
+            used_pct="$cached"
+        fi
     fi
-  fi
 else
-  echo "$used_pct" > "$CACHE_FILE"
+    echo "$used_pct" >"$CACHE_FILE"
 fi
 used_tokens=$(echo "$input" | jq -r '
   (.context_window.current_usage.input_tokens // 0) +
@@ -72,37 +72,37 @@ worktree_branch=$(echo "$input" | jq -r '.worktree.branch // empty')
 # Worktree detection (git fallback for external worktrees)
 is_worktree=0
 if [ -n "$worktree_name" ]; then
-  is_worktree=1
-elif [ -n "$current_dir" ] && git -C "$current_dir" --no-optional-locks rev-parse --git-dir >/dev/null 2>&1; then
-  _gd=$(git -C "$current_dir" --no-optional-locks rev-parse --git-dir 2>/dev/null)
-  _gcd=$(git -C "$current_dir" --no-optional-locks rev-parse --git-common-dir 2>/dev/null)
-  if [ -n "$_gd" ] && [ -n "$_gcd" ] && [ "$_gd" != "$_gcd" ]; then
     is_worktree=1
-    if [ -z "$worktree_name" ]; then
-      # Use parent dir basename as worktree id (e.g. ~/.codex/worktrees/46a6/clawmaster -> 46a6)
-      _parent=$(dirname "$current_dir")
-      worktree_name=$(basename "$_parent")
-      # Fall back to current dir basename if parent is a generic bucket
-      case "$worktree_name" in
-      worktrees | wt | .codex | .claude) worktree_name=$(basename "$current_dir") ;;
-      esac
+elif [ -n "$current_dir" ] && git -C "$current_dir" --no-optional-locks rev-parse --git-dir >/dev/null 2>&1; then
+    _gd=$(git -C "$current_dir" --no-optional-locks rev-parse --git-dir 2>/dev/null)
+    _gcd=$(git -C "$current_dir" --no-optional-locks rev-parse --git-common-dir 2>/dev/null)
+    if [ -n "$_gd" ] && [ -n "$_gcd" ] && [ "$_gd" != "$_gcd" ]; then
+        is_worktree=1
+        if [ -z "$worktree_name" ]; then
+            # Use parent dir basename as worktree id (e.g. ~/.codex/worktrees/46a6/clawmaster -> 46a6)
+            _parent=$(dirname "$current_dir")
+            worktree_name=$(basename "$_parent")
+            # Fall back to current dir basename if parent is a generic bucket
+            case "$worktree_name" in
+                worktrees | wt | .codex | .claude) worktree_name=$(basename "$current_dir") ;;
+            esac
+        fi
     fi
-  fi
 fi
 
 # Git branch (prefer worktree.branch from input, fall back to git CLI)
 git_branch="$worktree_branch"
 git_dirty=0
 if [ -n "$current_dir" ] && git -C "$current_dir" --no-optional-locks rev-parse --git-dir >/dev/null 2>&1; then
-  if [ -z "$git_branch" ]; then
-    git_branch=$(git -C "$current_dir" --no-optional-locks branch --show-current 2>/dev/null)
-  fi
-  if [ -n "$git_branch" ]; then
-    if ! git -C "$current_dir" --no-optional-locks diff --quiet 2>/dev/null ||
-      ! git -C "$current_dir" --no-optional-locks diff --cached --quiet 2>/dev/null; then
-      git_dirty=1
+    if [ -z "$git_branch" ]; then
+        git_branch=$(git -C "$current_dir" --no-optional-locks branch --show-current 2>/dev/null)
     fi
-  fi
+    if [ -n "$git_branch" ]; then
+        if ! git -C "$current_dir" --no-optional-locks diff --quiet 2>/dev/null ||
+            ! git -C "$current_dir" --no-optional-locks diff --cached --quiet 2>/dev/null; then
+            git_dirty=1
+        fi
+    fi
 fi
 
 # # Shorten directory (prefer original cwd when in a worktree)
@@ -116,52 +116,52 @@ fi
 # Progress bar (color scales with context usage)
 bar=""
 if [ -n "$used_pct" ]; then
-  filled=$((used_pct * 10 / 100))
-  empty=$((10 - filled))
-  if [ "$used_pct" -gt 80 ]; then
-    ctx_color="$C_CTX_LOW"
-  elif [ "$used_pct" -gt 50 ]; then
-    ctx_color="$C_CTX_WARN"
-  else
-    ctx_color="$C_CTX_OK"
-  fi
-  bar="${C_SEP}[${RST}"
-  for ((i = 0; i < filled; i++)); do bar+="${ctx_color}█${RST}"; done
-  for ((i = 0; i < empty; i++)); do bar+="${C_BAR_EMPTY}░${RST}"; done
-  # Format token counts (e.g. 30.3k/200k)
-  ctx_label=""
-  if [ -n "$used_tokens" ] && [ "$used_tokens" != "null" ] && [ "$total_tokens" ] && [ "$total_tokens" != "null" ] && [ "$used_tokens" -gt 0 ]; then
-    if [ "$used_tokens" -ge 1000 ]; then
-      used_k=$(awk -v v="$used_tokens" 'BEGIN { printf "%.1fk", v/1000 }')
+    filled=$((used_pct * 10 / 100))
+    empty=$((10 - filled))
+    if [ "$used_pct" -gt 80 ]; then
+        ctx_color="$C_CTX_LOW"
+    elif [ "$used_pct" -gt 50 ]; then
+        ctx_color="$C_CTX_WARN"
     else
-      used_k="${used_tokens}"
+        ctx_color="$C_CTX_OK"
     fi
-    if [ "$total_tokens" -ge 1000 ]; then
-      total_k=$(awk -v v="$total_tokens" 'BEGIN { printf "%.0fk", v/1000 }')
+    bar="${C_SEP}[${RST}"
+    for ((i = 0; i < filled; i++)); do bar+="${ctx_color}█${RST}"; done
+    for ((i = 0; i < empty; i++)); do bar+="${C_BAR_EMPTY}░${RST}"; done
+    # Format token counts (e.g. 30.3k/200k)
+    ctx_label=""
+    if [ -n "$used_tokens" ] && [ "$used_tokens" != "null" ] && [ "$total_tokens" ] && [ "$total_tokens" != "null" ] && [ "$used_tokens" -gt 0 ]; then
+        if [ "$used_tokens" -ge 1000 ]; then
+            used_k=$(awk -v v="$used_tokens" 'BEGIN { printf "%.1fk", v/1000 }')
+        else
+            used_k="${used_tokens}"
+        fi
+        if [ "$total_tokens" -ge 1000 ]; then
+            total_k=$(awk -v v="$total_tokens" 'BEGIN { printf "%.0fk", v/1000 }')
+        else
+            total_k="${total_tokens}"
+        fi
+        ctx_label=" ${ctx_color}${used_k}/${total_k}${RST}"
     else
-      total_k="${total_tokens}"
+        ctx_label=" ${ctx_color}${used_pct}%${RST}"
     fi
-    ctx_label=" ${ctx_color}${used_k}/${total_k}${RST}"
-  else
-    ctx_label=" ${ctx_color}${used_pct}%${RST}"
-  fi
-  bar+="${C_SEP}]${RST}${ctx_label}"
+    bar+="${C_SEP}]${RST}${ctx_label}"
 fi
 
 # Assemble
 parts=()
 
 if [ -n "$model" ]; then
-  parts+=("${C_MODEL}󰥖 ${model}${RST}")
+    parts+=("${C_MODEL}󰥖 ${model}${RST}")
 fi
 
 if [ -n "$bar" ]; then
-  parts+=("${ctx_color}${RST} ${bar}")
+    parts+=("${ctx_color}${RST} ${bar}")
 fi
 
 if [ -n "$session_id" ]; then
-  session_short="${session_id:0:8}"
-  parts+=("${C_SESSION_ID} ${session_short}${RST}")
+    session_short="${session_id:0:8}"
+    parts+=("${C_SESSION_ID} ${session_short}${RST}")
 fi
 
 # Cost display (disabled)
@@ -174,17 +174,17 @@ fi
 
 # Color effort by level (max/xhigh/high share the bold-red pressure tier)
 if [ -n "$effort" ]; then
-  case "$effort" in
-  max | MAX | Max | xhigh | XHIGH | XHigh | high | High | HIGH) effort_color="$C_EFFORT_HIGH" ;;
-  medium | Medium | MEDIUM) effort_color="$C_EFFORT_MED" ;;
-  low | Low | LOW | xlow | XLow | XLOW | minimal | Minimal) effort_color="$C_EFFORT_LOW" ;;
-  *) effort_color="$C_EFFORT_OFF" ;;
-  esac
-  parts+=("${effort_color} ${effort}${RST}")
+    case "$effort" in
+        max | MAX | Max | xhigh | XHIGH | XHigh | high | High | HIGH) effort_color="$C_EFFORT_HIGH" ;;
+        medium | Medium | MEDIUM) effort_color="$C_EFFORT_MED" ;;
+        low | Low | LOW | xlow | XLow | XLOW | minimal | Minimal) effort_color="$C_EFFORT_LOW" ;;
+        *) effort_color="$C_EFFORT_OFF" ;;
+    esac
+    parts+=("${effort_color} ${effort}${RST}")
 fi
 
 if [ -n "$output_style" ] && [ "$output_style" != "default" ]; then
-  parts+=("${C_STYLE}❋ ${output_style}${RST}")
+    parts+=("${C_STYLE}❋ ${output_style}${RST}")
 fi
 
 # Directory display (disabled)
@@ -193,24 +193,24 @@ fi
 # fi
 
 if [ "$is_worktree" -eq 1 ] && [ -n "$worktree_name" ]; then
-  parts+=("\033[1m${C_WORKTREE}⊕ worktree:${worktree_name}${RST}")
+    parts+=("\033[1m${C_WORKTREE}⊕ worktree:${worktree_name}${RST}")
 fi
 
 if [ -n "$git_branch" ]; then
-  if [ "$git_dirty" -eq 1 ]; then
-    parts+=("${C_GIT_DIRTY} ${git_branch}${RST}")
-  else
-    parts+=("${C_GIT} ${git_branch}${RST}")
-  fi
+    if [ "$git_dirty" -eq 1 ]; then
+        parts+=("${C_GIT_DIRTY} ${git_branch}${RST}")
+    else
+        parts+=("${C_GIT} ${git_branch}${RST}")
+    fi
 fi
 
 # Output
 output=""
 for i in "${!parts[@]}"; do
-  if [ "$i" -gt 0 ]; then
-    output+="${C_SEP}${SEP}${RST}"
-  fi
-  output+="${parts[$i]}"
+    if [ "$i" -gt 0 ]; then
+        output+="${C_SEP}${SEP}${RST}"
+    fi
+    output+="${parts[$i]}"
 done
 
 printf "%b" "$output"
