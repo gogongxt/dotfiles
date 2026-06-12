@@ -31,11 +31,28 @@ readonly C_SEP='\033[38;2;98;114;164m'
 
 readonly SEP=" | "
 
+# Cache file for last valid context percentage
+CACHE_DIR="${TMPDIR:-/tmp}/claude-statusline"
+CACHE_FILE="$CACHE_DIR/ctx-pct-$$.cache"
+mkdir -p "$CACHE_DIR"
+
 # Read JSON from stdin
 input=$(cat)
 
 model=$(echo "$input" | jq -r '.model.display_name // ""')
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // ""')
+
+# Fall back to cached percentage if current value is 0 or empty (transient during generation)
+if [ -z "$used_pct" ] || [ "$used_pct" = "0" ] || [ "$used_pct" = "null" ]; then
+  if [ -f "$CACHE_FILE" ]; then
+    cached=$(cat "$CACHE_FILE" 2>/dev/null)
+    if [ -n "$cached" ] && [ "$cached" != "0" ]; then
+      used_pct="$cached"
+    fi
+  fi
+else
+  echo "$used_pct" > "$CACHE_FILE"
+fi
 used_tokens=$(echo "$input" | jq -r '
   (.context_window.current_usage.input_tokens // 0) +
   (.context_window.current_usage.cache_creation_input_tokens // 0) +
