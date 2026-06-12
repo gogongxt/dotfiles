@@ -18,6 +18,7 @@
 	helper = !gh auth git-credential
 [delta]
 	dark = true
+	wrap-max-lines = unlimited
 	minus-style = "#E78284" "#4A2E32"
 	plus-style = syntax "#496F4A"
 	minus-emph-style = "#ff0000" "#cccccc" bold
