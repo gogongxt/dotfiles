@@ -31,9 +31,8 @@ readonly C_SEP='\033[38;2;98;114;164m'
 
 readonly SEP=" | "
 
-# Cache file for last valid context percentage
-CACHE_DIR="${TMPDIR:-/tmp}/claude-statusline"
-CACHE_FILE="$CACHE_DIR/ctx-pct-$$.cache"
+# Cache for last valid context values (session-stable)
+CACHE_DIR="/tmp/claude-statusline"
 mkdir -p "$CACHE_DIR"
 
 # Read JSON from stdin
@@ -41,18 +40,7 @@ input=$(cat)
 
 model=$(echo "$input" | jq -r '.model.display_name // ""')
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // ""')
-
-# Fall back to cached percentage if current value is 0 or empty (transient during generation)
-if [ -z "$used_pct" ] || [ "$used_pct" = "0" ] || [ "$used_pct" = "null" ]; then
-    if [ -f "$CACHE_FILE" ]; then
-        cached=$(cat "$CACHE_FILE" 2>/dev/null)
-        if [ -n "$cached" ] && [ "$cached" != "0" ]; then
-            used_pct="$cached"
-        fi
-    fi
-else
-    echo "$used_pct" >"$CACHE_FILE"
-fi
+session_id=$(echo "$input" | jq -r '.session_id // "default"')
 used_tokens=$(echo "$input" | jq -r '
   (.context_window.current_usage.input_tokens // 0) +
   (.context_window.current_usage.cache_creation_input_tokens // 0) +
@@ -60,8 +48,27 @@ used_tokens=$(echo "$input" | jq -r '
   (.context_window.current_usage.output_tokens // 0)
 ')
 total_tokens=$(echo "$input" | jq -r '.context_window.context_window_size // empty')
+
+# Cache key based on session_id (stable across calls, unlike $$)
+CACHE_FILE="$CACHE_DIR/ctx-${session_id}.cache"
+
+# Fall back to cached values if current pct is 0 or empty (transient during generation)
+# Cache format: line1=used_pct, line2=used_tokens, line3=total_tokens
+if [ -z "$used_pct" ] || [ "$used_pct" = "0" ] || [ "$used_pct" = "null" ]; then
+    if [ -f "$CACHE_FILE" ]; then
+        _cached_pct=$(sed -n '1p' "$CACHE_FILE" 2>/dev/null)
+        _cached_used=$(sed -n '2p' "$CACHE_FILE" 2>/dev/null)
+        _cached_total=$(sed -n '3p' "$CACHE_FILE" 2>/dev/null)
+        if [ -n "$_cached_pct" ] && [ "$_cached_pct" != "0" ]; then
+            used_pct="$_cached_pct"
+            used_tokens="$_cached_used"
+            total_tokens="$_cached_total"
+        fi
+    fi
+else
+    printf '%s\n%s\n%s\n' "$used_pct" "$used_tokens" "$total_tokens" >"$CACHE_FILE"
+fi
 effort=$(echo "$input" | jq -r '.effort.level // empty')
-session_id=$(echo "$input" | jq -r '.session_id // empty')
 current_dir=$(echo "$input" | jq -r '.workspace.current_dir // ""')
 original_cwd=$(echo "$input" | jq -r '.worktree.original_cwd // empty')
 output_style=$(echo "$input" | jq -r '.output_style.name // empty')
