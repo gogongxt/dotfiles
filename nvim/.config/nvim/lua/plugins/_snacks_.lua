@@ -283,6 +283,27 @@ return {
             picker.list:set_target()
             picker:find()
           end,
+          send_to_claude = function(picker)
+            local item = picker:current()
+            if not item then
+              vim.notify("No item selected", vim.log.levels.WARN)
+              return
+            end
+            local file = item.file
+            if not file then
+              vim.notify("No file in selected item", vim.log.levels.WARN)
+              return
+            end
+            local abs = vim.fn.fnamemodify(file, ":p")
+            local line = item.pos and item.pos[1]
+            if line then
+              vim.cmd("ClaudeCodeAdd " .. abs .. " " .. line .. " " .. line)
+              vim.notify("Sent to Claude: " .. file .. ":" .. line, vim.log.levels.INFO)
+            else
+              vim.cmd("ClaudeCodeAdd " .. abs)
+              vim.notify("Sent to Claude: " .. file, vim.log.levels.INFO)
+            end
+          end,
         },
         win = {
           input = {
@@ -305,12 +326,14 @@ return {
               ["<a-e>"] = { "toggle_exclude", mode = { "i", "n" } },
               ["<a-d>"] = { "toggle_docs", mode = { "i", "n" } },
               ["<c-x>"] = { "delete_breakpoint", mode = { "i", "n" } },
+              ["<a-c>"] = { "send_to_claude", mode = { "i", "n" } },
               -- ["<c-->"] = { "edit_split", mode = { "i", "n" } }, -- cannot map ctrl--
             },
           },
           list = {
             keys = {
               ["<a-p>"] = { "cycle_preview_layout", mode = { "n" } },
+              ["<a-c>"] = { "send_to_claude", mode = { "n" } },
             },
           },
           preview = {
