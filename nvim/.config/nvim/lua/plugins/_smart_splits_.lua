@@ -1,11 +1,12 @@
 -- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
-local mappings = require "mappings"
-mappings.set_mappings {
-  n = {
-    ["<C-e>"] = { "<cmd>lua require('smart-splits').start_resize_mode()<cr>", desc = "smart-splits" },
-  },
-}
+-- TODO: start_resize_mode 已在 smart-splits v2 中移除，考虑用 submode.nvim / hydra.nvim / mini.clue 替代
+-- local mappings = require "mappings"
+-- mappings.set_mappings {
+--   n = {
+--     ["<C-e>"] = { "<cmd>lua require('smart-splits').start_resize_mode()<cr>", desc = "smart-splits" },
+--   },
+-- }
 
 return {
   {
