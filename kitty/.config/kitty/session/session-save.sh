@@ -12,13 +12,36 @@ fi
 
 kitten @ --to "$KITTY_LISTEN_ON" ls 2>/dev/null | jq -r '.[].tabs[].title' >"$TMP_TITLES"
 
-# Count existing session files
-count=0
-for f in "$SESSION_DIR"/tmp_*.session; do
-    [ -f "$f" ] && count=$((count + 1))
-done
+# Collect tmux session names first
+names=()
+while read -r title; do
+    case "$title" in
+        tmux\ *)
+            names+=("${title#tmux }")
+            ;;
+    esac
+done <"$TMP_TITLES"
 
-# Rotate if buffer is full
+if [ ${#names[@]} -eq 0 ]; then
+    rm -f "$TMP_TITLES"
+    terminal-notifier -title "Kitty Session" -message "No tmux sessions found"
+    exit 0
+fi
+
+# Compact: renumber existing files to fill gaps (e.g. delete tmp_1 -> tmp_2 becomes tmp_1)
+slot=1
+for ((i = 1; i <= MAX_SLOTS; i++)); do
+    src="$SESSION_DIR/tmp_${i}.session"
+    if [ -f "$src" ]; then
+        if [ "$slot" -ne "$i" ]; then
+            mv "$src" "$SESSION_DIR/tmp_${slot}.session"
+        fi
+        slot=$((slot + 1))
+    fi
+done
+count=$((slot - 1))
+
+# Rotate if buffer is full (drop oldest, everything shifts down by 1)
 if [ "$count" -ge "$MAX_SLOTS" ]; then
     rm -f "$SESSION_DIR/tmp_1.session"
     for ((i = 2; i <= MAX_SLOTS; i++)); do
@@ -27,18 +50,15 @@ if [ "$count" -ge "$MAX_SLOTS" ]; then
     done
     target_slot=$MAX_SLOTS
 else
-    target_slot=$((count + 1))
+    target_slot=$slot
 fi
 
+# Write session file
 SESSION_FILE="$SESSION_DIR/tmp_${target_slot}.session"
->"$SESSION_FILE"
-
-names=()
 while read -r title; do
     case "$title" in
         tmux\ *)
             tmux_name="${title#tmux }"
-            names+=("$tmux_name")
             cat <<EOF >>"$SESSION_FILE"
 new_tab $title
 launch zsh -ic "myssh A800x2 -c 'tmux $tmux_name'"
@@ -50,12 +70,8 @@ done <"$TMP_TITLES"
 
 rm -f "$TMP_TITLES"
 
-if [ ${#names[@]} -gt 0 ]; then
-    list=$(
-        IFS=', '
-        echo "${names[*]}"
-    )
-    terminal-notifier -title "Kitty Session Saved (#${target_slot}/${MAX_SLOTS})" -message "${#names[@]} session(s): ${list}"
-else
-    terminal-notifier -title "Kitty Session Saved" -message "No tmux sessions found"
-fi
+list=$(
+    IFS=', '
+    echo "${names[*]}"
+)
+terminal-notifier -title "Kitty Session Saved (#${target_slot}/${MAX_SLOTS})" -message "${#names[@]} session(s): ${list}"
