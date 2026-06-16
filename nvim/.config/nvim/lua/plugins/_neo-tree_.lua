@@ -179,10 +179,6 @@ return {
           ["u"] = "restore_trash", -- Select from 'trash-list' -> 'trash-restore'
           ["m"] = false,
         },
-        fuzzy_finder_mappings = { -- define keymaps for filter popup window in fuzzy_finder_mode
-          ["<C-J>"] = "move_cursor_down",
-          ["<C-K>"] = "move_cursor_up",
-        },
       }
       -- Smart open: if directory, toggle it; if file and only one window, open directly; if multiple windows, use window picker
       opts.commands.smart_open = function(state)
@@ -351,6 +347,12 @@ return {
         window = {
           mappings = {
             ["<a-h>"] = "toggle_hidden",
+          },
+          fuzzy_finder_mappings = {
+            ["<C-J>"] = "move_cursor_down",
+            ["<C-K>"] = "move_cursor_up",
+            ["<Down>"] = "move_cursor_down",
+            ["<Up>"] = "move_cursor_up",
           },
         },
       }

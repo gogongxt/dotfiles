@@ -308,8 +308,10 @@ return {
         win = {
           input = {
             keys = {
-              ["<C-j>"] = { "history_forward", mode = { "i", "n" } },
-              ["<C-k>"] = { "history_back", mode = { "i", "n" } },
+              ["<Down>"] = { "history_forward", mode = { "i", "n" } },
+              ["<Up>"] = { "history_back", mode = { "i", "n" } },
+              ["<C-j>"] = { "<nop>", mode = { "i", "n" } },
+              ["<C-k>"] = { "<nop>", mode = { "i", "n" } },
               -- ["<a-p>"] = { "toggle_preview", mode = { "i", "n" } },
               -- ["<a-s-p>"] = { "cycle_preview_layout", mode = { "i", "n" } },
               ["<a-p>"] = { "cycle_preview_layout", mode = { "i", "n" } },
