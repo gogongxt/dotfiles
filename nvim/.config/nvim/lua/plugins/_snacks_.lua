@@ -296,6 +296,14 @@ return {
             end
             local abs = vim.fn.fnamemodify(file, ":p")
             local line = item.pos and item.pos[1]
+            -- Append to prompt buffer if open, otherwise send to Claude instance
+            if line and _G.claude_prompt and _G.claude_prompt.append_ref(abs, line, line) then
+              picker:close()
+              return
+            elseif _G.claude_prompt and _G.claude_prompt.append_ref(abs) then
+              picker:close()
+              return
+            end
             if line then
               vim.cmd("ClaudeCodeAdd " .. abs .. " " .. line .. " " .. line)
               vim.notify("Sent to Claude: " .. file .. ":" .. line, vim.log.levels.INFO)

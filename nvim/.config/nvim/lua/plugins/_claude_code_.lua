@@ -190,6 +190,76 @@ local function select_claude_vendor()
   end)
 end
 
+-- Global module for appending file references to Claude prompt temp files
+_G.claude_prompt = {}
+
+function _G.claude_prompt.find_buf()
+  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_is_loaded(bufnr) then
+      local name = vim.api.nvim_buf_get_name(bufnr)
+      if name:find "claude%-prompt.*%.md$" then return bufnr end
+    end
+  end
+  return nil
+end
+
+function _G.claude_prompt.append(text, bufnr)
+  bufnr = bufnr or 0
+  local ok, err = pcall(function()
+    local lines = vim.split(text, "\n", { plain = true })
+    local line_count = vim.api.nvim_buf_line_count(bufnr)
+    vim.api.nvim_buf_set_lines(bufnr, line_count, line_count, false, lines)
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      if vim.api.nvim_win_get_buf(win) == bufnr then
+        vim.api.nvim_win_set_cursor(win, { line_count + #lines, 0 })
+        break
+      end
+    end
+    vim.cmd "redraw"
+  end)
+  if not ok then vim.notify("[claude] append ERROR: " .. tostring(err), vim.log.levels.ERROR) end
+end
+
+--- Append file reference to prompt buffer. Returns true if handled, false otherwise.
+--- file_path: absolute path, line_start/line_end: optional 1-indexed line range
+function _G.claude_prompt.append_ref(file_path, line_start, line_end)
+  local prompt_buf = _G.claude_prompt.find_buf()
+  if not prompt_buf then return false end
+  local rel = vim.fn.fnamemodify(file_path, ":.")
+  local ref = "@" .. rel
+  if line_start and line_end then
+    ref = line_start == line_end and (ref .. "#L" .. line_start) or (ref .. "#L" .. line_start .. "-" .. line_end)
+  end
+  _G.claude_prompt.append(ref, prompt_buf)
+  vim.notify("[claude] appended " .. ref, vim.log.levels.INFO)
+  return true
+end
+
+function _G.claude_add_wrapper()
+  local file = vim.fn.expand "%:p"
+  if file ~= "" and _G.claude_prompt.append_ref(file) then return end
+  vim.cmd "ClaudeCodeAdd %"
+end
+
+local ESC_KEY = vim.api.nvim_replace_termcodes("<Esc>", true, false, true)
+
+function _G.claude_send_wrapper()
+  if _G.claude_prompt.find_buf() then
+    local l1 = vim.fn.line "."
+    local l2 = vim.fn.line "v"
+    if l1 > l2 then
+      l1, l2 = l2, l1
+    end
+    local file = vim.fn.expand "%:p"
+    vim.api.nvim_feedkeys(ESC_KEY, "i", true)
+    vim.schedule(function()
+      if file ~= "" then _G.claude_prompt.append_ref(file, l1, l2) end
+    end)
+    return
+  end
+  vim.cmd "ClaudeCodeSend"
+end
+
 return {
   "coder/claudecode.nvim",
   dependencies = { "akinsho/toggleterm.nvim" },
@@ -220,11 +290,42 @@ return {
     { "<leader>ar", "<cmd>ClaudeCode --resume<cr>",   desc = "Resume Claude" },
     -- { "<leader>aC", "<cmd>ClaudeCode --continue<cr>", desc = "Continue Claude" },
     { "<leader>am", "<cmd>ClaudeCodeSelectModel<cr>", desc = "Select Claude model" },
-    { "<leader>as", "<cmd>ClaudeCodeAdd %<cr>",       mode = "n",                   desc = "Add current buffer" },
-    { "<leader>as", "<cmd>ClaudeCodeSend<cr>",        mode = "v",                   desc = "Send to Claude" },
+    { "<leader>as", _G.claude_add_wrapper,            mode = "n",                   desc = "Add current buffer" },
+    { "<leader>as", _G.claude_send_wrapper,           mode = "v",                   desc = "Send to Claude" },
     {
       "<leader>as",
-      "<cmd>ClaudeCodeTreeAdd<cr>",
+      function()
+        if _G.claude_prompt.find_buf() then
+          local ft = vim.bo.filetype
+          local path = nil
+          if ft == "neo-tree" then
+            local ok, manager = pcall(require, "neo-tree.sources.manager")
+            if ok then
+              local state = manager.get_state "filesystem"
+              if state and state.tree then
+                local node = state.tree:get_node()
+                if node and node.path then path = node.path end
+              end
+            end
+          elseif ft == "NvimTree" then
+            local ok, api = pcall(require, "nvim-tree.api")
+            if ok then
+              local node = api.tree.get_node_under_cursor()
+              if node and node.absolute_path then path = node.absolute_path end
+            end
+          elseif ft == "oil" then
+            local ok, oil = pcall(require, "oil")
+            if ok then
+              local dir = oil.get_current_dir()
+              local entry = oil.get_entry_on_line(0, vim.fn.line ".")
+              if dir and entry and entry.name and entry.name ~= ".." then path = dir .. entry.name end
+            end
+          end
+          if path and path ~= "" then _G.claude_prompt.append_ref(path) end
+          return
+        end
+        vim.cmd "ClaudeCodeTreeAdd"
+      end,
       desc = "Add file",
       ft = { "NvimTree", "neo-tree", "oil", "minifiles" },
     },
