@@ -112,6 +112,25 @@ if ok then
   end
 end
 
+-- Monkey patch toggleterm 的 Terminal:close
+-- 修复：从已有 float 终端的 insert 模式触发 keymap 打开第二个全新 float 终端时，
+-- 新终端会落到 normal-terminal 模式而非 insert。
+-- 根因：t2 的 open_float 让光标离开 t1 → WinLeave autocmd → handle_term_leave →
+-- t1:close() → ui.stopinsert() 执行 stopinsert!。stopinsert! 的"尽快退出"效果是异步的，
+-- 会在下一帧覆盖 t2 的 startinsert，导致 t2 落到 nt 模式。
+-- 修复：只在 cursor 仍位于被关闭终端的 buffer 时才 stopinsert。当 close 由其他终端
+-- 的 open_float 间接触发时，cursor 已不在被关闭的 buffer 中，无需 stopinsert。
+-- 上游 issue：akinsho/toggleterm.nvim#657
+local ok_term, term_module = pcall(require, "toggleterm.terminal")
+if ok_term and term_module and term_module.Terminal and toggleterm_ui then
+  term_module.Terminal.close = function(self)
+    if self.on_close then self:on_close() end
+    toggleterm_ui.close(self)
+    if self.bufnr and vim.api.nvim_get_current_buf() == self.bufnr then toggleterm_ui.stopinsert() end
+    toggleterm_ui.update_origin_window(self.window)
+  end
+end
+
 -- 保存并恢复终端 ANSI 颜色，防止被 neovim 主题覆盖
 -- 原因：neovim 主题会设置 vim.g.terminal_color_*，覆盖终端模拟器（如 kitty）的颜色配置
 local saved_terminal_colors = {}
