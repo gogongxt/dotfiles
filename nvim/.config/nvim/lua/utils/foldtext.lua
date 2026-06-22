@@ -13,7 +13,7 @@
 local M = {}
 
 ---@type "bufline" | "regex"
-M.algorithm = "regex"
+M.algorithm = "bufline"
 
 -- Icon + line-count marker highlight group.
 local COUNT_HL = "CustomFoldText"
