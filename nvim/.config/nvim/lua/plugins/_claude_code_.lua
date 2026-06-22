@@ -192,6 +192,18 @@ local function select_claude_vendor()
   end)
 end
 
+local function resume_claude_with_session()
+  vim.ui.input({ prompt = "Claude session-id: " }, function(input)
+    if not input then return end
+    local session = vim.trim(input)
+    if session == "" then
+      vim.notify("Claude resume cancelled: empty session-id", vim.log.levels.WARN)
+      return
+    end
+    vim.cmd(("ClaudeCode --resume %s"):format(vim.fn.shellescape(session)))
+  end)
+end
+
 -- Global module for appending file references to Claude prompt temp files
 _G.claude_prompt = {}
 
@@ -289,7 +301,7 @@ return {
     { "<leader>ac", "<cmd>ClaudeCode<cr>",            desc = "Toggle Claude" },
     { "<leader>aC", select_claude_vendor,             desc = "Select Claude Vendor" },
     { "<leader>af", "<cmd>ClaudeCodeFocus<cr>",       desc = "Focus Claude" },
-    { "<leader>ar", "<cmd>ClaudeCode --resume<cr>",   desc = "Resume Claude" },
+    { "<leader>ar", resume_claude_with_session,      desc = "Resume Claude by session-id" },
     -- { "<leader>aC", "<cmd>ClaudeCode --continue<cr>", desc = "Continue Claude" },
     { "<leader>am", "<cmd>ClaudeCodeSelectModel<cr>", desc = "Select Claude model" },
     { "<leader>as", _G.claude_add_wrapper,            mode = "n",                   desc = "Add current buffer" },
