@@ -179,12 +179,14 @@ local function get_claude_vendors()
 end
 
 local function select_claude_vendor()
-  vim.ui.select(get_claude_vendors(), {
+  local vendors = get_claude_vendors()
+  local current = vim.env.CLAUDE_CODE_VENDOR
+  vim.ui.select(vendors, {
     prompt = "Select Claude Vendor:",
+    format_item = function(item) return item == current and (item .. " (current)") or item end,
   }, function(choice)
     if choice then
       vim.env.CLAUDE_CODE_VENDOR = choice
-      vim.cmd "ClaudeCode"
       vim.notify("Claude vendor: " .. choice, vim.log.levels.INFO)
     end
   end)
