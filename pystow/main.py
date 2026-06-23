@@ -24,18 +24,23 @@ def create_symlink(src: Path, dst: Path, simulate: bool, verbose: int) -> bool:
 
 
 def stow_package(
-    package_dir: Path, target_dir: Path, simulate: bool, verbose: int
+    package_dir: Path, target_dir: Path, simulate: bool, verbose: int, force: bool
 ) -> list[str]:
     """Stow a single package into the target directory.
 
     Walks the package tree. For each entry:
       - If the corresponding target path doesn't exist -> create a symlink.
       - If the target is already a symlink pointing into this package -> skip (idempotent).
+      - If the target is a symlink pointing elsewhere -> CONFLICT, unless --force is
+        given, in which case replace it with a symlink into this package.
       - If the target is a directory and the package entry is a directory -> recurse.
-      - Otherwise (conflict) -> report error.
+      - Otherwise (regular file or type mismatch) -> CONFLICT; --force never touches
+        regular files, only replaces stray symlinks.
     """
     errors = []
-    _stow_recursive(package_dir, package_dir, target_dir, simulate, verbose, errors)
+    _stow_recursive(
+        package_dir, package_dir, target_dir, simulate, verbose, force, errors
+    )
     return errors
 
 
@@ -45,6 +50,7 @@ def _stow_recursive(
     target_current: Path,
     simulate: bool,
     verbose: int,
+    force: bool,
     errors: list[str],
 ) -> None:
     for entry in sorted(pkg_current.iterdir()):
@@ -65,6 +71,16 @@ def _stow_recursive(
                 if resolved == pkg_resolved:
                     if verbose >= 2:
                         print(f"SKIP: {target_entry} already points to {target_in_pkg}")
+                elif force:
+                    if verbose >= 1:
+                        old_target = os.readlink(target_entry)
+                        print(
+                            f"REPLACE (force): {target_entry} -> {old_target} (will relink to {target_in_pkg})"
+                        )
+                    if not simulate:
+                        target_entry.unlink()
+                    if not create_symlink(entry, target_entry, simulate, verbose):
+                        errors.append(str(target_entry))
                 else:
                     msg = f"CONFLICT: {target_entry} already exists as symlink to {os.readlink(target_entry)}"
                     print(f"WARNING: {msg}", file=sys.stderr)
@@ -73,9 +89,12 @@ def _stow_recursive(
                 errors.append(f"CONFLICT: {target_entry} is a broken symlink")
         elif target_entry.is_dir() and entry.is_dir():
             # Both are directories — recurse (directory folding)
-            _stow_recursive(pkg_root, entry, target_entry, simulate, verbose, errors)
+            _stow_recursive(
+                pkg_root, entry, target_entry, simulate, verbose, force, errors
+            )
         else:
-            msg = f"CONFLICT: {target_entry} already exists (dir vs file or type mismatch)"
+            # Regular file or type mismatch — never touched by --force
+            msg = f"CONFLICT: {target_entry} already exists (regular file or type mismatch; --force does not touch regular files)"
             print(f"WARNING: {msg}", file=sys.stderr)
             errors.append(msg)
 
@@ -150,11 +169,11 @@ def _prune_empty_parents(
 
 
 def restow_package(
-    package_dir: Path, target_dir: Path, simulate: bool, verbose: int
+    package_dir: Path, target_dir: Path, simulate: bool, verbose: int, force: bool
 ) -> list[str]:
     """Restow: delete then stow."""
     errors = delete_package(package_dir, target_dir, simulate, verbose)
-    errors.extend(stow_package(package_dir, target_dir, simulate, verbose))
+    errors.extend(stow_package(package_dir, target_dir, simulate, verbose, force))
     return errors
 
 
@@ -203,6 +222,11 @@ def main():
         help="Simulate; don't make any filesystem changes",
     )
     parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Replace existing symlinks that point elsewhere; regular files are still NOT touched",
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         action="count",
@@ -249,14 +273,16 @@ def main():
             continue
 
         if op == "stow":
-            errors = stow_package(package_dir, target_dir, args.simulate, args.verbose)
+            errors = stow_package(
+                package_dir, target_dir, args.simulate, args.verbose, args.force
+            )
         elif op == "delete":
             errors = delete_package(
                 package_dir, target_dir, args.simulate, args.verbose
             )
         elif op == "restow":
             errors = restow_package(
-                package_dir, target_dir, args.simulate, args.verbose
+                package_dir, target_dir, args.simulate, args.verbose, args.force
             )
 
         all_errors.extend(errors)
