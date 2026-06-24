@@ -41,7 +41,7 @@ return {
     event = "LspAttach",
     opts = {
       --- The backend to use, currently only "vim", "delta", "difftastic", "diffsofancy" are supported
-      backend = "vim",
+      backend = "delta",
       -- The picker to use, "telescope", "snacks", "select", "buffer", "fzf-lua" are supported
       picker = "snacks",
       backend_opts = {

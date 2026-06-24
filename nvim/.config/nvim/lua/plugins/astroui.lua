@@ -121,21 +121,27 @@ return {
   },
   {
     "EdenEast/nightfox.nvim",
+    lazy = true,
   },
   {
     "sainnhe/everforest",
+    lazy = true,
   },
   {
     "morhetz/gruvbox",
+    lazy = true,
   },
   {
     "projekt0n/github-nvim-theme",
+    lazy = true,
   },
   {
     "NLKNguyen/papercolor-theme",
+    lazy = true,
   },
   {
     "marko-cerovac/material.nvim",
+    lazy = true,
     init = function() vim.g.material_style = "palenight" end,
     config = function()
       require("material").setup {
