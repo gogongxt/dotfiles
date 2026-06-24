@@ -1,10 +1,7 @@
 -- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
--- 支持%跳转"<>"
-vim.opt.matchpairs:append "<:>"
-
--- for chinese matchup
-vim.o.matchpairs = vim.o.matchpairs .. ",《:》,「:」,『:』,（:）,［:］,【:】"
+-- 支持%跳转"<>"和中文括号
+vim.opt.matchpairs:append "<:>,《:》,「:」,『:』,（:）,［:］,【:】"
 
 return {
   "gogongxt/vim-matchup",
