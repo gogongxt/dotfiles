@@ -4,7 +4,7 @@ keymap.set("i", "jk", "<Esc>", opts)
 keymap.set("n", "<leader>\\", "<C-w>v", opts)
 keymap.set("n", "<leader><BS>", "<C-w>v", opts)
 keymap.set("n", "<leader>-", "<C-w>s", opts)
-keymap.set("n", "<C-s>", "<cmd>w<cr>", opts)
+-- keymap.set("n", "<C-s>", "<cmd>w<cr>", opts)
 -- keymap.set("n", "<S-h>", "<cmd>bpre<cr>", opts)
 -- keymap.set("n", "<S-l>", "<cmd>bnext<cr>", opts)
 -- keymap.set("n", "<S-h>", "<cmd>lua require('astrocore.buffer').nav(vim.v.count1)<cr>", opts)
@@ -103,7 +103,7 @@ return {
 
           -- save file
           ["<leader>w"] = { "<cmd>w<cr>", desc = "Save File" },
-          ["<C-s>"] = { "<cmd>w<cr>", desc = "Save File" },
+          -- ["<C-s>"] = { "<cmd>w<cr>", desc = "Save File" },
           ["<Leader>W"] = {
             function() require("plugins.user.my_funcs.sudo_write").sudo_write() end,
             desc = "Write with root",
