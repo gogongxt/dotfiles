@@ -4,7 +4,7 @@ hash proxychains4 2>/dev/null && { alias pro='proxychains4'; }
 hash proxychains 2>/dev/null && { alias pro='proxychains'; }
 #🔼🔼🔼
 
-: ${PROXY_DEFAULT:=127.0.0.1:7890}
+: ${PROXY_DEFAULT:=http://127.0.0.1:7890}
 
 #🔽🔽🔽
 # set proxy
