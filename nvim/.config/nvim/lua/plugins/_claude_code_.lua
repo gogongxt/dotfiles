@@ -28,10 +28,12 @@ local function select_claude_vendor()
     prompt = "Select Claude Vendor:",
     format_item = function(item) return item == current and (item .. " (current)") or item end,
   }, function(choice)
-    if choice then
-      vim.env.CLAUDE_CODE_VENDOR = choice
-      vim.notify("Claude vendor: " .. choice, vim.log.levels.INFO)
-    end
+    if not choice then return end
+    -- terminal_cmd sources ~/.zshrc → ~/.user.sh, which re-evaluates the vendor
+    -- block from CLAUDE_CODE_VENDOR, so the new session picks up the right ANTHROPIC_* vars.
+    vim.env.CLAUDE_CODE_VENDOR = choice
+    vim.notify("Claude vendor: " .. choice .. " — starting new session", vim.log.levels.INFO)
+    vim.cmd "ClaudeCodeNew"
   end)
 end
 
@@ -51,24 +53,30 @@ end
 _G.claude_prompt = {}
 
 function _G.claude_prompt.find_buf()
-  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-    if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_is_loaded(bufnr) then
-      local name = vim.api.nvim_buf_get_name(bufnr)
-      if name:find "claude%-prompt.*%.md$" then return bufnr end
+  local best, best_time = nil, 0
+  for _, info in ipairs(vim.fn.getbufinfo { buflisted = 1 }) do
+    if info.loaded == 1 and info.name:find "claude%-prompt.*%.md$" then
+      local mtime = vim.fn.getftime(info.name)
+      if mtime > best_time then
+        best, best_time = info.bufnr, mtime
+      end
     end
   end
-  return nil
+  return best
 end
 
 function _G.claude_prompt.append(text, bufnr)
   bufnr = bufnr or 0
   local ok, err = pcall(function()
-    local lines = vim.split(text, "\n", { plain = true })
+    -- Inline append at end of last line to match Claude's native " ... " behavior.
     local line_count = vim.api.nvim_buf_line_count(bufnr)
-    vim.api.nvim_buf_set_lines(bufnr, line_count, line_count, false, lines)
+    local last_line = vim.api.nvim_buf_get_lines(bufnr, line_count - 1, line_count, false)[1] or ""
+    local sep = (last_line == "" or last_line:sub(-1) == " ") and "" or " "
+    local new_line = last_line .. sep .. text .. " "
+    vim.api.nvim_buf_set_lines(bufnr, line_count - 1, line_count, false, { new_line })
     for _, win in ipairs(vim.api.nvim_list_wins()) do
       if vim.api.nvim_win_get_buf(win) == bufnr then
-        vim.api.nvim_win_set_cursor(win, { line_count + #lines, 0 })
+        vim.api.nvim_win_set_cursor(win, { line_count, #new_line })
         break
       end
     end
@@ -98,6 +106,39 @@ function _G.claude_add_wrapper()
   vim.cmd "ClaudeCodeAdd %"
 end
 
+function _G.claude_filetree_add_wrapper()
+  if _G.claude_prompt.find_buf() then
+    local ft = vim.bo.filetype
+    local path = nil
+    if ft == "neo-tree" then
+      local ok, manager = pcall(require, "neo-tree.sources.manager")
+      if ok then
+        local state = manager.get_state "filesystem"
+        if state and state.tree then
+          local node = state.tree:get_node()
+          if node and node.path then path = node.path end
+        end
+      end
+    elseif ft == "NvimTree" then
+      local ok, api = pcall(require, "nvim-tree.api")
+      if ok then
+        local node = api.tree.get_node_under_cursor()
+        if node and node.absolute_path then path = node.absolute_path end
+      end
+    elseif ft == "oil" then
+      local ok, oil = pcall(require, "oil")
+      if ok then
+        local dir = oil.get_current_dir()
+        local entry = oil.get_entry_on_line(0, vim.fn.line ".")
+        if dir and entry and entry.name and entry.name ~= ".." then path = dir .. entry.name end
+      end
+    end
+    if path and path ~= "" then _G.claude_prompt.append_ref(path) end
+    return
+  end
+  vim.cmd "ClaudeCodeTreeAdd"
+end
+
 function _G.claude_send_wrapper()
   if _G.claude_prompt.find_buf() then
     local l1 = vim.fn.line "."
@@ -116,8 +157,75 @@ function _G.claude_send_wrapper()
   vim.cmd "ClaudeCodeSend"
 end
 
+-- Shared key → { action, desc } table for the <C-s> prefix bindings that should
+-- work both in normal/visual mode (lazy `keys`) and inside the Claude terminal
+-- (terminal mode `t`). `action` is either a command string (wrapped in
+-- <cmd>...<cr>) or a function (used directly). Each side generates its own
+-- mapping from this single source so a binding change only needs editing once.
+local claude_keys = {
+  ["<C-s><C-s>"] = { "ClaudeCode", "Toggle active Claude session" },
+  ["<C-s>n"] = { "ClaudeCodeNew", "New Claude session" },
+  ["<C-s>l"] = { "ClaudeCodeSessions", "List/pick Claude session" },
+  ["<C-s>q"] = { "ClaudeCodeCloseSession", "Close active Claude session" },
+  ["<C-s>r"] = { "ClaudeCodeRenameSession", "Rename active Claude session" },
+  ["<C-s>m"] = { "ClaudeCodeSelectModel", "Select Claude model" },
+  ["<C-s>f"] = { "ClaudeCodeFocus", "Focus Claude" },
+  ["<C-s>C"] = { select_claude_vendor, "Select Claude Vendor" },
+  ["<C-s>R"] = { resume_claude_with_session, "Resume Claude by session-id" },
+}
+-- <C-s>1..9 → toggle session slot N (1-9 only; plugin supports any N).
+for i = 1, 9 do
+  claude_keys[string.format("<C-s>%d", i)] = {
+    string.format("ClaudeCodeSessions %d", i),
+    string.format("Toggle Claude session %d", i),
+  }
+end
+
+-- Build a keymap rhs from a claude_keys entry: a function is used directly, a
+-- command string is wrapped in <cmd>...<cr>.
+local function claude_rhs(entry)
+  local action = entry[1]
+  if type(action) == "function" then return action end
+  return "<cmd>" .. action .. "<cr>"
+end
+
+-- Variant selector: pick between the upstream plugin and the multi-session
+-- fork. Only the multi-session variant ships the `tabs` config (it has no
+-- effect on upstream's single-terminal provider).
+--   "upstream"      → coder/claudecode.nvim (default branch) + toggleterm provider
+--   "multi-session" → gogongxt/claudecode.nvim @ feat/multi-session-terminal + toggleterm built-in
+local claude_variant = "multi-session"
+local claude_repo, claude_branch, claude_terminal_provider, claude_tabs
+if claude_variant == "multi-session" then
+  claude_repo = "gogongxt/claudecode.nvim"
+  claude_branch = "feat/multi-session-terminal"
+  claude_terminal_provider = "toggleterm"
+  -- Multi-session tab bar. Keymaps default to false so terminal-native keys
+  -- (<Tab>, <S-Tab>, <C-w>) pass through to Claude's TUI untouched. We opt
+  -- into <C-Tab>/<C-S-Tab> only — they don't conflict with the TUI.
+  claude_tabs = {
+    enabled = true,
+    show_close_button = true,
+    show_new_button = true,
+    keymaps = {
+      next_tab = "<Tab>",
+      -- prev_tab = "<S-Tab>",
+      prev_tab = false,
+      new_tab = false,
+      close_tab = false,
+    },
+  }
+else
+  claude_repo = "coder/claudecode.nvim"
+  claude_branch = nil -- default branch
+  claude_terminal_provider = require "utils.claude-toggleterm-provider"()
+  claude_tabs = {}
+end
+
 return {
-  "coder/claudecode.nvim",
+  claude_repo,
+  branch = claude_branch,
+  -- dir = "~/Projects/claudecode.nvim",
   dependencies = { "akinsho/toggleterm.nvim" },
   opts = {
     -- terminal_cmd = "ccr code",
@@ -130,63 +238,63 @@ return {
     terminal = {
       split_side = "right", -- "left" or "right"
       split_width_percentage = 0.40,
-      provider = require("utils.claude-toggleterm-provider")(),
+      provider = claude_terminal_provider,
+      -- provider = "toggleterm", -- built-in provider; uses toggleterm.nvim, falls back to native if unavailable
       auto_close = true, -- Works with toggleterm provider
       -- snacks_win_opts = {
       --   -- auto_insert = false,
       -- }, -- Not used with toggleterm provider
+      tabs = claude_tabs,
     },
   },
-  config = true,
-  keys = {
-    { "<leader>a",  nil,                              desc = "AI/Claude Code" },
-    { "<leader>ac", "<cmd>ClaudeCode<cr>",            desc = "Toggle Claude" },
-    { "<leader>aC", select_claude_vendor,             desc = "Select Claude Vendor" },
-    { "<leader>af", "<cmd>ClaudeCodeFocus<cr>",       desc = "Focus Claude" },
-    { "<leader>ar", resume_claude_with_session,      desc = "Resume Claude by session-id" },
-    -- { "<leader>aC", "<cmd>ClaudeCode --continue<cr>", desc = "Continue Claude" },
-    { "<leader>am", "<cmd>ClaudeCodeSelectModel<cr>", desc = "Select Claude model" },
-    { "<leader>as", _G.claude_add_wrapper,            mode = "n",                   desc = "Add current buffer" },
-    { "<leader>as", _G.claude_send_wrapper,           mode = "v",                   desc = "Send to Claude" },
-    {
-      "<leader>as",
-      function()
-        if _G.claude_prompt.find_buf() then
-          local ft = vim.bo.filetype
-          local path = nil
-          if ft == "neo-tree" then
-            local ok, manager = pcall(require, "neo-tree.sources.manager")
-            if ok then
-              local state = manager.get_state "filesystem"
-              if state and state.tree then
-                local node = state.tree:get_node()
-                if node and node.path then path = node.path end
-              end
-            end
-          elseif ft == "NvimTree" then
-            local ok, api = pcall(require, "nvim-tree.api")
-            if ok then
-              local node = api.tree.get_node_under_cursor()
-              if node and node.absolute_path then path = node.absolute_path end
-            end
-          elseif ft == "oil" then
-            local ok, oil = pcall(require, "oil")
-            if ok then
-              local dir = oil.get_current_dir()
-              local entry = oil.get_entry_on_line(0, vim.fn.line ".")
-              if dir and entry and entry.name and entry.name ~= ".." then path = dir .. entry.name end
-            end
-          end
-          if path and path ~= "" then _G.claude_prompt.append_ref(path) end
-          return
-        end
-        vim.cmd "ClaudeCodeTreeAdd"
-      end,
-      desc = "Add file",
-      ft = { "NvimTree", "neo-tree", "oil", "minifiles" },
-    },
+  config = function(_, opts)
+    require("claudecode").setup(opts)
+
+    -- Terminal-mode <C-s> bindings: inside the Claude terminal, <C-s> would be
+    -- forwarded to Claude's TUI. Intercept it in terminal mode (t) so the
+    -- <C-s>X shortcuts work without leaving the terminal. Bare <C-s> is mapped
+    -- to <Nop> so Neovim waits for the next key to complete the combo (terminal
+    -- mode has no timeoutlen, so without this the prefix reaches Claude
+    -- immediately). The provider's restore_mode re-enters insert after the
+    -- command, so a plain <cmd>...<cr> rhs suffices.
+    vim.keymap.set("t", "<C-s>", "<Nop>", { silent = true, desc = "Claude prefix (swallow)" })
+    for lhs, entry in pairs(claude_keys) do
+      vim.keymap.set("t", lhs, claude_rhs(entry), {
+        silent = true,
+        desc = entry[2],
+      })
+    end
+  end,
+  keys = function()
+    local k = {
+      { "<c-s>", nil, desc = "AI/Claude Code" },
+      -- { "<leader>aC", "<cmd>ClaudeCode --continue<cr>", desc = "Continue Claude" },
+      {
+        "<c-s>s",
+        _G.claude_add_wrapper,
+        mode = "n",
+        desc = "Add current buffer",
+      },
+      {
+        "<c-s>s",
+        _G.claude_send_wrapper,
+        mode = "v",
+        desc = "Send to Claude",
+      },
+      {
+        "<c-s>s",
+        _G.claude_filetree_add_wrapper,
+        desc = "Add file",
+        ft = { "NvimTree", "neo-tree", "oil", "minifiles" },
+      },
+    }
+    -- Shared <C-s>X bindings (same source as the terminal-mode mappings above).
+    for lhs, entry in pairs(claude_keys) do
+      table.insert(k, { lhs, claude_rhs(entry), desc = entry[2] })
+    end
     -- Diff management
-    { "<leader>aa", "<cmd>ClaudeCodeDiffAccept<cr>", desc = "Accept diff" },
-    { "<leader>ad", "<cmd>ClaudeCodeDiffDeny<cr>",   desc = "Deny diff" },
-  },
+    -- table.insert(k, { "<c-s>a", "<cmd>ClaudeCodeDiffAccept<cr>", desc = "Accept diff" })
+    -- table.insert(k, { "<c-s>d", "<cmd>ClaudeCodeDiffDeny<cr>", desc = "Deny diff" })
+    return k
+  end,
 }
