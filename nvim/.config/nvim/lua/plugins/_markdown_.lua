@@ -544,9 +544,16 @@ return {
         overrides = {
           -- Overrides for different buftypes, see :h 'buftype'
           buftype = {
+            -- LSP hover floats are buftype=nofile. The plugin's default
+            -- code.border = "hide" already conceals the ``` fence lines.
+            -- Disabling anti-conceal here prevents the fence from being
+            -- revealed when the cursor enters the float.
+            -- See https://github.com/MeanderingProgrammer/render-markdown.nvim/issues/383
             nofile = {
               padding = { highlight = "NormalFloat" },
               sign = { enabled = false },
+              code = { border = "hide", language = false },
+              anti_conceal = { enabled = false },
             },
           },
           -- Overrides for different filetypes, see :h 'filetype'
