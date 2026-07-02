@@ -1,29 +1,40 @@
 -- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
-vim.keymap.set(
-  "n",
-  "<leader>ee",
-  function() require("neo-tree.command").execute { source = "filesystem", toggle = true } end,
-  { desc = "Toggle Neo-tree filesystem" }
-)
-vim.keymap.set(
-  "n",
-  "<leader>eb",
-  function() require("neo-tree.command").execute { source = "buffers", toggle = true } end,
-  { desc = "Toggle Neo-tree buffers" }
-)
-vim.keymap.set(
-  "n",
-  "<leader>eo",
-  function() require("neo-tree.command").execute { source = "document_symbols", toggle = true } end,
-  { desc = "Toggle Neo-tree document symbols" }
-)
-vim.keymap.set(
-  "n",
-  "<leader>eg",
-  function() require("neo-tree.command").execute { source = "git_status", toggle = true } end,
-  { desc = "Toggle Neo-tree git status" }
-)
+-- Shared left sidebar: neo-tree and outline.nvim swap in the same position.
+local function close_neotree_windows()
+  for _, winid in ipairs(vim.api.nvim_list_wins()) do
+    if vim.api.nvim_win_is_valid(winid) then
+      local bufnr = vim.api.nvim_win_get_buf(winid)
+      local ft = vim.api.nvim_get_option_value("filetype", { buf = bufnr })
+      if ft == "neo-tree" then vim.api.nvim_win_close(winid, true) end
+    end
+  end
+end
+
+local function close_outline()
+  local ok, outline = pcall(require, "outline")
+  if ok and outline.is_open() then outline.close() end
+end
+
+local function toggle_neotree(source)
+  close_outline()
+  require("neo-tree.command").execute { source = source, toggle = true }
+end
+
+local function toggle_outline()
+  local ok, outline = pcall(require, "outline")
+  if not ok then
+    vim.notify("outline.nvim not installed", vim.log.levels.WARN)
+    return
+  end
+  close_neotree_windows()
+  outline.toggle()
+end
+
+vim.keymap.set("n", "<leader>ee", function() toggle_neotree "filesystem" end, { desc = "Toggle Neo-tree filesystem" })
+vim.keymap.set("n", "<leader>eb", function() toggle_neotree "buffers" end, { desc = "Toggle Neo-tree buffers" })
+vim.keymap.set("n", "<leader>eo", toggle_outline, { desc = "Toggle Outline" })
+vim.keymap.set("n", "<leader>eg", function() toggle_neotree "git_status" end, { desc = "Toggle Neo-tree git status" })
 
 local enable_smart_autofollow = false
 
@@ -136,14 +147,13 @@ return {
   {
     "nvim-neo-tree/neo-tree.nvim",
     opts = function(_, opts)
-      opts.sources = { "filesystem", "buffers", "document_symbols", "git_status" }
+      opts.sources = { "filesystem", "buffers", "git_status" }
       opts.source_selector = {
         winbar = true,
         content_layout = "center",
         sources = {
           { source = "filesystem", display_name = "󰉋 File" },
           { source = "buffers", display_name = "󰈙 Bufs" },
-          { source = "document_symbols", display_name = " Outline" },
           { source = "git_status", display_name = "󰊢 Git" },
         },
       }
@@ -185,9 +195,9 @@ return {
         local node = state.tree:get_node()
         if node.type == "directory" then
           -- For directories, toggle expand/collapse (use filesystem's toggle_directory for unloaded dirs)
-          local cc = require("neo-tree.sources.common.commands")
-          local fs = require("neo-tree.sources.filesystem")
-          local utils = require("neo-tree.utils")
+          local cc = require "neo-tree.sources.common.commands"
+          local fs = require "neo-tree.sources.filesystem"
+          local utils = require "neo-tree.utils"
           cc.toggle_node(state, utils.wrap(fs.toggle_directory, state))
         else
           -- For files, check number of usable windows
@@ -356,20 +366,6 @@ return {
           },
         },
       }
-      -- Disable file-system-specific mappings for document_symbols source
-      opts.document_symbols = {
-        follow_cursor = false,
-        follow_tree_cursor = false, -- Automatically show symbol location when moving cursor in the tree
-        window = {
-          mappings = {
-            ["y"] = false,
-            ["p"] = false,
-            ["D"] = false,
-            ["<C-r>"] = false, -- Use uppercase C to match default mapping
-          },
-        },
-      }
-
       -- Override git_status mappings: change gg to goto top instead of git_commit_and_push
       opts.git_status = {
         window = {
@@ -380,44 +376,6 @@ return {
           },
         },
       }
-
-      -- Add markdown fallback support for document_symbols
-      -- We need to patch after the plugin loads, so use a VeryLazy autocmd
-      vim.api.nvim_create_autocmd("User", {
-        pattern = "LazyLoad",
-        callback = function(event)
-          if event.data == "neo-tree.nvim" then
-            local symbols_utils = require "neo-tree.sources.document_symbols.lib.symbols_utils"
-            local original_render = symbols_utils.render_symbols
-            symbols_utils.render_symbols = function(state, callback)
-              local bufnr = state.lsp_bufnr
-              if bufnr then
-                local ft = vim.api.nvim_buf_get_option(bufnr, "filetype")
-                if ft == "markdown" then
-                  -- Check for LSP client
-                  local get_clients = vim.lsp.get_clients or vim.lsp.get_active_clients
-                  local has_lsp = false
-                  for _, client in pairs(get_clients { bufnr = bufnr }) do
-                    if client.server_capabilities.documentSymbolProvider then
-                      has_lsp = true
-                      break
-                    end
-                  end
-                  -- Use markdown provider if no LSP
-                  if not has_lsp then
-                    local md_ok, md_provider = pcall(require, "utils.neo-tree-markdown-provider")
-                    if md_ok then return md_provider.render_symbols(state, callback) end
-                  end
-                end
-              end
-
-              return original_render(state, callback)
-            end
-
-            return true -- Remove the autocmd after execution
-          end
-        end,
-      })
 
       return opts
     end,
