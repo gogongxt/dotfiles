@@ -264,6 +264,89 @@ return {
         desc = entry[2],
       })
     end
+
+    -- Normal-mode mouse wheel passthrough: in terminal-normal mode ("n"),
+    -- Neovim handles <ScrollWheelUp/Down> itself but a terminal buffer has no
+    -- native scroll target, so the wheel does nothing. Claude's TUI enables
+    -- SGR mouse tracking (mode 1006), so in terminal mode ("t") the wheel
+    -- reaches the PTY directly. Intercept the wheel in normal mode on Claude
+    -- terminal buffers and forward an SGR wheel event to the PTY channel,
+    -- mimicking what Neovim would have sent in terminal mode.
+    local install_wheel_passthrough = function(bufnr)
+      if vim.b[bufnr].claudecode_wheel_passthrough then return end
+      vim.b[bufnr].claudecode_wheel_passthrough = true
+      local send_sgr = function(button, col, row)
+        -- SGR mouse format: ESC [ < button ; col ; row M (press) / m (release)
+        local seq = string.format("\27[<%d;%d;%dM", button, col, row)
+        local chan = vim.bo[bufnr].channel
+        if chan and chan > 0 then vim.api.nvim_chan_send(chan, seq) end
+      end
+      local dispatch_wheel = function(button)
+        -- getmousepos() returns {winid, screenrow, screencol, winrow, wincol, line, column}.
+        -- SGR mouse coordinates are terminal-screen-relative (1-indexed).
+        local m = vim.fn.getmousepos()
+        if not m then return end
+        local winid = m.winid
+        if not winid or not vim.api.nvim_win_is_valid(winid) then return end
+        if vim.api.nvim_win_get_buf(winid) ~= bufnr then return end
+        local col = m.screencol or 1
+        local row = m.screenrow or 1
+        if col < 1 then col = 1 end
+        if row < 1 then row = 1 end
+        -- SGR wheel: a single press event with the wheel button code.
+        -- No release event is needed (wheel buttons are momentary).
+        send_sgr(button, col, row)
+      end
+      vim.keymap.set(
+        "n",
+        "<ScrollWheelUp>",
+        function() dispatch_wheel(64) end,
+        { buffer = bufnr, silent = true, desc = "Claude wheel up → PTY" }
+      )
+      vim.keymap.set(
+        "n",
+        "<ScrollWheelDown>",
+        function() dispatch_wheel(65) end,
+        { buffer = bufnr, silent = true, desc = "Claude wheel down → PTY" }
+      )
+      -- Horizontal wheel (rare, but harmless to forward too).
+      vim.keymap.set(
+        "n",
+        "<ScrollWheelLeft>",
+        function() dispatch_wheel(66) end,
+        { buffer = bufnr, silent = true, desc = "Claude wheel left → PTY" }
+      )
+      vim.keymap.set(
+        "n",
+        "<ScrollWheelRight>",
+        function() dispatch_wheel(67) end,
+        { buffer = bufnr, silent = true, desc = "Claude wheel right → PTY" }
+      )
+    end
+    local is_claude_term_buf = function(bufnr)
+      local ok, term_mod = pcall(require, "claudecode.terminal")
+      if not ok then return false end
+      -- get_session_for_buffer is buffer-local and authoritative; fall back to
+      -- get_active_terminal_bufnr for older plugin revisions that lack it.
+      if term_mod.get_session_for_buffer then return term_mod.get_session_for_buffer(bufnr) ~= nil end
+      if term_mod.get_active_terminal_bufnr then return term_mod.get_active_terminal_bufnr() == bufnr end
+      return false
+    end
+    vim.api.nvim_create_autocmd("TermOpen", {
+      group = vim.api.nvim_create_augroup("ClaudeCodeWheelPassthrough", { clear = true }),
+      callback = function(args)
+        local bufnr = args.buf
+        if is_claude_term_buf(bufnr) then
+          install_wheel_passthrough(bufnr)
+          return
+        end
+        -- Active-bufnr registration may lag TermOpen by a tick; recheck deferred.
+        vim.schedule(function()
+          if vim.api.nvim_buf_is_valid(bufnr) and is_claude_term_buf(bufnr) then install_wheel_passthrough(bufnr) end
+        end)
+      end,
+    })
+
   end,
   keys = function()
     local k = {
