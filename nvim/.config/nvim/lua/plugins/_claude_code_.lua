@@ -347,6 +347,61 @@ return {
       end,
     })
 
+    -- C-d / C-u half-page scroll is now handled Claude-side via
+    -- ~/.claude/keybindings.json (Scroll context: ctrl+d → scroll:halfPageDown,
+    -- ctrl+u → scroll:halfPageUp). See GitHub issue #64992 — the "reserved"
+    -- restriction on Ctrl+D only protects the Global app:exit default; a more
+    -- specific context (Scroll) can shadow it. Caveat per #64992: ctrl+u
+    -- shares byte 0x15 with Cmd+Backspace, so Cmd+Backspace in the Claude
+    -- prompt stops deleting to line start. To restore the neovim-side
+    -- workaround (which avoids the byte collision), uncomment the block below
+    -- and remove the Scroll-context binding from keybindings.json.
+    --[[
+    local PGUP = "\27[5~"
+    local PGDN = "\27[6~"
+    local install_scroll_keys = function(bufnr)
+      if vim.b[bufnr].claudecode_scroll_keys then return end
+      vim.b[bufnr].claudecode_scroll_keys = true
+      local send_bytes = function(seq)
+        return function()
+          local chan = vim.bo[bufnr].channel
+          if chan and chan > 0 then vim.api.nvim_chan_send(chan, seq) end
+        end
+      end
+      vim.keymap.set(
+        "t",
+        "<C-d>",
+        send_bytes(PGDN),
+        { buffer = bufnr, silent = true, desc = "Claude scroll half-page down" }
+      )
+      vim.keymap.set(
+        "t",
+        "<C-u>",
+        send_bytes(PGUP),
+        { buffer = bufnr, silent = true, desc = "Claude scroll half-page up" }
+      )
+    end
+    local is_claude_buf = function(bufnr)
+      local ok, term_mod = pcall(require, "claudecode.terminal")
+      if not ok then return false end
+      local active = term_mod.get_active_terminal_bufnr and term_mod.get_active_terminal_bufnr()
+      return active == bufnr
+    end
+    vim.api.nvim_create_autocmd("TermOpen", {
+      group = vim.api.nvim_create_augroup("ClaudeCodeScrollKeys", { clear = true }),
+      callback = function(args)
+        local bufnr = args.buf
+        if is_claude_buf(bufnr) then
+          install_scroll_keys(bufnr)
+          return
+        end
+        -- Active-bufnr registration may lag TermOpen by a tick; recheck deferred.
+        vim.schedule(function()
+          if vim.api.nvim_buf_is_valid(bufnr) and is_claude_buf(bufnr) then install_scroll_keys(bufnr) end
+        end)
+      end,
+    })
+    ]]
   end,
   keys = function()
     local k = {
