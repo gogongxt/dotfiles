@@ -135,6 +135,12 @@ return {
       require("render-markdown").setup {
         -- Whether Markdown should be rendered by default or not
         enabled = true,
+        -- Skip rendering for specific buffers, e.g. claude-code prompt scratch files.
+        -- Return true to ignore (not render) the buffer.
+        ignore = function(buf)
+          local name = vim.api.nvim_buf_get_name(buf)
+          return name:find "claude%-prompt.*%.md$" ~= nil
+        end,
         -- Vim modes that will show a rendered view of the markdown file, :h mode(), for
         -- all enabled components. Individual components can be enabled for other modes.
         -- Remaining modes will be unaffected by this plugin.
