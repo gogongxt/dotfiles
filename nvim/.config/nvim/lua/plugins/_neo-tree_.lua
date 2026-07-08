@@ -147,6 +147,35 @@ return {
   {
     "nvim-neo-tree/neo-tree.nvim",
     opts = function(_, opts)
+      -- TODO: (upstream) re-check if neo-tree adds a config option to disable this prompt.
+      --   As of neo-tree @ 2026-07, there is NO global option (no `disable_*`/`no_prompt` in
+      --   defaults.lua). The prompt comes from `handle_reveal` in lua/neo-tree/command/init.lua,
+      --   introduced by commit 427056e2 (PR #2002, 2026-03-26, "fix: reveal on open when
+      --   `follow_current_file`") — that PR is what made `follow_current_file.enabled = true`
+      --   imply a reveal on toggle/focus, which hits this prompt for files outside cwd.
+      --   Feature request #1571 ("Disable all prompts") was closed WITHOUT adding an option;
+      --   the maintainer's resolution (PR #1649) is: the prompt is skipped only when `dir`
+      --   or `reveal_force_cwd` is passed to the command. Neither gives our desired behavior:
+      --     - `reveal_force_cwd = true`  -> silently changes cwd (rejected, see Option A)
+      --     - `dir = vim.fn.getcwd()`    -> works but pins neo-tree's root to vim's cwd on
+      --                                     every toggle (supported, but may force a re-navigate)
+      --   So we monkeypatch `inputs.confirm` instead. Revisit later: if upstream adds a real
+      --   option (e.g. per-source `disable_cwd_prompt`), drop this override and use it.
+      --
+      -- What this does: the "File not in cwd. Change cwd to ...?" prompt fires when a reveal
+      -- targets a file outside cwd. Answer "No": keep cwd as-is and open the tree without
+      -- revealing, instead of asking or silently changing cwd. Other confirm prompts (trash,
+      -- delete, restore, overwrite) fall through to the original function unchanged.
+      local inputs = require "neo-tree.ui.inputs"
+      if not inputs._orig_confirm then inputs._orig_confirm = inputs.confirm end
+      inputs.confirm = function(message, callback)
+        if type(message) == "string" and message:match "^File not in cwd%. Change cwd to" then
+          if callback then callback(false) end
+          return false
+        end
+        return inputs._orig_confirm(message, callback)
+      end
+
       opts.sources = { "filesystem", "buffers", "git_status" }
       opts.source_selector = {
         winbar = true,
