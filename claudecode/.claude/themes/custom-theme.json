@@ -2,13 +2,7 @@
   "name": "Custom Theme",
   "base": "dark",
   "overrides": {
-    "diffAdded": "#496F4A",
-    "diffRemoved": "#4A2E32",
-    "diffAddedDimmed": "#3a5a3b",
-    "diffRemovedDimmed": "#3a2a2a",
-    "diffAddedWord": "#ff0000",
-    "diffRemovedWord": "#ff0000",
-    "userMessageBackground": "#2563eb",
-    "userMessageBackgroundHover": "#3b82f6"
+    "userMessageBackground": "#494d64",
+    "userMessageBackgroundHover": "#494d64"
   }
 }
