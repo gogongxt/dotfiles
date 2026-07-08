@@ -232,7 +232,7 @@ return {
     -- terminal_cmd = "claude",
     terminal_cmd = claude_cmd,
     focus_after_send = true, -- When true, successful sends will focus the Claude terminal if already connected
-    track_selection = true,
+    track_selection = false, -- disable auto file-context push (removes the "⧉ In <filename>" indicator)
 
     -- Terminal Configuration
     terminal = {
