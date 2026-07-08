@@ -48,10 +48,17 @@ else
   git checkout "$branch"
 fi
 '
-alias gl="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%cd) %C(green)%cn %C(reset)%s' --date=format:'%Y-%m-%d %H:%M:%S' --all --graph --abbrev-commit -10"
-alias gll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%cd) %C(green)%cn %C(reset)%s' --date=format:'%Y-%m-%d %H:%M:%S' --all --graph --abbrev-commit -20"
-alias glll="git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%cd) %C(green)%cn %C(reset)%s' --date=format:'%Y-%m-%d %H:%M:%S' --all --graph --abbrev-commit -40"
-alias gllll="git --no-pager log --color=always --pretty=format:'%C(auto)%h%d %C(cyan)(%cd) %C(green)%cn %C(reset)%s' --date=format:'%Y-%m-%d %H:%M:%S' --all --graph --abbrev-commit | fzf --ansi --no-preview"
+unalias gl gll glll gllll 2>/dev/null
+_gl() {
+  local count="$1"
+  git --no-pager log --pretty=format:'%C(auto)%h%d %C(cyan)(%cd) %C(green)%cn %C(reset)%s' --date=format:'%Y-%m-%d %H:%M:%S' --all --graph --abbrev-commit "-${count}"
+}
+gl()   { _gl "${1:-10}"; }
+gll()  { _gl "${1:-20}"; }
+glll() { _gl "${1:-40}"; }
+gllll() {
+  git --no-pager log --color=always --pretty=format:'%C(auto)%h%d %C(cyan)(%cd) %C(green)%cn %C(reset)%s' --date=format:'%Y-%m-%d %H:%M:%S' --all --graph --abbrev-commit | fzf --ansi --no-preview
+}
 alias gam='git add . && echo "exec git add all" && git commit -m '
 alias gcm='git commit --amend'
 #🔼🔼🔼
