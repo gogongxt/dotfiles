@@ -84,6 +84,7 @@
   "skipWebFetchPreflight": true,
   "syntaxHighlightingDisabled": true,
   "alwaysThinkingEnabled": false,
+  "effortLevel": "xhigh",
   "skipDangerousModePermissionPrompt": true,
-  "effortLevel": "xhigh"
+  "theme": "custom:custom-theme"
 }
