@@ -24,7 +24,7 @@
       "Bash(chown *)",
       "Bash(git add *)",
       "Bash(git reset *)",
-      "Bash(git restore --staged *)",
+      "Bash(git restore *)",
       "Bash(git rm *)",
       "Bash(git stash *)",
       "Bash(git branch -D *)",
@@ -34,6 +34,8 @@
       "Bash(git clean -f *)",
       "Bash(git commit --amend *)",
       "Bash(git push origin --delete *)",
+      "Bash(git push fork --delete *)",
+      "Bash(git push upstream --delete *)",
       "Bash(docker rm *)",
       "Bash(docker rmi *)",
       "Bash(docker system prune *)"
