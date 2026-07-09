@@ -3,7 +3,22 @@
 local mappings = require "mappings"
 mappings.set_mappings {
   n = {
-    ["md"] = { "<cmd>MarkdownPreview<cr>", desc = "markdown preview" },
+    ["<leader>md"] = { "<cmd>MarkdownPreview<cr>", desc = "markdown preview" },
+    ["<leader>ms"] = {
+      -- toggle scroll sync (browser follows neovim cursor) for the current buffer
+      function()
+        local mp = require "markdown_preview"
+        mp.config.scroll_sync = not mp.config.scroll_sync
+        mp._last_scroll_line = nil -- clear cache so the next sync always fires
+        if mp.config.scroll_sync then
+          -- turning ON: push current cursor position to the browser right away
+          -- by reusing the plugin's own CursorMoved scroll-sync path
+          vim.api.nvim_exec_autocmds("CursorMoved", { buffer = 0 })
+        end
+        vim.notify("Scroll sync: " .. (mp.config.scroll_sync and "ON" or "OFF"), vim.log.levels.INFO)
+      end,
+      desc = "markdown toggle scroll sync",
+    },
   },
   v = {},
 }
