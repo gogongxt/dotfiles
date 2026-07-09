@@ -82,7 +82,7 @@
     }
   },
   "skipWebFetchPreflight": true,
-  "syntaxHighlightingDisabled": true,
+  "syntaxHighlightingDisabled": false,
   "alwaysThinkingEnabled": false,
   "effortLevel": "xhigh",
   "skipDangerousModePermissionPrompt": true,

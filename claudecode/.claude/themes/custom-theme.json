@@ -1,8 +1,15 @@
 {
+  "_todo": "diff* overrides below are ignored by the file-diff renderer as of v2.1.202 (open bug). Track fix: https://github.com/anthropics/claude-code/issues/57036 — values are correct; they should apply automatically once fixed.",
   "name": "Custom Theme",
   "base": "dark",
   "overrides": {
     "userMessageBackground": "#494d64",
-    "userMessageBackgroundHover": "#494d64"
+    "userMessageBackgroundHover": "#494d64",
+    "diffAdded": "#496F4A",
+    "diffRemoved": "#4A2E32",
+    "diffAddedDimmed": "#243528",
+    "diffRemovedDimmed": "#352428",
+    "diffAddedWord": "#6fbf5a",
+    "diffRemovedWord": "#ff6b6b"
   }
 }
