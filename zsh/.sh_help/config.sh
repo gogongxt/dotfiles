@@ -12,7 +12,8 @@ export XDG_CONFIG_HOME="$HOME/.config"
 #🔽🔽🔽
 #git
 alias g="gitui"
-alias serie="serie -p kitty"
+# alias serie="serie -p kitty"
+# unalias serie
 alias gg="serie"
 alias gs="git status"
 alias gr="git remote -v"
