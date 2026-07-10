@@ -16,7 +16,7 @@ return {
         colors = {
           -- buffer_bg = "#000000",
           buffer_fg = "#a5adce",
-          buffer_active_bg = "#a6d189",
+          buffer_active_bg = "#76e19c",
           buffer_active_fg = "#000000",
           -- buffer_active_bg: 当前聚焦的 buffer（绿色）
           -- buffer_visible_bg: 可见但非聚焦的 buffer（浅绿色，同色系更浅）
