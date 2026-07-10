@@ -4,7 +4,7 @@
 How to use:
 
 ```lua
-local make_repeatable = require("plugins.user.my_funcs.repeat").make_repeatable
+local make_repeatable = require("user.my_funcs.repeat").make_repeatable
 
 ["<Leader>gK"] = {
       make_repeatable(function()

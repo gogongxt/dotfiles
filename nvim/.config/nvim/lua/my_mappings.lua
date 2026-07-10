@@ -1,4 +1,4 @@
-local make_repeatable = require("plugins.user.my_funcs.repeat").make_repeatable
+local make_repeatable = require("user.my_funcs.repeat").make_repeatable
 
 local opts = { noremap = true, silent = true }
 local keymap = vim.keymap
@@ -225,13 +225,13 @@ mappings.set_mappings {
       silent = true,
     },
     ["<leader>ld"] = {
-      function() require("plugins.user.my_funcs.delete_comments").delete_comments() end,
+      function() require("user.my_funcs.delete_comments").delete_comments() end,
       desc = "Delete Comments",
       noremap = true,
       silent = true,
     },
     ["<leader>ln"] = {
-      function() require("plugins.user.my_funcs.insert_blank_lines").insert_blank_lines() end,
+      function() require("user.my_funcs.insert_blank_lines").insert_blank_lines() end,
       desc = "Insert Blank Lines",
       noremap = true,
       silent = true,
@@ -426,13 +426,13 @@ mappings.set_mappings {
   v = {
     -- delete comments
     ["<leader>ld"] = {
-      "<cmd>lua require('plugins.user.my_funcs.delete_comments').delete_comments('v')<cr>",
+      "<cmd>lua require('user.my_funcs.delete_comments').delete_comments('v')<cr>",
       desc = "Delete Comments",
       noremap = true,
       silent = true,
     },
     ["<leader>ln"] = {
-      "<cmd>lua require('plugins.user.my_funcs.insert_blank_lines').insert_blank_lines('v')<cr>",
+      "<cmd>lua require('user.my_funcs.insert_blank_lines').insert_blank_lines('v')<cr>",
       desc = "Insert Blank Lines",
       noremap = true,
       silent = true,

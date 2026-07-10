@@ -22,11 +22,11 @@ mappings.set_mappings {
   },
   v = {
     ["sw"] = {
-      '<esc><cmd>lua require("spectre").open({ search_text=require("plugins.user.my_funcs").get_text("v"), path=require("plugins.user.my_funcs").GetBufRelativePath()})<cr>',
+      '<esc><cmd>lua require("spectre").open({ search_text=require("user.my_funcs").get_text("v"), path=require("user.my_funcs").GetBufRelativePath()})<cr>',
       desc = "Search on current file",
     },
     ["sW"] = {
-      '<esc><cmd>lua require("spectre").open({ search_text=require("plugins.user.my_funcs").get_text("v") })<cr>',
+      '<esc><cmd>lua require("spectre").open({ search_text=require("user.my_funcs").get_text("v") })<cr>',
       desc = "Search on whole directory",
     },
   },

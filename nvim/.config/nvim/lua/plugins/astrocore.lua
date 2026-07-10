@@ -103,13 +103,13 @@ return {
           ["<leader>w"] = { "<cmd>w<cr>", desc = "Save File" },
           -- ["<C-s>"] = { "<cmd>w<cr>", desc = "Save File" },
           ["<Leader>W"] = {
-            function() require("plugins.user.my_funcs.sudo_write").sudo_write() end,
+            function() require("user.my_funcs.sudo_write").sudo_write() end,
             desc = "Write with root",
           },
 
           -- run cmd
           ["<Leader>R"] = {
-            "<cmd>lua require('plugins.user.my_funcs.execute_and_print_cmd').execute_and_print_cmd()<cr>",
+            "<cmd>lua require('user.my_funcs.execute_and_print_cmd').execute_and_print_cmd()<cr>",
             desc = "Run cmd",
             noremap = true,
             silent = true,
@@ -117,7 +117,7 @@ return {
 
           -- go to file
           ["gf"] = {
-            "<cmd>lua require('plugins.user.my_funcs.goto_file').extract_file_info()<cr>",
+            "<cmd>lua require('user.my_funcs.goto_file').extract_file_info()<cr>",
             desc = "Goto file",
             noremap = true,
             silent = true,
@@ -125,7 +125,7 @@ return {
 
           -- delete empty lines
           ["<Leader>lc"] = {
-            "<cmd>lua require('plugins.user.my_funcs.delete_empty_lines').delete_empty_lines()<CR>",
+            "<cmd>lua require('user.my_funcs.delete_empty_lines').delete_empty_lines()<CR>",
             desc = "Delete Empty Lines",
             noremap = true,
             silent = true,
@@ -144,13 +144,13 @@ return {
 
           -- go to file
           ["gf"] = {
-            "<cmd>lua require('plugins.user.my_funcs.goto_file').extract_file_info(require('plugins.user.my_funcs').get_text('v'))<cr>",
+            "<cmd>lua require('user.my_funcs.goto_file').extract_file_info(require('user.my_funcs').get_text('v'))<cr>",
             desc = "Goto file",
           },
 
           -- delete empty lines
           ["<Leader>lc"] = {
-            "<cmd>lua require('plugins.user.my_funcs.delete_empty_lines').delete_empty_lines('v')<CR>",
+            "<cmd>lua require('user.my_funcs.delete_empty_lines').delete_empty_lines('v')<CR>",
             desc = "Delete Empty Lines",
             noremap = true,
             silent = true,

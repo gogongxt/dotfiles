@@ -1,6 +1,6 @@
 -- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
-local make_repeatable = require("plugins.user.my_funcs.repeat").make_repeatable
+local make_repeatable = require("user.my_funcs.repeat").make_repeatable
 
 return {
   -- {

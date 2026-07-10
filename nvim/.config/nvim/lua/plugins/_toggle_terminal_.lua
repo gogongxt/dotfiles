@@ -56,7 +56,7 @@ M.add_exec = function(opts)
   local binary = opts.cmd:match "(%S+)"
   if vim.fn.executable(binary) ~= 1 then
     -- Log:debug("Skipping configuring executable " .. binary .. ". Please make sure it is installed properly.")
-    require("plugins.user.my_sys").DEBUG(
+    require("user.my_sys").DEBUG(
       "Skipping configuring executable " .. binary .. ". Please make sure it is installed properly."
     )
     return

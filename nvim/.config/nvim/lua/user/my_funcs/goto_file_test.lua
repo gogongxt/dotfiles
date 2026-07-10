@@ -1,5 +1,5 @@
 -- How to run this test file
--- nvim --headless -c "luafile $HOME/.config/nvim/lua/plugins/user/my_funcs/goto_file_test.lua" -c "qa"
+-- nvim --headless -c "luafile $HOME/.config/nvim/lua/user/my_funcs/goto_file_test.lua" -c "qa"
 -- Tests for goto_file.lua
 
 -- Add the current directory to package.path so we can require goto_file
@@ -9,7 +9,7 @@ package.path = package.path
     .. home_dir
     .. "/.config/nvim/lua/?.lua;"
     .. home_dir
-    .. "/.config/nvim/lua/plugins/user/my_funcs/?.lua"
+    .. "/.config/nvim/lua/user/my_funcs/?.lua"
 
 local goto_file = require "goto_file"
 
