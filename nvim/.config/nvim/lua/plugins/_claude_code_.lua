@@ -164,7 +164,7 @@ end
 -- mapping from this single source so a binding change only needs editing once.
 local claude_keys = {
   ["<C-s><C-s>"] = { "ClaudeCode", "Toggle active Claude session" },
-  ["<C-s>n"] = { "ClaudeCodeNew", "New Claude session" },
+  ["<C-s>c"] = { "ClaudeCodeNew", "New Claude session" },
   ["<C-s>l"] = { "ClaudeCodeSessions", "List/pick Claude session" },
   ["<C-s>q"] = { "ClaudeCodeCloseSession", "Close active Claude session" },
   ["<C-s>r"] = { "ClaudeCodeRenameSession", "Rename active Claude session" },
@@ -208,9 +208,8 @@ if claude_variant == "multi-session" then
     show_close_button = true,
     show_new_button = true,
     keymaps = {
-      next_tab = "<Tab>",
-      -- prev_tab = "<S-Tab>",
-      prev_tab = false,
+      next_tab = "<c-s>n",
+      prev_tab = "<c-s>p",
       new_tab = false,
       close_tab = false,
     },
