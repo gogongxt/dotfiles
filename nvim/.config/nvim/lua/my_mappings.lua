@@ -225,13 +225,13 @@ mappings.set_mappings {
       silent = true,
     },
     ["<leader>ld"] = {
-      "<cmd>lua require('plugins.user.my_funcs.delete_comments').delete_comments()<cr>",
+      function() require("plugins.user.my_funcs.delete_comments").delete_comments() end,
       desc = "Delete Comments",
       noremap = true,
       silent = true,
     },
     ["<leader>ln"] = {
-      "<cmd>lua require('plugins.user.my_funcs.insert_blank_lines').insert_blank_lines()<cr>",
+      function() require("plugins.user.my_funcs.insert_blank_lines").insert_blank_lines() end,
       desc = "Insert Blank Lines",
       noremap = true,
       silent = true,
