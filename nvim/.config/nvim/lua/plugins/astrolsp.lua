@@ -141,6 +141,10 @@ return {
     mappings = {
       n = {
         -- a `cond` key can provided as the string of a server capability to be required to attach, or a function with `client` and `bufnr` parameters from the `on_attach` that returns a boolean
+        ["<Leader>j"] = {
+          "<cmd>ClangdSwitchSourceHeader<cr>",
+          desc = "Jump between source and head file",
+        },
         gh = {
           function()
             if vim.bo.filetype == "markdown" then
