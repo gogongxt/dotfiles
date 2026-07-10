@@ -70,5 +70,3 @@ for i = 1, 9 do
     { desc = "Move current buffer to tab " .. i }
   )
 end
-
-return {}
