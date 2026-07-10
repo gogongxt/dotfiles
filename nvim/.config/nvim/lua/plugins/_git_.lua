@@ -82,7 +82,47 @@ mappings.set_mappings {
     ["<Leader>gd"] = { "<cmd>lua require('gitsigns').diffthis()<cr>", desc = "Git Giff" },               -- see diff unstaged
     ["<Leader>gD"] = { "<cmd>lua require('gitsigns').diffthis('HEAD')<cr>", desc = "Git Giff(staged)" }, -- see diff all include unstaged and staged
     ["<A-g>"] = { function() git_gitui_toggle() end, desc = "gitui" },
-    ["<Leader>gP"] = { "<cmd>lua require('gitsigns').preview_hunk()<cr>", desc = "Hunk Preview Hover" },
+    ["<Leader>gP"] = {
+      function()
+        -- TODO: gitsigns `preview_hunk()` has no `greedy`/opts arg, so it uses
+        -- cached linematch-split hunks and shows a SMALLER range than
+        -- `preview_hunk_inline()` (which hardcodes greedy=true and re-runs the
+        -- diff without linematch). This override rebuilds the float preview with
+        -- the greedy/merged hunk to match the inline range.
+        -- Remove this override and use `require('gitsigns').preview_hunk(...)`
+        -- directly once upstream supports greedy in a single call. Track:
+        -- https://github.com/lewis6991/gitsigns.nvim/pull/1480
+        -- (also issue #1344). Check: does preview_hunk accept an opts table with
+        -- `greedy` yet? If yes, replace this whole function with that call.
+        local popup = require "gitsigns.popup"
+        local Hunks = require "gitsigns.hunks"
+        local cache = require("gitsigns.cache").cache
+        local config = require("gitsigns.config").config
+        local async = require "gitsigns.async"
+        -- If a preview float is already open, focus it instead of re-creating.
+        if popup.focus_open "hunk" then return end
+        local bufnr = vim.api.nvim_get_current_buf()
+        local bcache = cache[bufnr]
+        if not bcache then return end
+        -- Resolve the hunk greedily: greedy=true makes get_hunks() re-run the
+        -- diff WITHOUT linematch, so adjacent change regions merge into one
+        -- bigger hunk — matching the range preview_hunk_inline() shows. get_hunk
+        -- is async, so wait on it (mirrors select_hunk in gitsigns/actions.lua).
+        -- Try unstaged first, then fall back to staged (mirrors preview_hunk_inline).
+        local hunk ---@type Gitsigns.Hunk.Hunk?
+        for _, staged in ipairs { false, true } do
+          async.run(function() hunk = bcache:get_hunk(nil, true, staged) end):wait()
+          if hunk then break end
+        end
+        if not hunk then return end
+        local preview_linespec = {
+          { { "Hunk Preview", "Title" } },
+        }
+        vim.list_extend(preview_linespec, Hunks.linespec_for_hunk(hunk, vim.bo[bufnr].fileformat))
+        popup.create(preview_linespec, config.preview_config, "hunk")
+      end,
+      desc = "Hunk Preview Hover",
+    },
     ["<Leader>gi"] = { "<cmd>lua require('gitsigns').blame_line()<cr>", desc = "Line Info" },
     ["<Leader>gq"] = { "<cmd>lua require('gitsigns').setqflist()<cr>", desc = "Git Quickfix" },
     ["<Leader>gQ"] = { "<cmd>lua require('gitsigns').setqflist('all')<cr>", desc = "Git Quickfix(all files)" },
