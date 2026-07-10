@@ -162,6 +162,7 @@ return {
       picker = {
         -- Custom source for DAP breakpoints
         sources = {
+          files = { follow = true },
           dap_breakpoints = {
             finder = dap_breakpoints_finder,
             format = "file",
