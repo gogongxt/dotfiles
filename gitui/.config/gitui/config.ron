@@ -2,4 +2,5 @@
     status_left_ratio: Some(30),
     log_left_ratio: Some(50),
     detail_left_ratio: Some(30),
+    preview_tree_depth: Some(3),
 )
