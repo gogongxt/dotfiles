@@ -159,21 +159,13 @@ export FZF_DEFAULT_OPTS="--height 80% --layout=reverse --preview 'echo {} | ~/.s
   --bind 'ctrl-d:page-down,ctrl-u:page-up' \
   --bind 'ctrl-f:preview-half-page-down,ctrl-b:preview-half-page-up' \
   --bind 'alt-p:change-preview-window(right|hidden|down)' \
-  --color=bg+:#555555
+  --color=bg+:#555555,hl:#f4b8e4,hl+:#f4b8e4
 "
 export FZF_CTRL_R_OPTS="
   --preview 'echo {}'
   --preview-window=down:wrap
 "
 # for zoxide
-export _ZO_FZF_OPTS="
-  $FZF_DEFAULT_OPTS
-  --header='   =:increment   -:decrement   C-x:delete'
-  --bind '=:reload(zoxide edit increment {2..})'
-  --bind '-:reload(zoxide edit decrement {2..})'
-  --bind 'ctrl-x:reload(zoxide edit delete {2..})'
-  --preview 'ls -aC --color=always {2}'
-"
 # _fzf_compgen_path() {
 #   fd --hidden --follow --exclude={${fzf_ignore}}
 # }
@@ -252,15 +244,57 @@ command -v direnv &>/dev/null && eval "$(direnv hook ${CURRENT_SHELL})"
 #🔽🔽🔽
 if command -v zoxide &>/dev/null; then
   eval "$(zoxide init ${CURRENT_SHELL})"
+
+  # Absolute paths resolved once at definition, so a runtime PATH that drops
+  # /opt/homebrew/bin (conda activate, venv, oh-my-zsh fzf plugin, re-sourcing
+  # config) can't break these calls.
+  local _ze_zoxide _ze_fzf
+  _ze_zoxide=$(command -v zoxide 2>/dev/null)
+  _ze_fzf=$(command -v fzf 2>/dev/null)
+
+  # zoxide's chpwd hook (__zoxide_hook) runs `\command zoxide add ...`, which only
+  # resolves via PATH. When PATH has lost the zoxide bin dir at runtime, every cd
+  # (including ze's Enter) fails with `__zoxide_hook:2: command not found: zoxide`.
+  # Override it to call the absolute binary captured above, making the hook
+  # PATH-independent for all cd, not just ze. Uses `builtin pwd -L` directly instead
+  # of zoxide's internal __zoxide_pwd, so a zoxide upgrade can't break the hook.
+  __zoxide_hook() {
+    "$_ze_zoxide" add -- "$(builtin pwd -L)"
+  }
+
   z() {
     if [[ $# -eq 0 ]]; then
-      __zoxide_zi
+      ze
     else
       __zoxide_z $@
     fi
   }
   j() {
     z $@
+  }
+
+  # ze: fzf picker over the zoxide DB that can edit score attributes AND cd on Enter.
+  # Unlike reload-binds inside `zi` (zoxide query -i), this persists: there is no
+  # long-lived query parent holding a stale DB to clobber the `zoxide edit` writes.
+  # Source `zoxide edit reload` is NUL-separated "<score>\t<path>"; Enter prints the
+  # selected line, we strip the score field and cd via zoxide's own __zoxide_cd.
+  ze() {
+    if [[ -z "$_ze_zoxide" || -z "$_ze_fzf" ]]; then
+      echo "ze: zoxide or fzf not found (zoxide=<$_ze_zoxide> fzf=<$_ze_fzf>)" >&2; return 1
+    fi
+    local sel path
+    sel=$("$_ze_zoxide" edit reload | "$_ze_fzf" \
+        --with-shell='/bin/sh -c' \
+        --read0 --delimiter=$'\t' --nth=2 --no-sort --cycle \
+        --header='ctrl-x:delete   =:increment   -:decrement   ctrl-r:reload' \
+        --bind "ctrl-x:reload($_ze_zoxide edit delete {2})" \
+        --bind "=:reload($_ze_zoxide edit increment {2})" \
+        --bind "-:reload($_ze_zoxide edit decrement {2})" \
+        --bind "ctrl-r:reload($_ze_zoxide edit reload)" \
+        --preview '/bin/ls -aC --color=always {2}') || return $?
+    [[ -z "$sel" ]] && return 1
+    path="${sel#*$'\t'}"          # " <score>\t<path>" -> "<path>"
+    [[ -n "$path" ]] && __zoxide_cd "$path"
   }
 fi
 #🔼🔼🔼
