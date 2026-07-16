@@ -245,28 +245,28 @@ mappings.set_mappings {
       desc = "Toggle Render",
     },
     -- treesitter class navigation
-    ["]c"] = {
+    ["]s"] = {
       function() require("nvim-treesitter-textobjects.move").goto_next_start("@class.outer", "textobjects") end,
       desc = "Next class start",
     },
-    ["]C"] = {
+    ["]S"] = {
       function() require("nvim-treesitter-textobjects.move").goto_next_end("@class.outer", "textobjects") end,
       desc = "Next class end",
     },
-    ["[c"] = {
+    ["[s"] = {
       function() require("nvim-treesitter-textobjects.move").goto_previous_start("@class.outer", "textobjects") end,
       desc = "Prev class start",
     },
-    ["[C"] = {
+    ["[S"] = {
       function() require("nvim-treesitter-textobjects.move").goto_previous_end("@class.outer", "textobjects") end,
       desc = "Prev class end",
     },
     -- treesitter class swap
-    [">C"] = {
+    [">S"] = {
       function() require("nvim-treesitter-textobjects.swap").swap_next("@class.outer", "textobjects") end,
       desc = "Swap next class",
     },
-    ["<C"] = {
+    ["<S"] = {
       function() require("nvim-treesitter-textobjects.swap").swap_previous("@class.outer", "textobjects") end,
       desc = "Swap prev class",
     },
