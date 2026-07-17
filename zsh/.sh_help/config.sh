@@ -153,7 +153,7 @@ command -v npu-smi &>/dev/null && alias nv="watch -d -n 1 'npu-smi info'"
 
 #🔽🔽🔽
 # fzf
-fzf_ignore=".wine,.git,.idea,.vscode,node_modules,build"
+fzf_ignore=".wine,.git,.idea,.vscode,node_modules,build,dist,out,target,__pycache__,.venv,venv,.cache,.npm,.yarn,.pnpm-store,.cargo,.Trash,.DS_Store"
 export FZF_DEFAULT_COMMAND="fd --hidden --follow --exclude={${fzf_ignore}} "
 export FZF_DEFAULT_OPTS="--height 80% --layout=reverse --preview 'echo {} | ~/.sh_help/functions/fzf_preview.py' --preview-window=down --border \
   --bind 'ctrl-d:page-down,ctrl-u:page-up' \
