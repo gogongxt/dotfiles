@@ -159,7 +159,7 @@ export FZF_DEFAULT_OPTS="--height 80% --layout=reverse --preview 'echo {} | ~/.s
   --bind 'ctrl-d:page-down,ctrl-u:page-up' \
   --bind 'ctrl-f:preview-half-page-down,ctrl-b:preview-half-page-up' \
   --bind 'alt-p:change-preview-window(right|hidden|down)' \
-  --color=bg+:#555555,hl:#f4b8e4,hl+:#f4b8e4
+  --color=bg+:#555555,hl:#f5bde6,hl+:#f5bde6
 "
 export FZF_CTRL_R_OPTS="
   --preview 'echo {}'
