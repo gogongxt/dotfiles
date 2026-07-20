@@ -3,6 +3,7 @@
 import argparse
 import base64
 import fcntl
+import importlib.util
 import logging
 import os
 import re
@@ -15,7 +16,6 @@ import termios
 from pathlib import Path
 
 import pexpect
-import yaml
 
 # --- 从 password.py 模块导入需要的类 ---
 from password import EnhancedPasswordManager
@@ -77,7 +77,7 @@ def is_encrypted_password(password_str):
 
 
 def install_required_tools():
-    required_tools = ["yq", "fzf"]
+    required_tools = ["fzf"]
     missing_tools = []
 
     for tool in required_tools:
@@ -89,26 +89,38 @@ def install_required_tools():
         sys.exit(1)
 
 
+def load_config_module(config_file):
+    """动态加载 Python 配置文件（servers.py），返回其中的 SERVERS 列表。
+
+    配置文件改为可执行的 Python，便于在其中编写任意匹配逻辑
+    （例如把 response 设为 callable，由主程序在运行时调用）。
+    """
+    script_dir = Path(__file__).parent.resolve()
+    config_path = script_dir / config_file
+
+    if not config_path.exists():
+        print(f"配置文件不存在: {config_path}")
+        sys.exit(1)
+
+    spec = importlib.util.spec_from_file_location("servers_config", config_path)
+    config_module = importlib.util.module_from_spec(spec)
+    sys.modules["servers_config"] = config_module
+    spec.loader.exec_module(config_module)
+
+    return getattr(config_module, "SERVERS", [])
+
+
 def select_server(config_file):
     try:
-        script_dir = Path(__file__).parent.resolve()
-        config_path = script_dir / config_file
-
-        cmd = [
-            "yq",
-            "e",
-            '.servers[] | .name + " ➔ " + .ssh_user + "@" + .host + ":" + (.port|tostring)',
-            str(config_path),
-        ]
-
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        if result.returncode != 0:
-            raise RuntimeError(f"yq command failed: {result.stderr}")
-
-        server_list = result.stdout.strip().split("\n")
-
-        if not server_list or server_list == [""]:
+        servers = load_config_module(config_file)
+        if not servers:
             raise RuntimeError("No servers found in config file")
+
+        # 直接用 Python 列表推导式生成菜单，不再依赖 yq
+        server_list = [
+            f"{s.get('name', 'Unknown')} ➔ {s.get('ssh_user', 'user')}@{s.get('host', 'ip')}:{s.get('port', 22)}"
+            for s in servers
+        ]
 
         fzf_cmd = ["fzf", "--height", "40%", "--prompt=Select server: ", "--no-preview"]
         with subprocess.Popen(
@@ -141,6 +153,10 @@ def get_server_details(config_file, server_name):
     """
     获取服务器详情，智能识别并解密加密字段。
 
+    response 既可能是字符串（明文或加密后的 base64），也可能是函数对象
+    （callable(before_text) -> str | None，用于动态解析菜单等）。
+    函数对象跳过加密检测与解密。
+
     Args:
         config_file: 配置文件路径
         server_name: 服务器名称
@@ -149,14 +165,10 @@ def get_server_details(config_file, server_name):
         dict: 包含服务器连接信息的字典，所有加密字段已解密
     """
     try:
-        script_dir = Path(__file__).parent.resolve()
-        config_path = script_dir / config_file
-
-        with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
+        servers = load_config_module(config_file)
 
         found_server = None
-        for server in config.get("servers", []):
+        for server in servers:
             if server.get("name") == server_name:
                 found_server = server
                 break
@@ -171,6 +183,7 @@ def get_server_details(config_file, server_name):
         processed_prompts = []
         if prompts:
             pwd_manager = None
+            script_dir = Path(__file__).parent.resolve()
             for item in prompts:
                 # prompt_interact: 匹配后进入交互模式，无自动响应
                 if "prompt_interact" in item:
@@ -182,8 +195,12 @@ def get_server_details(config_file, server_name):
                 prompt = item.get("prompt", "")
                 response = item.get("response", "")
 
-                # 自动检测并解密加密字段
-                if response and is_encrypted_password(response):
+                # response 是函数时，跳过加密检测/解密，交给主程序运行时调用
+                if (
+                    isinstance(response, str)
+                    and response
+                    and is_encrypted_password(response)
+                ):
                     if pwd_manager is None:
                         logger.debug("检测到加密字段，需要输入主密码进行解密...")
                         key_file = script_dir / "encrypted_key.bin"
@@ -333,7 +350,20 @@ def connect_to_server(server_details, auto_command=None):
                     elif result == "continue":
                         continue
                 else:
-                    child.sendline(str(matched["response"]))
+                    response_val = matched["response"]
+
+                    # response 为函数（callable）：传入 child.before 供其解析，
+                    # 返回非空字符串则发送；返回 None 则降级为手动交互
+                    if callable(response_val):
+                        dynamic_response = response_val(child.before)
+                        if dynamic_response is not None:
+                            child.sendline(str(dynamic_response))
+                        else:
+                            print("\n[自定义函数返回空] 转为手动模式处理。")
+                            child.interact(escape_character="\r")
+                            child.sendline("")
+                    else:
+                        child.sendline(str(response_val))
 
             # 处理系统提示
             else:
@@ -367,8 +397,8 @@ def main():
     )
     parser.add_argument(
         "--config",
-        default="servers.yaml",
-        help="服务器YAML配置文件路径",
+        default="servers.py",
+        help="服务器配置文件路径（可执行的 Python 模块，需暴露 SERVERS 列表）",
     )
     parser.add_argument(
         "-c",

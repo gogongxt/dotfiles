@@ -1,3 +1,4 @@
 *.yaml
+servers.py
 local_key.txt
 *.bin
