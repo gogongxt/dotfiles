@@ -50,8 +50,8 @@ hash = "268eecfdcb159461834c5d27072990b"
 
 [[plugin.deps]]
 use = "gogongxt/copy-path"
-rev = "3288d45"
-hash = "bc79f5cfe2baa37c7b1c8578f19f4c83"
+rev = "b0d9e9c"
+hash = "58e26acdd02eccc127a5fa1f434716e4"
 
 [[plugin.deps]]
 use = "gogongxt/initial-cwd"
