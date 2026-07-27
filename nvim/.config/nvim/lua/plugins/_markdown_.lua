@@ -576,6 +576,8 @@ return {
               sign = { enabled = false },
               code = { border = "hide", language = false },
               anti_conceal = { enabled = false },
+              heading = { border = false },
+              pipe_table = { border_enabled = false },
             },
           },
           -- Overrides for different filetypes, see :h 'filetype'
