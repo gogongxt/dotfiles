@@ -50,6 +50,10 @@ return {
 
         -- js
         "vtsls",
+
+        -- Dockerfile
+        "hadolint",
+        "dockerfmt",
       },
     },
   },
