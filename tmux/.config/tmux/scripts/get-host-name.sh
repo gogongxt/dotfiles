@@ -23,11 +23,14 @@ get_ip_address() {
         ip=$(ifconfig 2>/dev/null | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | head -n1)
     else
         ip=$(hostname -i 2>/dev/null | grep -v '127.0.0.1' | awk '{print $1}')
-        if [ -z "$ip" ] || [ "$ip" = "127.0.0.1" ]; then
+        if [ -z "$ip" ] || [[ "$ip" == 127.* ]]; then
             ip=$(hostname -I 2>/dev/null | cut -d' ' -f1)
         fi
-        if [ -z "$ip" ] || [ "$ip" = "127.0.0.1" ]; then
+        if [ -z "$ip" ] || [[ "$ip" == 127.* ]]; then
             ip=$(ip route get 1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") print $(i+1)}')
+        fi
+        if [ -z "$ip" ] || [[ "$ip" == 127.* ]]; then
+            ip=$(curl -s --connect-timeout 1 ifconfig.me || curl -s --connect-timeout 1 api.ipify.org)
         fi
     fi
     echo "$ip"
