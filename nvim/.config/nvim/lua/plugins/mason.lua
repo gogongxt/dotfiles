@@ -53,7 +53,8 @@ return {
 
         -- Dockerfile
         "hadolint",
-        "dockerfmt",
+        -- dockerfmt is built from Go source, only install when `go` is on PATH
+        { "dockerfmt", condition = function() return vim.fn.executable "go" == 1 end },
       },
     },
   },
