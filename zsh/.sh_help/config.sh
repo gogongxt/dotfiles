@@ -219,6 +219,30 @@ fi
 alias claude_init='claude -p "/init"'
 #🔼🔼🔼
 
+#🔽🔽🔽
+# mywait: 等待任意 pid 结束（跨 shell 有效，不同于内置 wait 只能等当前 shell 的子进程）
+# usage: mywait <pid> && echo "123"
+mywait() {
+  local pid="$1"
+  if ! [[ "$pid" =~ ^[0-9]+$ ]]; then
+    echo "Usage: mywait <pid>" >&2
+    return 1
+  fi
+  if ! kill -0 "$pid" 2>/dev/null; then
+    echo "mywait: process $pid not running" >&2
+    return 0
+  fi
+  if command -v tail &>/dev/null && tail --help 2>&1 | grep -q -- '--pid'; then
+    # GNU tail: 阻塞到 pid 结束为止，不用轮询
+    tail --pid="$pid" -f /dev/null 2>/dev/null
+  else
+    while kill -0 "$pid" 2>/dev/null; do
+      sleep 1
+    done
+  fi
+}
+#🔼🔼🔼
+
 # rust cargo
 #🔽🔽🔽
 command -v sccache &>/dev/null && export RUSTC_WRAPPER="`which sccache`"
