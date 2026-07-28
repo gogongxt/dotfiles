@@ -50,7 +50,7 @@ function M.set_mappings(map_table, base)
   end
 
   if was_no_which_key_queue and M.which_key_queue then
-    require("which-key").register(M.which_key_queue)
+    require("which-key").add(M.which_key_queue)
     M.which_key_queue = nil
   end
 end

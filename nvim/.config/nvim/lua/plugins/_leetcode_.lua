@@ -6,7 +6,7 @@ local mappings = require "mappings"
 mappings.set_mappings {
   n = {
     -- leetcode
-    ["<Leader>L"] = { name = "Leetcode" },
+    ["<Leader>L"] = { group = "Leetcode" },
     ["<Leader>LL"] = {
       function()
         if vim.fn.exists ":Leet" ~= 2 then
