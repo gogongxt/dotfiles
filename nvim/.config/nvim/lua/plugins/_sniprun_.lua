@@ -3,7 +3,7 @@
 local mappings = require "mappings"
 mappings.set_mappings {
   n = {
-    ["<Leader>r"] = { "<cmd>%SnipRun<cr>", desc = "Sniprun" },
+    ["<Leader>r"] = { "<cmd>SnipRun<cr>", desc = "Sniprun" },
   },
   v = {
     ["<Leader>r"] = { "<cmd>'<,'>SnipRun<cr>", desc = "Sniprun" },
