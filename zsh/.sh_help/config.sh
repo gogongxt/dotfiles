@@ -224,14 +224,18 @@ alias claude_init='claude -p "/init"'
 # usage: mywait <pid> && echo "123"
 mywait() {
   local pid="$1"
+  local ms
   if ! [[ "$pid" =~ ^[0-9]+$ ]]; then
     echo "Usage: mywait <pid>" >&2
     return 1
   fi
   if ! kill -0 "$pid" 2>/dev/null; then
-    echo "mywait: process $pid not running" >&2
+    ms=$(printf '%03d' "$(($(date +%s%N) / 1000000 % 1000))")
+    printf '\033[33mmywait: process %s not running (%s.%s)\033[0m\n' "$pid" "$(date '+%F %T')" "$ms" >&2
     return 0
   fi
+  ms=$(printf '%03d' "$(($(date +%s%N) / 1000000 % 1000))")
+  printf '\033[36mmywait: waiting for process %s, start at %s.%s\033[0m\n' "$pid" "$(date '+%F %T')" "$ms"
   if command -v tail &>/dev/null && tail --help 2>&1 | grep -q -- '--pid'; then
     # GNU tail: 阻塞到 pid 结束为止，不用轮询
     tail --pid="$pid" -f /dev/null 2>/dev/null
@@ -240,6 +244,8 @@ mywait() {
       sleep 1
     done
   fi
+  ms=$(printf '%03d' "$(($(date +%s%N) / 1000000 % 1000))")
+  printf '\033[32mmywait: process %s finished at %s.%s\033[0m\n' "$pid" "$(date '+%F %T')" "$ms"
 }
 #🔼🔼🔼
 
