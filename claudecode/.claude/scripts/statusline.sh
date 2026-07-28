@@ -5,6 +5,45 @@
 # Reference:
 #   https://code.claude.com/docs/en/statusline
 #   https://code.claude.com/docs/en/settings
+#
+# ── TODO: 未启用的字段(statusline JSON 已提供,按需开启)──────────────
+# 这些字段官方 statusline JSON 都会从 stdin 传入,目前脚本没用,留作备选。
+#
+# [未实现, 高优] rate_limits —— 订阅额度用量
+#   .rate_limits.five_hour.used_percentage   0-100, 5 小时滚动窗口已用额度
+#   .rate_limits.seven_day.used_percentage   0-100, 7 天滚动窗口已用额度
+#   .rate_limits.five_hour.resets_at         Unix 秒, 5h 窗口重置时间
+#   .rate_limits.seven_day.resets_at         Unix 秒, 7d 窗口重置时间
+#   为什么有用: 订阅用户最大盲区——不知道离限速还有多少。建议放第一行
+#   挨着 context bar, >80% 黄 / >95% 红, 再配重置倒计时。
+#
+# [未实现, 中优] fast_mode —— Fast 模式开关 (bool)
+#   Fast mode 是 Claude Code 的加速输出模式: 用 Opus 但加快 token 生成速度
+#   (不是降级到小模型)。可在 Opus 4.8/4.7 上用 /fast 切换。计费与普通 Opus 不同,
+#   所以值得在状态栏标出来, 避免误以为开着其实没开。建议第二行小图标 ⚡fast。
+#   (暂不需要, 暂不开启)
+#
+# [未实现] pr.review_state —— 当前分支 PR 的审查状态
+#   .pr.number / .pr.url                    PR 号与链接
+#   .pr.review_state                        approved | pending | changes_requested | draft
+#   仅在 PR 分支且有 PR 时出现; 合并/关闭后消失。走 PR 工作流时实用。
+#
+# [未实现] thinking.enabled —— Extended thinking 开关 (bool)
+#   是否为本会话开启 extended thinking。配合 effort.level 一起看,
+#   能更完整反映"当前思考强度"。
+#
+# [未实现] session_name —— 会话名
+#   用 --name <name> 或 /rename 设置后才有; 否则回退到 session_id 前 8 位。
+#   习惯给会话命名时比 hash 好认。
+#
+# [未实现] vim.mode —— NORMAL/INSERT/VISUAL/VISUAL LINE
+#   仅在使用 vim 编辑模式时有意义。脚本已定义 C_VIM 颜色却没用上。
+#
+# [未实现] workspace.repo —— {host, owner, name}
+#   如 anthropics/claude-code。多仓库切换时可显示仓库名。
+#
+# [未实现] exceeds_200k_tokens (bool) / transcript_path —— 调试用, 一般不需要。
+# ────────────────────────────────────────────────────────────────────
 
 # Ensure jq is available
 if ! command -v jq >/dev/null 2>&1; then
@@ -31,6 +70,9 @@ readonly C_EFFORT_HIGH='\033[38;2;255;85;85m'
 readonly C_EFFORT_MED='\033[38;2;241;250;140m'
 readonly C_EFFORT_LOW='\033[38;2;80;250;123m'
 readonly C_EFFORT_OFF='\033[2;38;2;98;114;164m'
+readonly C_LINES_ADD='\033[38;2;80;250;123m'
+readonly C_LINES_DEL='\033[38;2;255;85;85m'
+readonly C_VERSION='\033[2;38;2;98;114;164m'
 readonly C_SEP='\033[38;2;98;114;164m'
 
 readonly SEP=" | "
@@ -84,6 +126,13 @@ cost_usd=$(echo "$input" | jq -r '.cost.total_cost_usd // empty')
 worktree_name=$(echo "$input" | jq -r '.worktree.name // empty')
 worktree_branch=$(echo "$input" | jq -r '.worktree.branch // empty')
 
+# Lines changed this session (+added / -removed) — replaces the disabled cost display
+lines_added=$(echo "$input" | jq -r '.cost.total_lines_added // 0')
+lines_removed=$(echo "$input" | jq -r '.cost.total_lines_removed // 0')
+
+# Claude Code version
+cc_version=$(echo "$input" | jq -r '.version // empty')
+
 # Worktree detection (git fallback for external worktrees)
 is_worktree=0
 if [ -n "$worktree_name" ]; then
@@ -133,7 +182,7 @@ bar=""
 readonly BAR_WIDTH=15
 if [ -n "$used_pct" ]; then
     # Ceiling: any non-zero usage rounds up to at least 1 block.
-    filled=$(( (used_pct * BAR_WIDTH + 99) / 100 ))
+    filled=$(((used_pct * BAR_WIDTH + 99) / 100))
     [ "$filled" -eq 0 ] && [ "$used_pct" -gt 0 ] && filled=1
     empty=$((BAR_WIDTH - filled))
     if [ "$used_pct" -gt 80 ]; then
@@ -214,16 +263,36 @@ fi
 #   parts2+=("${C_DIR}⌂ ${short_dir}${RST}")
 # fi
 
-if [ "$is_worktree" -eq 1 ] && [ -n "$worktree_name" ]; then
-    parts2+=("${C_WORKTREE} ${worktree_name}${RST}")
-fi
-
 if [ -n "$git_branch" ]; then
     if [ "$git_dirty" -eq 1 ]; then
         parts2+=("${C_GIT_DIRTY} ${git_branch}${RST}")
     else
         parts2+=("${C_GIT} ${git_branch}${RST}")
     fi
+fi
+
+if [ "$is_worktree" -eq 1 ] && [ -n "$worktree_name" ]; then
+    parts2+=("${C_WORKTREE} ${worktree_name}${RST}")
+fi
+
+# Lines changed this session, shown as one "+added/-removed" component.
+# Only appears when there's any change (added or removed). Missing side is omitted
+# (e.g. only deletions → "-30", only additions → "+123").
+_lines_add_ok=0
+_lines_del_ok=0
+[ -n "$lines_added" ] && [ "$lines_added" != "null" ] && [ "$lines_added" -gt 0 ] 2>/dev/null && _lines_add_ok=1
+[ -n "$lines_removed" ] && [ "$lines_removed" != "null" ] && [ "$lines_removed" -gt 0 ] 2>/dev/null && _lines_del_ok=1
+if [ "$_lines_add_ok" -eq 1 ] || [ "$_lines_del_ok" -eq 1 ]; then
+    _lines=""
+    [ "$_lines_add_ok" -eq 1 ] && _lines+="${C_LINES_ADD}+${lines_added}${RST}"
+    [ "$_lines_add_ok" -eq 1 ] && [ "$_lines_del_ok" -eq 1 ] && _lines+=" "
+    [ "$_lines_del_ok" -eq 1 ] && _lines+="${C_LINES_DEL}-${lines_removed}${RST}"
+    parts2+=("$_lines")
+fi
+
+# Claude Code version (dim, last on the line)
+if [ -n "$cc_version" ] && [ "$cc_version" != "null" ]; then
+    parts2+=("${C_VERSION}v${cc_version}${RST}")
 fi
 
 # Join parts with separator and interpret escape codes
