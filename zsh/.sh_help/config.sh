@@ -278,7 +278,6 @@ if command -v zoxide &>/dev/null; then
   # Absolute paths resolved once at definition, so a runtime PATH that drops
   # /opt/homebrew/bin (conda activate, venv, oh-my-zsh fzf plugin, re-sourcing
   # config) can't break these calls.
-  local _ze_zoxide _ze_fzf
   _ze_zoxide=$(command -v zoxide 2>/dev/null)
   _ze_fzf=$(command -v fzf 2>/dev/null)
 
