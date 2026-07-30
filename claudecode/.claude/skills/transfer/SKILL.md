@@ -45,7 +45,7 @@ Local machine → jump host → target machine. The jump host has access to both
 - If YES: No need to transfer files from local to jump host. Just SCP from jump host to target directly.
 - If NO: Need to first SCP from local to jump host, then SCP from jump host to target.
 
-Common pattern: `/nfs/ofs-llm-ssd/` paths are shared between local and jump host machines. Verify this before starting.
+Common pattern: `/nfs/gogongxt/` paths are shared between local and jump host machines. Verify this before starting.
 
 ## Workflow
 
