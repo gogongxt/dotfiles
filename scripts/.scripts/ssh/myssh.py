@@ -13,6 +13,7 @@ import struct
 import subprocess
 import sys
 import termios
+import time
 from pathlib import Path
 
 import pexpect
@@ -285,6 +286,8 @@ def connect_to_server(server_details, auto_command=None):
 
         def handle_successful_login():
             if auto_command:
+                # 添加延迟，防止服务器没准备好错过命令
+                time.sleep(0.5)
                 child.logfile_read = sys.stdout
                 # 利用 Shell 解析特性：
                 # 终端回显的内容会带着单引号： echo ___MYSSH_''EXEC_DONE___ （因此不会误触发 pexpect）
