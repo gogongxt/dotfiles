@@ -115,6 +115,12 @@ while IFS= read -r window; do
 
 	# 检查是否匹配
 	if [ "$match_result" = true ]; then
+		# 全局窗口列表里可能残留已销毁/0x0 的僵尸窗口(能被 match 到但 yabai 无法操作),
+		# 先校验窗口是否仍可被定位,否则跳过它让下一个匹配或 not_found_command 接手。
+		if ! yabai -m query --windows --window "$window_id" >/dev/null 2>&1; then
+			echo "Window $window_id (app: $app_name, title: $title) matched but not locatable; skipping"
+			continue
+		fi
 		if [ "$window_id" == "$cur_window_id" ]; then
 			# 如果当前窗口已经是匹配的窗口，则移动到空间10
 			bash $HOME/.config/yabai/scripts/safe_focus_space.sh "check" "10"
