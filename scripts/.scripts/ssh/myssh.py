@@ -284,11 +284,19 @@ def connect_to_server(server_details, auto_command=None):
             child.sendline("yes")
 
         def handle_successful_login():
-            child.logfile_read = None
             if auto_command:
-                # 发送自动执行的命令
-                child.sendline(auto_command)
-            child.interact()
+                child.logfile_read = sys.stdout
+                # 利用 Shell 解析特性：
+                # 终端回显的内容会带着单引号： echo ___MYSSH_''EXEC_DONE___ （因此不会误触发 pexpect）
+                # 实际执行时，Shell 会吃掉空单引号并输出： ___MYSSH_EXEC_DONE___ （精准触发 pexpect）
+                child.sendline(f"{auto_command}; echo ___MYSSH_''EXEC_DONE___")
+                # 死等真正的输出
+                child.expect("___MYSSH_EXEC_DONE___")
+                # 掐断物理连接
+                sys.exit(0)
+            else:
+                child.logfile_read = None
+                child.interact()
             return "break"
 
         def handle_permission_denied():
