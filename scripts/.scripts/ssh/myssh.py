@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import base64
 import fcntl
 import importlib.util
 import logging
@@ -25,6 +24,10 @@ from password import EnhancedPasswordManager
 YELLOW = "\033[33m"
 CYAN = "\033[36m"
 RESET = "\033[0m"  # 重置颜色
+
+# 真正的 shell 提示符：行尾的 $/#/>/%/]，容忍行尾的 ANSI 颜色码
+# （如 ~$<ESC>[00m<空格>）。用于判定登录成功 / shell 就绪。
+PROMPT_RE = "[$#>%\\]](\\x1b\\[[0-9;]*m)?\\s*$"
 
 # 基本配置
 logging.basicConfig(
@@ -254,18 +257,24 @@ def sigwinch_handler(signum, frame):
         child.setwinsize(rows, cols)
 
 
-def connect_to_server(server_details, auto_command=None):
+def connect_to_server(
+    server_details,
+    auto_command=None,
+    interact_cmd=None,
+):
     """
-    连接到服务器，支持动态认证提示列表。
+    连接服务器并完成动态认证。
 
     Args:
-        server_details: 包含服务器连接信息的字典，包括 auth_prompts 列表
-        auto_command: 连接成功后自动执行的命令
+        server_details: 含 auth_prompts 的连接信息
+        auto_command: 非交互模式——登录后执行该命令并流式输出，结束即退出
+        interact_cmd: 交互模式——登录后先发该命令（如 `dssh <host>` 跳板）再 interact
     """
     global child
     try:
         cmd = f"ssh {server_details['add']} -p {server_details['port']} {server_details['ssh_user']}@{server_details['host']}"
-        print(cmd)
+        if auto_command is None:
+            print(cmd)
         env = os.environ.copy()
         env["TERM"] = "xterm-256color"
 
@@ -275,7 +284,9 @@ def connect_to_server(server_details, auto_command=None):
         child.setwinsize(rows, cols)
         signal.signal(signal.SIGWINCH, sigwinch_handler)
 
-        child.logfile_read = sys.stdout
+        # -c（auto_command）即非交互机器模式：整条链路都不透传到 stdout。
+        machine_mode = auto_command is not None
+        child.logfile_read = None if machine_mode else sys.stdout
 
         # 获取认证提示列表
         auth_prompts = server_details.get("auth_prompts", [])
@@ -285,17 +296,69 @@ def connect_to_server(server_details, auto_command=None):
             child.sendline("yes")
 
         def handle_successful_login():
-            if auto_command:
-                # 添加延迟，防止服务器没准备好错过命令
+            # 匹配到的是 Last login:/Ubuntu 横幅而非真提示符时，说明 MOTD 还在刷屏、
+            # shell 未就绪；立刻 sendline 会被 pty 换行回显破坏。先等真提示符。
+            if str(child.after) == "Last login:" or str(child.after).startswith(
+                "Ubuntu comes with ABSOLUTELY NO WARRANTY"
+            ):
+                try:
+                    child.expect([PROMPT_RE, pexpect.TIMEOUT], timeout=1.0)
+                except pexpect.EOF:
+                    pass
+
+            # 跳板模式：先发跳转命令（如 `dssh <host>`）再 interact，落到目标机 shell。
+            if interact_cmd:
                 time.sleep(0.5)
-                child.logfile_read = sys.stdout
-                # 利用 Shell 解析特性：
-                # 终端回显的内容会带着单引号： echo ___MYSSH_''EXEC_DONE___ （因此不会误触发 pexpect）
-                # 实际执行时，Shell 会吃掉空单引号并输出： ___MYSSH_EXEC_DONE___ （精准触发 pexpect）
-                child.sendline(f"{auto_command}; echo ___MYSSH_''EXEC_DONE___")
-                # 死等真正的输出
-                child.expect("___MYSSH_EXEC_DONE___")
-                # 掐断物理连接
+                # interact 前必须关掉 logfile_read（encoding=utf-8 下会 bytes 报错）。
+                child.logfile_read = None
+                child.sendline(interact_cmd)
+                child.interact()
+                return "break"
+            if auto_command:
+                time.sleep(0.5)
+                child.logfile_read = None
+                # 机器模式：先把提示符覆盖为一个唯一的字面量标记，再 expect 该标记来
+                # 丢弃 `stty -echo` 的回显、旧提示符和换行噪声。不能靠 PROMPT_RE 匹配
+                # 真实提示符——有的 bashrc 会在 `$` 后追加时间戳（如 `Thu Aug 13 ...`），
+                # 行尾锚定的 PROMPT_RE 匹配不上便会超时，导致 stty 回显 + 整个转义提示符
+                # 泄漏进命令输出（见制造集成观测到的噪声）。覆盖 PS1 后标记是唯一的，
+                # expect 精确命中，无论 bashrc 装饰成什么样都能清干净。
+                ready = f"__CP_MYSSH_READY_{os.urandom(8).hex()}__"
+                # PS1 就是标记本身（不带尾随空格），expect 命中即把整个“就绪提示符”连同
+                # 之前的 stty 回显、旧提示符、OSC 标题、颜色码一起清掉，不留任何残留。
+                child.sendline(f"stty -echo; PS1='{ready}'; PS2=''; echo {ready}")
+                try:
+                    child.expect(ready, timeout=10)
+                except (pexpect.TIMEOUT, pexpect.EOF):
+                    pass  # 朴素防御：即使标记未打印，也继续（输出可能带一点噪声）
+
+                # `; exit` 退不回堡垒机菜单，改用随机哨兵标记命令结束，命中即退出。
+                sentinel = f"___MYSSH_DONE_{os.urandom(8).hex()}___"
+                child.sendline(f"{auto_command}; echo {sentinel}")
+
+                hold = len(sentinel) - 1
+                tail = ""
+                while True:
+                    try:
+                        data = child.read_nonblocking(size=65536, timeout=1.0)
+                    except pexpect.TIMEOUT:
+                        continue
+                    except pexpect.EOF:
+                        break
+                    if not data:
+                        continue
+                    chunk = tail + data
+                    i = chunk.find(sentinel)
+                    if i >= 0:
+                        sys.stdout.write(chunk[:i])  # 哨兵之后是噪声
+                        sys.stdout.flush()
+                        break
+                    if len(chunk) > hold:
+                        sys.stdout.write(chunk[:-hold])
+                        sys.stdout.flush()
+                        tail = chunk[-hold:]
+                    else:
+                        tail = chunk
                 sys.exit(0)
             else:
                 child.logfile_read = None
@@ -329,7 +392,10 @@ def connect_to_server(server_details, auto_command=None):
                 "Are you sure you want to continue connecting.*",
                 handle_ssh_host_verification,
             ),
-            ("(Last login:|[$#>%\\]]\\s*$)", handle_successful_login),
+            # 真正的 shell 提示符（容忍行尾 ANSI 颜色码），或 Last login: 登录横幅。
+            # Last login: 只代表登录开始，MOTD 还在刷屏、shell 未就绪 ——
+            # handle_successful_login 里会先等提示符 / 输出静默再发命令。
+            ("(Last login:[^\r\n]*|" + PROMPT_RE + ")", handle_successful_login),
             ("Ubuntu comes with ABSOLUTELY NO WARRANTY.*", handle_successful_login),
             ("Permission denied", handle_permission_denied),
             ("Dkey shield code:", handle_dynamic_code),
@@ -370,6 +436,14 @@ def connect_to_server(server_details, auto_command=None):
                         if dynamic_response is not None:
                             child.sendline(str(dynamic_response))
                         else:
+                            # 机器模式（-c）下无法回退到真人交互：返回 None 只能
+                            # 快速失败，让后端知道「登录失败」而不是卡死等输入。
+                            if machine_mode:
+                                print(
+                                    "\n[自定义函数返回空] 机器模式无法交互，登录失败",
+                                    file=sys.stderr,
+                                )
+                                sys.exit(1)
                             print("\n[自定义函数返回空] 转为手动模式处理。")
                             child.interact(escape_character="\r")
                             child.sendline("")
@@ -392,7 +466,6 @@ def connect_to_server(server_details, auto_command=None):
         signal.signal(signal.SIGWINCH, signal.SIG_DFL)
         if child and child.isalive():
             child.close(force=True)
-        print("--- Connection closed. ---", file=sys.stderr)
 
 
 def main():
@@ -415,24 +488,37 @@ def main():
         "-c",
         "--command",
         default=None,
-        help="SSH连接成功后自动执行的命令 (例如: 'tmux attach' 或 'tmux new -s main')",
+        help="SSH连接成功后自动执行的命令，执行完成后会退出myssh",
+    )
+    parser.add_argument(
+        "--interact-cmd",
+        default=None,
+        help="和-c/--command类似，不过执行完成后不退出myssh，留在交互模式，适用于执行命令还需要手动执行别的",
     )
     args = parser.parse_args()
 
     config_file = args.config
     server_name = args.server
 
-    if server_name:
+    # -c（command）即非交互机器模式：抑制所有 chatter。
+    machine_mode = args.command is not None
+
+    if not machine_mode and server_name:
         print(f"参数指定服务器: {server_name}")
-    else:
+    elif server_name is None and not machine_mode:
         server_name = select_server(config_file)
         if not server_name:
             print("未选择任何服务器，程序退出。")
             sys.exit(0)
 
-    print(f"正在获取 '{server_name}' 的详细信息...")
+    if not machine_mode:
+        print(f"正在获取 '{server_name}' 的详细信息...")
     server_details = get_server_details(config_file, server_name)
-    connect_to_server(server_details, args.command)
+    connect_to_server(
+        server_details,
+        args.command,
+        interact_cmd=args.interact_cmd,
+    )
 
 
 if __name__ == "__main__":

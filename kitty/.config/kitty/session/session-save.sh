@@ -61,7 +61,7 @@ while read -r title; do
             tmux_name="${title#tmux }"
             cat <<EOF >>"$SESSION_FILE"
 new_tab $title
-launch --cwd=$HOME zsh -ic "myssh A800x2 -c 'tmux $tmux_name'"
+launch --cwd=$HOME zsh -ic "myssh A800x2 --interact-cmd 'tmux $tmux_name'"
 
 EOF
             ;;
