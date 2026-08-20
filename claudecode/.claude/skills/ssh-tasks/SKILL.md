@@ -184,6 +184,41 @@ ssh -p <port> <user>@<host> "nvidia-smi"
 ssh -p <port> <user>@<host> "ss -tlnp | grep <serve_port>"
 ```
 
+## myssh Support (bastion / dynamic-auth targets)
+
+For hosts bare `ssh` can't reach (bastion jumps, dynamic auth), use the user's pexpect wrapper `~/.scripts/ssh/myssh.py`. The wrapper takes a **server name from `~/.scripts/ssh/servers.py`** (not user@host) and handles the login dance itself.
+
+**RULE — never look up the server name.** When myssh is needed, the target is always a luban physical machine reached through the one fixed bastion entry. Use the name below verbatim, directly, without reading `servers.py` or probing other names first:
+
+```
+用于连接luban物理机(堡垒机)
+```
+
+To run a command on a *specific physical machine*, hop with `dssh <host>` (available on the bastion) — the bastion itself is rarely the target:
+
+```bash
+# Non-interactive batch exec on a physical machine (the default for tasks)
+python3 ~/.scripts/ssh/myssh.py "用于连接luban物理机(堡垒机)" -c "dssh ml-b1-ser161.nmg03 '<command>'"
+
+# Non-interactive batch exec on the bastion itself (rare)
+python3 ~/.scripts/ssh/myssh.py "用于连接luban物理机(堡垒机)" -c "<command>"
+
+# Interactive session (lands you on the bastion's shell)
+python3 ~/.scripts/ssh/myssh.py "用于连接luban物理机(堡垒机)"
+
+# Interactive with a bastion jump: log in, send the hop command, then stay interactive
+python3 ~/.scripts/ssh/myssh.py "用于连接luban物理机(堡垒机)" --interact-cmd "dssh <real-host>"
+```
+
+Usage notes:
+
+- `dssh <host>` composes with `-c`: the whole `dssh host 'cmd'` string is the command sent to the bastion shell. Keep quoting flat — double quotes outside, single quotes inside (`dssh host '...'`); for gnarly payloads, `base64`-encode locally and run `dssh host "echo <b64> | base64 -d | bash"`.
+- `-c` is machine mode: banner/chatter and command echo are suppressed, output is clean remote stdout — safe to parse directly.
+- The `-c` argument is passed as one argv element to the wrapper, but the command string is **sent into a remote shell** — mind nested quoting. If the command itself contains single/double quotes, prefer wrapping in single quotes and escaping embedded `'` as `'\''` (POSIX style), or keep the payload simple (e.g. the base64 form above).
+- Long-running commands are fine with `-c` for streaming output, but for fire-and-forget still use `nohup ... &` on the remote side as with plain ssh.
+- Don't combine `-c` with `--interact-cmd`; `-c` runs the command and exits.
+- Only if the fixed bastion name itself fails (auth/policy change) should you fall back to reading `~/.scripts/ssh/servers.py` to find the current entry — and mention it to the user.
+
 ## SSH Alias Support
 
 If the user provides an SSH alias (from `~/.ssh/config`), use it directly — no need to specify user/host/port separately:
