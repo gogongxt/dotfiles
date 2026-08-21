@@ -192,7 +192,7 @@ if [ -n "$used_pct" ]; then
     else
         ctx_color="$C_CTX_OK"
     fi
-    bar="${C_CTX_OK}[${RST}"
+    bar="${ctx_color}[${RST}"
     # ░▒▓█
     for ((i = 0; i < filled; i++)); do bar+="${ctx_color}█${RST}"; done
     for ((i = 0; i < empty; i++)); do bar+="${C_BAR_EMPTY}░${RST}"; done
@@ -213,7 +213,7 @@ if [ -n "$used_pct" ]; then
     else
         ctx_label=" ${ctx_color}${used_pct}%${RST}"
     fi
-    bar+="${C_CTX_OK}]${RST}${ctx_label}"
+    bar+="${ctx_color}]${RST}${ctx_label}"
 fi
 
 # Assemble — Line 1: model + context bar
