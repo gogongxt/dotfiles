@@ -87,11 +87,16 @@ input=$(cat)
 model=$(echo "$input" | jq -r '.model.display_name // ""')
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // ""')
 session_id=$(echo "$input" | jq -r '.session_id // "default"')
+# Per official docs (statusline.md): used_percentage is input-only —
+# input_tokens + cache_creation_input_tokens + cache_read_input_tokens.
+# output_tokens is NOT included. Prefer the total_input_tokens field added
+# in newer versions; fall back to summing current_usage (input-only) for
+# older versions.
 used_tokens=$(echo "$input" | jq -r '
-  (.context_window.current_usage.input_tokens // 0) +
-  (.context_window.current_usage.cache_creation_input_tokens // 0) +
-  (.context_window.current_usage.cache_read_input_tokens // 0) +
-  (.context_window.current_usage.output_tokens // 0)
+  .context_window.total_input_tokens //
+  ((.context_window.current_usage.input_tokens // 0) +
+   (.context_window.current_usage.cache_creation_input_tokens // 0) +
+   (.context_window.current_usage.cache_read_input_tokens // 0))
 ')
 total_tokens=$(echo "$input" | jq -r '.context_window.context_window_size // empty')
 
