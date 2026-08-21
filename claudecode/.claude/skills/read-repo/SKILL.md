@@ -1,6 +1,6 @@
 ---
 name: read-repo
-description: Clone a GitHub repo into /nfs/gogongxt (skip if exists), generate CLAUDE.md, run codegraph init, and summarize what the repo does. Trigger on "read repo", "拉取仓库", "clone 并分析仓库", or when user gives a repo URL and wants it set up and explained.
+description: Clone a GitHub repo into /nfs/gogongxt/Projects (skip if exists), generate CLAUDE.md, run codegraph init, and summarize what the repo does. Trigger on "read repo", "拉取仓库", "clone 并分析仓库", or when user gives a repo URL and wants it set up and explained.
 ---
 
 # read-repo
@@ -15,9 +15,9 @@ description: Clone a GitHub repo into /nfs/gogongxt (skip if exists), generate C
 
 ### 1. 获取仓库（如已存在则跳过）
 
-- 目标目录：`/nfs/gogongxt/<repo-name>`
+- 目标目录：`/nfs/gogongxt/Projects/<repo-name>`
 - 如果目录已存在且有 `.git`，直接跳过 clone，进入下一步
-- 优先用 `/proxy` SKILL 开启代理，再在 `/nfs/gogongxt` 下执行 `git clone <url>`（统一用 https 地址）——国内直连 GitHub 很慢，优先走代理
+- 优先用 `/proxy` SKILL 开启代理，再在 `/nfs/gogongxt/Projects` 下执行 `git clone <url>`（统一用 https 地址）——国内直连 GitHub 很慢，优先走代理
 - clone 失败可关闭代理直连重试一次；仍失败则停止并报告用户
 
 ### 2. 拉取成功后，以下三件事可以并行做
