@@ -23,7 +23,15 @@ description: Clone a GitHub repo into /nfs/gogongxt (skip if exists), generate C
 ### 2. 拉取成功后，以下三件事可以并行做
 
 1. **生成 CLAUDE.md**：在仓库内基于代码结构生成（可参考 /init 的做法）
-2. **codegraph init**：在仓库根目录执行；初始化可能失败，最多重试 2~3 次，仍失败就跳过并告知用户
+2. **codegraph init**：在仓库根目录执行，按下面的重试规则执行；仍失败就跳过并告知用户
+
+#### codegraph init 重试规则
+
+- 失败后 **不要删除已有的 `.codegraph/`**，保留现场，等待 10 秒后原样重试
+- 最多重试 3 次（每次失败后等 10 秒），全部失败才放弃
+- 重试期间不做其他破坏性操作（不 `rm -rf .codegraph`）
+- 报 `database disk image is malformed` 时也一样按上述规则重试（可能是竞争或磁盘问题），不要拷贝到 /tmp 等变通方案
+- init 跑通后，用 `codegraph explore "<symbol>"` 验证索引可读
 3. **阅读代码**：了解仓库结构、主要模块、入口，搞清楚这个仓库是做什么的
 
 ### 3. 汇报结果
