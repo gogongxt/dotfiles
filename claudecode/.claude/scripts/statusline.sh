@@ -52,7 +52,7 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 # Colors
 readonly RST='\033[0m'
-readonly C_MODEL='\033[38;2;189;147;249m'
+readonly C_MODEL='\033[38;2;255;184;108m'
 readonly C_CTX_OK='\033[38;2;80;250;123m'
 readonly C_CTX_WARN='\033[38;2;241;250;140m'
 readonly C_CTX_LOW='\033[38;2;255;85;85m'
@@ -61,6 +61,7 @@ readonly C_PCT='\033[38;2;248;248;242m'
 readonly C_DIR='\033[38;2;139;233;253m'
 readonly C_SESSION_ID='\033[38;2;139;233;253m'
 readonly C_GIT='\033[38;2;255;184;108m'
+readonly C_API='\033[38;2;189;147;249m'
 readonly C_GIT_DIRTY='\033[38;2;241;250;140m'
 readonly C_VIM='\033[38;2;241;250;140m'
 readonly C_WORKTREE='\033[38;2;255;121;198m'
@@ -221,8 +222,35 @@ if [ -n "$used_pct" ]; then
     bar+="${ctx_color}]${RST}${ctx_label}"
 fi
 
-# Assemble — Line 1: model + context bar
+# Assemble — Line 1: API base URL + model + context bar
+# ANTHROPIC_BASE_URL is inherited from Claude Code's environment.
+# Show only when set (i.e. not the official api.anthropic.com endpoint).
 parts1=()
+
+# host[:port] with path stripped, then shortened:
+#   domain -> last two labels (token-plan-cn.xiaomimimo.com -> xiaomimimo.com)
+#   IP     -> kept whole, port included (127.0.0.1:8088)
+base_host=""
+if [ -n "$ANTHROPIC_BASE_URL" ]; then
+    _hp=$(printf '%s' "$ANTHROPIC_BASE_URL" | sed -e 's|^[a-zA-Z][a-zA-Z0-9+.-]*://||' -e 's|/.*||')
+    _host=${_hp%%:*}
+    _port=""
+    case "$_hp" in *:*) _port=":${_hp##*:}" ;; esac
+    case "$_host" in
+        *[!0-9.]*) # not a plain IPv4 — keep last two domain labels
+            _first=${_host%.*.*}
+            if [ "$_first" = "$_host" ]; then
+                base_host="$_hp" # fewer than 3 labels, keep as-is
+            else
+                base_host="${_host#${_first}.}$_port"
+            fi
+            ;;
+        *) base_host="$_hp" ;; # IPv4 (or empty): host[:port] verbatim
+    esac
+fi
+if [ -n "$base_host" ]; then
+    parts1+=("${C_API}󰒍 ${base_host}${RST}")
+fi
 
 if [ -n "$model" ]; then
     parts1+=("${C_MODEL}󰥖 ${model}${RST}")
