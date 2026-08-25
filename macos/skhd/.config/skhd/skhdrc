@@ -2,7 +2,7 @@ cmd + shift - return : kitty --single-instance -d ~ --title "kitty"
 # shift - return : osascript -e 'tell application "System Events" to keystroke return using command down'
 
 # shift - return : skhd -k "cmd - return"
-cmd+shift-e : open ~
+cmd+shift-e : open -a "QSpace Pro" ~ 2>/dev/null || open ~
 cmd-i : open -a "System Preferences"
 
 # cmd-tab : open -a 'Mission Control'  
