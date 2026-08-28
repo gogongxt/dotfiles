@@ -28,9 +28,15 @@ description: Clone a GitHub repo into /nfs/gogongxt/Projects (skip if exists), g
 #### codegraph init 重试规则
 
 - 失败后 **不要删除已有的 `.codegraph/`**，保留现场，等待 10 秒后原样重试
-- 最多重试 3 次（每次失败后等 10 秒），全部失败才放弃
+- 最多重试 3 次（每次失败后等 10 秒）
 - 重试期间不做其他破坏性操作（不 `rm -rf .codegraph`）
-- 报 `database disk image is malformed` 时也一样按上述规则重试（可能是竞争或磁盘问题），不要拷贝到 /tmp 等变通方案
+- 报 `database disk image is malformed` 时也一样先按上述规则重试（可能是竞争）
+- 3 次重试全部失败、且报疑似磁盘/NFS 问题（如 `database disk image is malformed`、I/O error）时，走 /tmp 变通方案：
+  1. 把仓库拷贝到 `/tmp/<repo-name>`，**排除已有的 `.codegraph/`**（损坏的索引不带走）
+  2. 在 `/tmp/<repo-name>` 里执行 `codegraph init`
+  3. init 成功后，用 `/tmp/<repo-name>/.codegraph/` 替换原仓库里损坏的 `.codegraph/`（此时才允许覆盖）
+  4. 在**原仓库**里用 `codegraph explore "<symbol>"` 验证索引可读（在 /tmp 里能查不算数）
+  5. 结束后清理 `/tmp/<repo-name>` 副本；变通方案也失败则放弃 init 并告知用户
 - init 跑通后，用 `codegraph explore "<symbol>"` 验证索引可读
 3. **阅读代码**：了解仓库结构、主要模块、入口，搞清楚这个仓库是做什么的
 
