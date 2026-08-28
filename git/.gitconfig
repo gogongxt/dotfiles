@@ -22,4 +22,4 @@
 	minus-style = "#E78284" "#4A2E32"
 	plus-style = syntax "#496F4A"
 	minus-emph-style = "#ff0000" "#cccccc" bold
-	plus-emph-style = "#ff0000" "#cccccc" bold
+	plus-emph-style = "#00ff00" "#25533D" bold
