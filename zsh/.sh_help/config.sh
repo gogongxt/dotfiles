@@ -122,8 +122,12 @@ command -v yazi &>/dev/null && alias r="yazi" || alias r="ranger"
 command -v fastfetch &>/dev/null && alias neofetch="fastfetch"
 command -v lolcat &>/dev/null && alias fastfetch="fastfetch | lolcat"
 alias mycp="rsync -avz --progress"
-alias mycp_parallel="rclone copy --transfers 32 --create-empty-src-dirs --progress --copy-links"
-alias mycp_parallel_4="rclone copy --transfers 32 --create-empty-src-dirs --progress --copy-links --multi-thread-streams=4 --local-no-check-updated"
+_mycp_parallel="rclone copy --transfers 32 --create-empty-src-dirs --progress --copy-links"
+alias mycp_parallel="$_mycp_parallel"
+for _n in 4 8 16; do
+  alias mycp_parallel_$_n="$_mycp_parallel --multi-thread-streams=$_n --local-no-check-updated"
+done
+unset _n _mycp_parallel
 # alias mycp_parallel="rclone copy --transfers 32 --create-empty-src-dirs --progress --copy-links --multi-thread-streams=4 --multi-thread-chunk-size 1024M --multi-thread-write-buffer-size 512M --local-no-check-updated"
 alias mywget="aria2c -x 16 -s 16"
 export BAT_THEME="Catppuccin Frappe"
