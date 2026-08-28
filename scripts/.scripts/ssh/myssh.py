@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import base64
 import fcntl
 import importlib.util
 import logging
@@ -18,7 +19,7 @@ from pathlib import Path
 import pexpect
 
 # --- 从 password.py 模块导入需要的类 ---
-from password import EnhancedPasswordManager
+from password import DEFAULT_KEY_FILE, EnhancedPasswordManager
 
 # ANSI 颜色代码
 YELLOW = "\033[33m"
@@ -187,7 +188,6 @@ def get_server_details(config_file, server_name):
         processed_prompts = []
         if prompts:
             pwd_manager = None
-            script_dir = Path(__file__).parent.resolve()
             for item in prompts:
                 # prompt_interact: 匹配后进入交互模式，无自动响应
                 if "prompt_interact" in item:
@@ -206,15 +206,10 @@ def get_server_details(config_file, server_name):
                     and is_encrypted_password(response)
                 ):
                     if pwd_manager is None:
-                        logger.debug("检测到加密字段，需要输入主密码进行解密...")
-                        key_file = script_dir / "encrypted_key.bin"
-                        salt_file = script_dir / "salt.bin"
-                        pwd_manager = EnhancedPasswordManager(
-                            key_file=str(key_file), salt_file=str(salt_file)
-                        )
+                        # logger.debug("检测到加密字段，使用本地密钥文件解密...")
+                        pwd_manager = EnhancedPasswordManager(key_file=DEFAULT_KEY_FILE)
                     try:
                         response = pwd_manager.decrypt_to_real_password(response)
-                        print(f"字段解密成功: {prompt}")
                     except Exception as e:
                         print(f"字段解密失败 ({prompt}): {e}", file=sys.stderr)
                         sys.exit(1)

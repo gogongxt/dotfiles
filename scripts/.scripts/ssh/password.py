@@ -1,109 +1,54 @@
 import argparse
-import os
 import base64
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives import padding
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import getpass
+import os
 import secrets
+from pathlib import Path
+
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+SECURE_DIR = Path.home() / ".myssh"
+DEFAULT_KEY_FILE = str(SECURE_DIR / "encrypted_key.bin")
 
 
 class EnhancedPasswordManager:
     """
-    增强版密码管理器，使用AES-CBC加密和PBKDF2密钥派生。
-    允许任意长度的密码(不推荐使用短密码)。
+    文件密钥式密码管理器，使用 AES-CBC 加密。
     """
 
-    def __init__(
-        self, key_file="encrypted_key.bin", salt_file="salt.bin", verbose=False
-    ):
+    def __init__(self, key_file=DEFAULT_KEY_FILE, verbose=False):
         """
         初始化密码管理器。
         :param key_file: 存储加密密钥的文件路径。
-        :param salt_file: 存储盐值的文件路径。
         :param verbose: 是否打印详细信息。
         """
         self.key_file = key_file
-        self.salt_file = salt_file
         self.verbose = verbose
 
-        # 检查并生成必要的文件
-        if not os.path.exists(self.salt_file):
-            if self.verbose:
-                print(f"盐值文件 '{self.salt_file}' 不存在，正在生成...")
-            self._generate_salt()
+        # 确保密钥所在目录存在，并把权限收窄为仅当前用户可访问
+        key_dir = os.path.dirname(os.path.abspath(self.key_file))
+        os.makedirs(key_dir, mode=0o700, exist_ok=True)
 
         if not os.path.exists(self.key_file):
             if self.verbose:
-                print(f"密钥文件 '{self.key_file}' 不存在，需要创建主密码...")
-            self._setup_master_password()
-        else:
-            if self.verbose:
-                print(f"使用已存在的密钥文件: '{self.key_file}'")
+                print(f"密钥文件 '{self.key_file}' 不存在，正在生成随机密钥...")
+            self._generate_key()
+        elif self.verbose:
+            print(f"使用已存在的密钥文件: '{self.key_file}'")
 
-    def _generate_salt(self):
-        """生成并保存随机盐值"""
-        salt = secrets.token_bytes(16)
-        with open(self.salt_file, "wb") as f:
-            f.write(salt)
-
-    def _get_salt(self):
-        """从文件读取盐值"""
-        with open(self.salt_file, "rb") as f:
-            return f.read()
-
-    def _setup_master_password(self):
-        """设置主密码并生成加密密钥"""
-        while True:
-            master_pwd = getpass.getpass("首次运行，请设置主密码: ")
-            confirm = getpass.getpass("请再次输入主密码确认: ")
-            if master_pwd == confirm:
-                break
-            print("两次输入的主密码不匹配，请重试!")
-
-        # 派生加密密钥
-        salt = self._get_salt()
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=salt,
-            iterations=600000,
-            backend=default_backend(),
-        )
-        key = kdf.derive(master_pwd.encode("utf-8"))
-
-        # 保存加密后的密钥
+    def _generate_key(self):
+        """生成并保存随机 32 字节 AES-256 密钥"""
+        key = secrets.token_bytes(32)
         with open(self.key_file, "wb") as f:
             f.write(key)
-        print("主密码设置成功！")
+        os.chmod(self.key_file, 0o600)
 
     def _get_encryption_key(self):
-        """验证主密码并返回加密密钥"""
-        master_pwd = getpass.getpass("请输入主密码: ")
-        salt = self._get_salt()
-
-        # 从主密码派生密钥以进行验证
-        kdf_verify = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=salt,
-            iterations=600000,
-            backend=default_backend(),
-        )
-        derived_key = kdf_verify.derive(master_pwd.encode("utf-8"))
-
-        # 读取存储的密钥
+        """从密钥文件读取加密密钥"""
         with open(self.key_file, "rb") as f:
-            stored_key = f.read()
-
-        # 比较派生的密钥和存储的密钥
-        if derived_key == stored_key:
-            return derived_key
-        else:
-            # 使用 raise 代替返回 None，可以更清晰地处理错误
-            raise ValueError("主密码无效")
+            return f.read()
 
     def _pad_data(self, data):
         """填充数据使其符合块大小"""
@@ -183,16 +128,9 @@ def _mask_password(password: str) -> str:
 
 def main():
     """主函数，用于处理命令行参数和执行加解密操作。"""
-    
-    # 获取脚本文件所在的绝对目录
-    script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # 使用脚本目录构建默认文件路径
-    default_key_file = os.path.join(script_dir, "encrypted_key.bin")
-    default_salt_file = os.path.join(script_dir, "salt.bin")
-    
     parser = argparse.ArgumentParser(
-        description="增强版命令行密码加解密工具。",
+        description="命令行密码加解密工具（密钥存于 ~/.myssh，无主密码）。",
         formatter_class=argparse.RawTextHelpFormatter,
     )
 
@@ -207,15 +145,8 @@ def main():
     parser.add_argument(
         "--keyfile",
         type=str,
-        default=default_key_file,
-        help=f"指定密钥文件的路径 (默认: {default_key_file})。",
-    )
-
-    parser.add_argument(
-        "--saltfile",
-        type=str,
-        default=default_salt_file,
-        help=f"指定盐值文件的路径 (默认: {default_salt_file})。",
+        default=DEFAULT_KEY_FILE,
+        help=f"指定密钥文件的路径 (默认: {DEFAULT_KEY_FILE})。",
     )
 
     parser.add_argument(
@@ -225,9 +156,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        manager = EnhancedPasswordManager(
-            key_file=args.keyfile, salt_file=args.saltfile, verbose=args.verbose
-        )
+        manager = EnhancedPasswordManager(key_file=args.keyfile, verbose=args.verbose)
 
         if args.encrypt == 1:
             # --- 加密流程 ---
@@ -243,7 +172,7 @@ def main():
                 print("两次输入的密码不匹配，请重试!")
 
             masked = _mask_password(password_to_encrypt)
-            print(f"你输入的密码为: \"{masked}\"")
+            print(f'你输入的密码为: "{masked}"')
 
             encrypted_data = manager.encrypt_password(password_to_encrypt)
             print("\n加密结果:")
