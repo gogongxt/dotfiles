@@ -163,6 +163,22 @@ return {
     config = function()
       -- Lua
       require("diffview").setup {
+        hooks = {
+          -- per-side diff colors, keep in sync with lua/polish.lua:
+          -- a = minus (old), b = plus (new), like git-delta.
+          -- polish.lua also has a positional fallback for plain vimdiff.
+          diff_buf_win_enter = function(_, winid, ctx)
+            if ctx.layout_name:match "^diff2" then
+              if ctx.symbol == "a" then
+                vim.wo[winid].winhl =
+                  "DiffChange:DiffMinusLine,DiffText:DiffMinusEmph,DiffTextAdd:DiffMinusEmph"
+              elseif ctx.symbol == "b" then
+                vim.wo[winid].winhl =
+                  "DiffChange:DiffPlusLine,DiffText:DiffPlusEmph,DiffTextAdd:DiffPlusEmph"
+              end
+            end
+          end,
+        },
         view = {
           -- Configure the layout and behavior of different types of views.
           -- Available layouts:

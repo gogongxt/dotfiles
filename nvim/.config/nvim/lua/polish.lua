@@ -12,11 +12,74 @@ vim.cmd.colorscheme "catppuccin"
 -- define function to change color for catppuccin*
 local function set_diff_highlights()
   vim.cmd [[
-    highlight DiffAdd    guibg=#496F4A
-    highlight DiffDelete guibg=#4A2E32 guifg=#E78284
-    highlight DiffChange   guibg=#000000 guifg=#aaaaaa gui=none
-    highlight DiffText     guibg=#cccccc guifg=#ff0000 gui=bold
+    " like git-delta plus-style / minus-style (also used by unified diff buffers)
+    highlight DiffAdd       guibg=#496F4A
+    highlight DiffDelete    guibg=#4A2E32 guifg=#E78284
+    " global fallback when side is unknown (e.g. BASE window in 3-way merge)
+    highlight DiffChange    guibg=#000000 guifg=#aaaaaa gui=none
+    highlight DiffText      guibg=#25533D guifg=#00ff00 gui=bold
+    " per-side groups, mapped per window via 'winhl' (delta minus/plus-emph-style)
+    highlight DiffMinusLine guibg=#4A2E32 guifg=#E78284
+    highlight DiffMinusEmph guibg=#cccccc guifg=#ff0000 gui=bold
+    highlight DiffPlusLine  guibg=#496F4A
+    highlight DiffPlusEmph  guibg=#25533D guifg=#00ff00 gui=bold
   ]]
+end
+-- vim has only one DiffChange/DiffText, split them per window with 'winhl':
+-- in vimdiff the minus/plus side are different windows, so each side can
+-- have its own colors like git-delta
+local function set_diff_winhl(win, line, emph)
+  local parts = {}
+  if vim.wo[win].winhl ~= "" then
+    for _, entry in ipairs(vim.split(vim.wo[win].winhl, ",", { plain = true, trimempty = true })) do
+      -- keep entries not managed here
+      local from = entry:match "^([^:]+):"
+      if from ~= "DiffChange" and from ~= "DiffText" and from ~= "DiffTextAdd" then
+        parts[#parts + 1] = entry
+      end
+    end
+  end
+  if line and vim.fn.hlexists(line) == 1 then
+    parts[#parts + 1] = "DiffChange:" .. line
+    parts[#parts + 1] = "DiffText:" .. emph
+    -- nvim 0.12+: purely inserted chars, no counterpart in the other buffer
+    parts[#parts + 1] = "DiffTextAdd:" .. emph
+  end
+  vim.wo[win].winhl = table.concat(parts, ",")
+end
+-- like git-delta: leftmost diff window = minus (old), rightmost = plus (new).
+-- middle windows (e.g. BASE in a 3-way merge) keep the global fallback.
+local function apply_diff_side_highlights()
+  for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
+    local wins = {}
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
+      if vim.api.nvim_win_is_valid(win) then
+        if vim.wo[win].diff then
+          local pos = vim.api.nvim_win_get_position(win)
+          wins[#wins + 1] = { win = win, col = pos[2], row = pos[1] }
+        else
+          -- clear leftover entries on windows that left diff mode (:diffoff)
+          local hl = vim.wo[win].winhl
+          if hl:find "DiffChange:" or hl:find "DiffText:" or hl:find "DiffTextAdd:" then
+            set_diff_winhl(win)
+          end
+        end
+      end
+    end
+    table.sort(wins, function(a, b)
+      if a.col ~= b.col then return a.col < b.col end
+      return a.row < b.row
+    end)
+    for i, w in ipairs(wins) do
+      if i == 1 and #wins >= 2 then
+        set_diff_winhl(w.win, "DiffMinusLine", "DiffMinusEmph")
+      elseif i == #wins and #wins >= 2 then
+        set_diff_winhl(w.win, "DiffPlusLine", "DiffPlusEmph")
+      else
+        set_diff_winhl(w.win) -- single or middle window: global fallback
+      end
+    end
+  end
 end
 -- need set color once when start neovim
 if vim.g.colors_name:find "catppuccin" then set_diff_highlights() end
@@ -25,6 +88,18 @@ vim.api.nvim_create_autocmd("ColorScheme", {
   pattern = "catppuccin*", -- pair all catppuccin theme（frappe, macchiato, etc）
   callback = function() set_diff_highlights() end,
   desc = "Override diff colors for Catppuccin",
+})
+-- apply per-side diff colors when a window enters/leaves diff mode
+-- (vimdiff, :diffsplit, :diffthis, difftool, ...)
+vim.api.nvim_create_autocmd("OptionSet", {
+  pattern = "diff",
+  callback = vim.schedule_wrap(apply_diff_side_highlights),
+  desc = "Split diff highlights per side (minus/plus)",
+})
+-- OptionSet is not fired during startup (e.g. nvim -d), and diff windows may close
+vim.api.nvim_create_autocmd({ "VimEnter", "WinClosed" }, {
+  callback = vim.schedule_wrap(apply_diff_side_highlights),
+  desc = "Re-apply per-side diff highlights",
 })
 
 -- merge fillchars config, remain fold icon
