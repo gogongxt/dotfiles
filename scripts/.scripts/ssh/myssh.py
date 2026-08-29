@@ -328,11 +328,39 @@ def connect_to_server(
                     pass  # 朴素防御：即使标记未打印，也继续（输出可能带一点噪声）
 
                 # `; exit` 退不回堡垒机菜单，改用随机哨兵标记命令结束，命中即退出。
-                sentinel = f"___MYSSH_DONE_{os.urandom(8).hex()}___"
-                child.sendline(f"{auto_command}; echo {sentinel}")
+                # 哨兵后紧跟 $?：PTY 链路上读不到远端进程的真实退出码，哨兵随
+                # stdout 回传是唯一可靠通道，myssh 以该码退出，调用方（面板
+                # exec/runs/SSE）才能据此判定命令成败。
+                #
+                # 哨兵来源两种：
+                # - MYSSH_SENTINEL 环境变量（面板注入）：命令里已嵌好
+                #   「<cmd>; echo <哨兵>$?」且位于跳板模板内侧——echo 在最终机器
+                #   上执行，退出码随 stdout 流回。dssh 这类中转会把非零退出码
+                #   坍缩成 1，落地层追加 echo 的 $? 拿不到真实值，所以这里只负责
+                #   检测哨兵、解析随行数字，不再自行追加。
+                # - 无环境变量（人工直连）：在本层 shell 追加 echo，$? 即命令
+                #   退出码（直连场景没有中转坍缩问题）。
+                sentinel = os.environ.get("MYSSH_SENTINEL") or None
+                if sentinel:
+                    child.sendline(auto_command)
+                else:
+                    sentinel = f"___MYSSH_DONE_{os.urandom(8).hex()}___"
+                    child.sendline(f"{auto_command}; echo {sentinel}$?")
 
-                hold = len(sentinel) - 1
+                def held_len(s):
+                    # 哨兵可能被拆在两次 read 之间：只需扣住「恰好是哨兵前缀」的
+                    # 结尾后缀，其余全部立刻输出（固定扣 len-1 会把短输出憋到下一段）。
+                    return max(
+                        (
+                            k
+                            for k in range(min(len(s), len(sentinel) - 1), 0, -1)
+                            if s.endswith(sentinel[:k])
+                        ),
+                        default=0,
+                    )
+
                 tail = ""
+                rc_text = ""  # 哨兵之后的内容：开头是退出码数字（可能拆包未到齐）
                 while True:
                     try:
                         data = child.read_nonblocking(size=65536, timeout=1.0)
@@ -343,18 +371,34 @@ def connect_to_server(
                     if not data:
                         continue
                     chunk = tail + data
-                    i = chunk.find(sentinel)
+                    # 哨兵含随机 hex、全文只出现一次；用最右匹配，避免把结尾
+                    # 恰好是哨兵前缀（如 '___'）的正文吃进哨兵。
+                    i = chunk.rfind(sentinel)
                     if i >= 0:
                         sys.stdout.write(chunk[:i])  # 哨兵之后是噪声
                         sys.stdout.flush()
+                        # 退出码数字可能拆在下一段 read 才到；echo 的输出必然是
+                        # 「数字+换行」，攒到出现行尾即齐（EOF/超时就用现有内容）。
+                        rc_text = chunk[i + len(sentinel) :]
+                        for _ in range(3):
+                            if re.search(r"[\r\n]", rc_text):
+                                break
+                            try:
+                                rc_text += child.read_nonblocking(
+                                    size=4096, timeout=1.0
+                                )
+                            except (pexpect.TIMEOUT, pexpect.EOF):
+                                break
                         break
-                    if len(chunk) > hold:
-                        sys.stdout.write(chunk[:-hold])
+                    keep = held_len(chunk)
+                    tail = chunk[len(chunk) - keep :] if keep else ""
+                    if keep < len(chunk):
+                        sys.stdout.write(chunk[: len(chunk) - keep])
                         sys.stdout.flush()
-                        tail = chunk[-hold:]
-                    else:
-                        tail = chunk
-                sys.exit(0)
+                # 以远端命令的退出码退出（& 0xFF 防御异常值）。哨兵未出现（EOF，
+                # 会话中途断掉）时退出码不可知，维持旧行为退出 0。
+                m = re.match(r"\d+", rc_text)
+                sys.exit(int(m.group()) & 0xFF if m else 0)
             else:
                 child.logfile_read = None
                 child.interact()
