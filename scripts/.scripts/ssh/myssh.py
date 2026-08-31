@@ -345,7 +345,14 @@ def connect_to_server(
                     child.sendline(auto_command)
                 else:
                     sentinel = f"___MYSSH_DONE_{os.urandom(8).hex()}___"
-                    child.sendline(f"{auto_command}; echo {sentinel}$?")
+                    # 哨兵在命令行里必须拆成两段相邻字符串：echo 输出的仍是完整
+                    # 哨兵，但 zsh(ZLE) 对输入行的高亮重绘会把整行原样画回 pty，
+                    # 命令行文本若含连续哨兵原文（典型如 `sleep infinity` 这类
+                    # 永不结束的命令，真实哨兵永远不出现），回显就会被下面的
+                    # rfind 误判成哨兵、带着空退出码提前退出。中间插一对 '' 后
+                    # 回显永远拼不出哨兵原文，误判即消失。
+                    typed = f"{sentinel[:14]}''{sentinel[14:]}"
+                    child.sendline(f"{auto_command}; echo {typed}$?")
 
                 def held_len(s):
                     # 哨兵可能被拆在两次 read 之间：只需扣住「恰好是哨兵前缀」的
