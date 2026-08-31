@@ -188,6 +188,7 @@ command -v xhost &>/dev/null && xhost + &>/dev/null
 # Ref: https://github.com/DaoCloud/public-image-mirror
 # usage: sudo docker pull $DOCKER_PROXY/lmsysorg/sglang:blackwell
 export DOCKER_PROXY="docker.m.daocloud.io"
+export GOPROXY=https://goproxy.cn,direct
 #🔼🔼🔼
 
 #🔽🔽🔽
