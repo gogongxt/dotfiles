@@ -93,7 +93,7 @@ end, { desc = "Open URL under cursor" })
 return {
   {
     "gogongxt/markdown-preview.nvim",
-    branch = "feat/relative-links-and-header-filename",
+    branch = "mymain",
     dependencies = { "selimacerbas/live-server.nvim" },
     config = function()
       require("markdown_preview").setup {
