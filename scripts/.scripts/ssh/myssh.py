@@ -327,6 +327,26 @@ def connect_to_server(
                 except (pexpect.TIMEOUT, pexpect.EOF):
                     pass  # 朴素防御：即使标记未打印，也继续（输出可能带一点噪声）
 
+                # 同步点：吸干残留的就绪标记（设置行的回显、echo 输出、紧随其后
+                # 的提示符），直到 0.5s 内不再出现为止。此后流里再冒出标记，只可
+                # 能是「命令链结束后 shell 回到了提示符」——正是下面中断检测要的
+                # 信号。吸不干（个别堡垒机提示符行为怪异）就放弃检测，退回纯哨兵
+                # 等待，绝不影响正常命令。
+                synced = False
+                for _ in range(6):
+                    try:
+                        if child.expect([ready, pexpect.TIMEOUT], timeout=0.5) == 1:
+                            synced = True
+                            break
+                    except pexpect.EOF:
+                        synced = True
+                        break
+                # 中断检测（仅面板哨兵模式 + 同步成功时启用）：完成哨兵未至而就绪
+                # 标记先现 = 命令链中途断掉（目标机 wrapper 被杀、链路被重置），
+                # 哨兵永远等不来。立即以 255 失败退出，而非无限挂起——此前面板侧
+                # 会一直挂着：quick command 拖到超时，不限时的 run 永久卡死。
+                prompt_watch = synced and os.environ.get("MYSSH_SENTINEL") is not None
+
                 # `; exit` 退不回堡垒机菜单，改用随机哨兵标记命令结束，命中即退出。
                 # 哨兵后紧跟 $?：PTY 链路上读不到远端进程的真实退出码，哨兵随
                 # stdout 回传是唯一可靠通道，myssh 以该码退出，调用方（面板
@@ -354,14 +374,15 @@ def connect_to_server(
                     typed = f"{sentinel[:14]}''{sentinel[14:]}"
                     child.sendline(f"{auto_command}; echo {typed}$?")
 
-                def held_len(s):
-                    # 哨兵可能被拆在两次 read 之间：只需扣住「恰好是哨兵前缀」的
-                    # 结尾后缀，其余全部立刻输出（固定扣 len-1 会把短输出憋到下一段）。
+                def held_len(s, marker):
+                    # 哨兵/标记可能被拆在两次 read 之间：只需扣住「恰好是该前缀」
+                    # 的结尾后缀，其余全部立刻输出（固定扣 len-1 会把短输出憋到
+                    # 下一段）。
                     return max(
                         (
                             k
-                            for k in range(min(len(s), len(sentinel) - 1), 0, -1)
-                            if s.endswith(sentinel[:k])
+                            for k in range(min(len(s), len(marker) - 1), 0, -1)
+                            if s.endswith(marker[:k])
                         ),
                         default=0,
                     )
@@ -397,7 +418,21 @@ def connect_to_server(
                             except (pexpect.TIMEOUT, pexpect.EOF):
                                 break
                         break
-                    keep = held_len(chunk)
+                    if prompt_watch:
+                        j = chunk.rfind(ready)
+                        if j >= 0:
+                            # 命令链中断：标记之前的内容照常输出，然后带明确错误退出。
+                            sys.stdout.write(chunk[:j])
+                            sys.stdout.flush()
+                            print(
+                                "\n[myssh] 命令链在完成哨兵前中断（shell 已回到提示符）",
+                                file=sys.stderr,
+                            )
+                            sys.exit(255)
+                    keep = max(
+                        held_len(chunk, sentinel),
+                        held_len(chunk, ready) if prompt_watch else 0,
+                    )
                     tail = chunk[len(chunk) - keep :] if keep else ""
                     if keep < len(chunk):
                         sys.stdout.write(chunk[: len(chunk) - keep])
