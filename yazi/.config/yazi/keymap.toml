@@ -91,7 +91,6 @@ keymap = [
 	{ on = "<S-s>", run = 'shell "$SHELL" --block --confirm',desc = "Spawn a subshell in the current directory" },
 	{ on = [",","g","g"], run = "shell --confirm --block gitui",               desc = "gitui" },
 	{ on = [",","g","d"], run = "plugin diff",               desc = "Diff the selected with the hovered file" },
-	# { on =  "<A-t>" , run = "plugin eza-preview",  desc = "Toggle tree/list dir preview" },
 	{ on =  "K" , run = "plugin parent-arrow -1",  desc = "move parent arrow" },
 	{ on =  "J" , run = "plugin parent-arrow 1",  desc = "move parent arrow" },
 

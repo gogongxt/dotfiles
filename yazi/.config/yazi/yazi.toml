@@ -8,11 +8,6 @@ group = "git"
 url = "*/"
 run = "git"
 
-# TODO: eza preview not working
-# [[plugin.prepend_previewers]]
-# url = "*/"
-# run = "eza-preview"
-
 [preview]
 # Change them to your desired values
 max_width = 2000

@@ -24,11 +24,6 @@ rev = "ea92cf4"
 hash = "9776f378459072b6c2875eae5addc49d"
 
 [[plugin.deps]]
-use = "ahkohd/eza-preview"
-rev = "e8fb6c8"
-hash = "c238595c801caa4f28553b9af8cf8804"
-
-[[plugin.deps]]
 use = "yazi-rs/plugins:piper"
 rev = "4dc7f1b"
 hash = "45a533508a9840cc5a10cf6129f63e6a"
