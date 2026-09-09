@@ -252,10 +252,32 @@ def sigwinch_handler(signum, frame):
         child.setwinsize(rows, cols)
 
 
+def _feed_lines(child, payload):
+    """把 payload 逐行敲入会话（见 connect_to_server 的 feed_payload）。
+
+    先发一个就绪标记并等它回显回来：多跳链路（dssh → sudo ssh → …）建立要
+    1~3 秒，而 PTY 输入队列只有 ~4KB，远端还没开始读就灌入会丢字符；标记
+    回来说明最终机器的 `bash -s` 已在消费 stdin。delaybeforesend 必须清零
+    ——pexpect 默认每行等 50ms，几百行的脚本会被拖成几十秒。
+    """
+    mark = "__CP_FEED_READY_%s__" % os.urandom(8).hex()
+    child.sendline("echo %s" % mark)
+    try:
+        child.expect(mark, timeout=30)
+    except (pexpect.TIMEOUT, pexpect.EOF):
+        pass  # 链路可能已断，后续哨兵/上层空闲超时兜底
+    time.sleep(0.3)
+    child.delaybeforesend = 0
+    for line in payload.split("\n"):
+        child.sendline(line)
+    child.delaybeforesend = 0.05
+
+
 def connect_to_server(
     server_details,
     auto_command=None,
     interact_cmd=None,
+    feed_payload=None,
 ):
     """
     连接服务器并完成动态认证。
@@ -264,6 +286,10 @@ def connect_to_server(
         server_details: 含 auth_prompts 的连接信息
         auto_command: 非交互模式——登录后执行该命令并流式输出，结束即退出
         interact_cmd: 交互模式——登录后先发该命令（如 `dssh <host>` 跳板）再 interact
+        feed_payload: 机器模式附加——命令发出后将这些行逐行敲入会话。配合
+            远端 `bash -s`（或 `ssh host bash -s`）+ heredoc 投递大脚本：PTY
+            输入行的 4KB 限制是"每行"，逐行喂入即可绕开总量限制，脚本随
+            会话流到最终机器，全程不需要目标机反向连接面板。
     """
     global child
     try:
@@ -373,6 +399,9 @@ def connect_to_server(
                     # 回显永远拼不出哨兵原文，误判即消失。
                     typed = f"{sentinel[:14]}''{sentinel[14:]}"
                     child.sendline(f"{auto_command}; echo {typed}$?")
+
+                if feed_payload is not None:
+                    _feed_lines(child, feed_payload)
 
                 def held_len(s, marker):
                     # 哨兵/标记可能被拆在两次 read 之间：只需扣住「恰好是该前缀」
@@ -576,7 +605,16 @@ def main():
         default=None,
         help="和-c/--command类似，不过执行完成后不退出myssh，留在交互模式，适用于执行命令还需要手动执行别的",
     )
+    parser.add_argument(
+        "--feed-stdin",
+        action="store_true",
+        help="与 -c 连用：命令发出后，把自身 stdin 的内容逐行敲入会话"
+        "（配合远端 `bash -s` + heredoc 投递大脚本；stdin 需来自重定向/管道）",
+    )
     args = parser.parse_args()
+
+    if args.feed_stdin and args.command is None:
+        parser.error("--feed-stdin 只能与 -c/--command 连用")
 
     config_file = args.config
     server_name = args.server
@@ -594,11 +632,25 @@ def main():
 
     if not machine_mode:
         print(f"正在获取 '{server_name}' 的详细信息...")
+
+    feed_payload = None
+    if args.feed_stdin:
+        feed_payload = sys.stdin.buffer.read().decode("utf-8", "replace")
+        longest = max(feed_payload.split("\n"), key=len)
+        if len(longest) >= 4000:
+            print(
+                "[myssh] --feed-stdin: 存在超过 4000 字符的行，PTY 输入行限制会"
+                "截断（该行开头: %r）" % longest[:40],
+                file=sys.stderr,
+            )
+            sys.exit(2)
+
     server_details = get_server_details(config_file, server_name)
     connect_to_server(
         server_details,
         args.command,
         interact_cmd=args.interact_cmd,
+        feed_payload=feed_payload,
     )
 
 
