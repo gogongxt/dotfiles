@@ -31,6 +31,8 @@ keymap = [
 
 	{ on = [ "g", "g" ], run = "arrow top", desc = "Go to top" },
 	{ on = "G",          run = "arrow bot", desc = "Go to bottom" },
+	# H/M/L viewport motions (v26.8.15): H/L are taken by tab switching (<S-h>/<S-l>), so only M
+	{ on = "M",          run = "arrow 50vp", desc = "Move cursor to the middle of the viewport" },
 
 	# Navigation
 	{ on = "h", run = "leave", desc = "Back to the parent directory" },
@@ -74,7 +76,7 @@ keymap = [
 	{ on = "d",         run = "remove",                      desc = "Trash selected files" },
 	{ on = "D",         run = "remove --permanently",        desc = "Permanently delete selected files" },
 	{ on = "a",         run = "create",                      desc = "Create a file (ends with / for directories)" },
-	{ on = "A",         run = "create --dir", 				 desc = "create directory" },
+	{ on = "A",         run = "bulk_create",                 desc = "Bulk create files/dirs (one path per line)" },
 	{ on = "e",         run = "plugin shell-extract",        desc = "Extract selected archive(s) via shell extract" },
 	{ on = "r",         run = "rename --cursor=before_ext",  desc = "Rename selected file(s)" },
 	{ on = ";",         run = "shell --interactive",         desc = "Run a shell command" },
@@ -104,7 +106,7 @@ keymap = [
 
 	# Copy
 	{ on = [ "c", "c" ], run = "copy path",             desc = "Copy the file path" },
-	{ on = [ "c", "d" ], run = "copy dirname",          desc = "Copy the directory path" },
+	{ on = [ "c", "d" ], run = "copy dirpath",          desc = "Copy the directory path" },
 	{ on = [ "c", "f" ], run = "copy filename",         desc = "Copy the filename" },
 	{ on = [ "c", "n" ], run = "copy name_without_ext", desc = "Copy the filename without extension" },
 
@@ -140,6 +142,7 @@ keymap = [
 	{ on = [ "g", "T" ],       run = "cd /tmp",             desc = "Go tmp" },
 	{ on = [ "g", "c" ],       run = "cd ~/.config",     desc = "Go ~/.config" },
 	{ on = [ "g", "d" ],       run = "cd ~/Downloads",   desc = "Go ~/Downloads" },
+	{ on = [ "g", "b" ],       run = "plugin trash",     desc = "Go to trash bin" },
 	{ on = [ "g", "<Space>" ],  run = "plugin initial-cwd",  desc = "Go to initial directory" },
 	{ on = [ "g", "<Enter>" ], run = "cd --interactive", desc = "Jump interactively" },
 	{ on = [ "g", "l" ],       run = "follow",           desc = "Follow hovered symlink" },
@@ -156,6 +159,7 @@ keymap = [
 	# { on = "8", run = "tab_switch 7", desc = "Switch to eighth tab" },
 	# { on = "9", run = "tab_switch 8", desc = "Switch to ninth tab" },
 	{ on = "t", run = "tab_create --current", desc = "Create a new tab with CWD" },
+	{ on = "R", run = "tab_rename --interactive", desc = "Rename the current tab" },
 	{ on = "1", run = "plugin smart-tab  0", desc = "Switch to/create tab 1" },
 	{ on = "2", run = "plugin smart-tab  1", desc = "Switch to/create tab 2" },
 	{ on = "3", run = "plugin smart-tab  2", desc = "Switch to/create tab 3" },
@@ -197,7 +201,7 @@ keymap = [
 	{ on = "<Down>", run = "arrow next", desc = "Next task" },
 
 	{ on = "<Enter>", run = "inspect", desc = "Inspect the task" },
-	{ on = "k",       run = "cancel",  desc = "Cancel the task" },
+	{ on = "x",       run = "cancel",  desc = "Cancel the task" },
 	{ on = "K",       run = "cancel",  desc = "Cancel the task" },
 
 	# Help
@@ -281,14 +285,16 @@ keymap = [
 	# { on = "<C-f>",   run = "move 1",  desc = "Move forward a character" },
 
 	# Word-wise movement
-	{ on = "b",     run = "backward",                    desc = "Move back to the start of the current or previous word" },
-	{ on = "B",     run = "backward --far",              desc = "Move back to the start of the current or previous WORD" },
-	{ on = "w",     run = "forward",                     desc = "Move forward to the start of the next word" },
-	{ on = "W",     run = "forward --far",               desc = "Move forward to the start of the next WORD" },
-	{ on = "e",     run = "forward --end-of-word",       desc = "Move forward to the end of the current or next word" },
-	{ on = "E",     run = "forward --far --end-of-word", desc = "Move forward to the end of the current or next WORD" },
-	{ on = "<A-b>", run = "backward",                    desc = "Move back to the start of the current or previous word" },
-	{ on = "<A-f>", run = "forward --end-of-word",       desc = "Move forward to the end of the current or next word" },
+	{ on = "b",         run = "backward",                   desc = "Move back to the start of the current or previous word" },
+	{ on = "B",         run = "backward wide",              desc = "Move back to the start of the current or previous WORD" },
+	{ on = "w",         run = "forward",                    desc = "Move forward to the start of the next word" },
+	{ on = "W",         run = "forward wide",               desc = "Move forward to the start of the next WORD" },
+	{ on = "e",         run = "forward --end-of-word",      desc = "Move forward to the end of the current or next word" },
+	{ on = "E",         run = "forward wide --end-of-word", desc = "Move forward to the end of the current or next WORD" },
+	{ on = "<A-b>",     run = "backward lean",              desc = "Move back to the start of the current or previous word" },
+	{ on = "<A-f>",     run = "forward lean --end-of-word", desc = "Move forward to the end of the current or next word" },
+	{ on = "<C-Left>",  run = "backward lean",              desc = "Move back to the start of the current or previous word" },
+	{ on = "<C-Right>", run = "forward lean --end-of-word", desc = "Move forward to the end of the current or next word" },
 
 	# Line-wise movement
 	{ on = "0",      run = "move bol",        desc = "Move to the BOL" },
@@ -324,9 +330,18 @@ keymap = [
 	{ on = "p", run = "paste",                                             desc = "Paste copied characters after the cursor" },
 	{ on = "P", run = "paste --before",                                    desc = "Paste copied characters before the cursor" },
 
-	# Undo/Redo
-	{ on = "u",     run = "undo", desc = "Undo the last operation" },
-	{ on = "<C-r>", run = "redo", desc = "Redo the last operation" },
+	# Undo/Redo/Casefy
+	{ on = "u",     run = [ "undo", "casefy lower" ], desc = "Undo, or lowercase if in visual mode" },
+	{ on = "U",     run = "casefy upper",             desc = "Uppercase" },
+	{ on = "<C-r>", run = "redo",                     desc = "Redo the last operation" },
+
+	# History (v26.8.15): recall previous inputs
+	{ on = "k",      run = "recall -1", desc = "Recall previous input" },
+	{ on = "j",      run = "recall 1",  desc = "Recall next input" },
+	{ on = "<Up>",   run = "recall -1", desc = "Recall previous input" },
+	{ on = "<Down>", run = "recall 1",  desc = "Recall next input" },
+	{ on = "<C-p>",  run = "recall -1", desc = "Recall previous input" },
+	{ on = "<C-n>",  run = "recall 1",  desc = "Recall next input" },
 
 	# Help
 	{ on = "<F1>", run = "help", desc = "Open help" },
@@ -374,12 +389,14 @@ keymap = [
 ]
 
 [help]
+# Since v26.8.15 the help menu is a command palette: type to filter, <Enter> runs the selected action
 
 keymap = [
-	{ on = "<Esc>", run = "escape", desc = "Clear the filter, or hide the help" },
-	{ on = "<C-[>", run = "escape", desc = "Clear the filter, or hide the help" },
-	{ on = "<C-c>", run = "close",  desc = "Hide the help" },
-	{ on = "q", run = "close",  desc = "Hide the help" },
+	{ on = "<Esc>",   run = "escape",         desc = "Enter normal mode, or hide help menu" },
+	{ on = "<C-[>",   run = "escape",         desc = "Enter normal mode, or hide help menu" },
+	{ on = "<C-c>",   run = "close",          desc = "Close help menu" },
+	{ on = "q",       run = "close",          desc = "Close help menu" },
+	{ on = "<Enter>", run = "close --submit", desc = "Run the selected action(s)" },
 
 	# Navigation
 	{ on = "k", run = "arrow prev", desc = "Previous line" },
@@ -388,8 +405,8 @@ keymap = [
 	{ on = "<Up>",   run = "arrow prev", desc = "Previous line" },
 	{ on = "<Down>", run = "arrow next", desc = "Next line" },
 
-	# Filtering
-	{ on = "f", run = "filter", desc = "Filter help items" },
+	{ on = "<C-p>", run = "arrow prev", desc = "Previous line" },
+	{ on = "<C-n>", run = "arrow next", desc = "Next line" },
 ]
 
 [[mgr.prepend_keymap]]

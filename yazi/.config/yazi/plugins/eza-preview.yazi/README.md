@@ -10,13 +10,13 @@ Tree mode:
 
 ## Requirements
 
-- [yazi (25.12+) or nightly](h;nottps://github.com/sxyazi/yazi)
+- [yazi (26.1.4+) or nightly](https://github.com/sxyazi/yazi)
 - [eza (0.20+)](https://github.com/eza-community/eza)
 
 ## Installation
 
 ```sh
-ya pack -a ahkohd/eza-preview
+ya pkg add ahkohd/eza-preview
 ```
 
 ## Usage

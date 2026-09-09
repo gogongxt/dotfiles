@@ -1,44 +1,47 @@
---- @since 25.5.31
+--- @since 26.8.15
 --- @sync entry
 
+local PANE = { parent = 1, current = 2, preview = 3 }
+
+local function eq(other)
+	local r = rt.mgr.ratio
+	return other[1] == r[1] and other[2] == r[2] and other[3] == r[3]
+end
+
+local function get()
+	local r = rt.mgr.ratio
+	return { r[1], r[2], r[3] }
+end
+
+local function set(new) rt.mgr.ratio = { new[1], new[2], new[3] } end
+
 local function entry(st, job)
-	local R = rt.mgr.ratio
 	job = type(job) == "string" and { args = { job } } or job
 
-	st.parent = st.parent or R.parent
-	st.current = st.current or R.current
-	st.preview = st.preview or R.preview
+	if not eq(st.new or {}) then
+		st.new, st.old = nil, nil
+	end
+	local N, O = st.new or get(), st.old or get()
 
 	local act, to = string.match(job.args[1] or "", "(.-)-(.+)")
+	local i = PANE[to]
 	if act == "min" then
-		st[to] = st[to] == R[to] and 0 or R[to]
+		N[i] = N[i] == O[i] and 0 or O[i]
 	elseif act == "max" then
-		local max = st[to] == 65535 and R[to] or 65535
-		st.parent = st.parent == 65535 and R.parent or st.parent
-		st.current = st.current == 65535 and R.current or st.current
-		st.preview = st.preview == 65535 and R.preview or st.preview
-		st[to] = max
+		local max = N[i] == 9999 and O[i] or 9999
+		N[1] = N[1] == 9999 and O[1] or N[1]
+		N[2] = N[2] == 9999 and O[2] or N[2]
+		N[3] = N[3] == 9999 and O[3] or N[3]
+		N[i] = max
 	end
 
-	if not st.old then
-		st.old = Tab.layout
-		Tab.layout = function(self)
-			local all = st.parent + st.current + st.preview
-			self._chunks = ui.Layout()
-				:direction(ui.Layout.HORIZONTAL)
-				:constraints({
-					ui.Constraint.Ratio(st.parent, all),
-					ui.Constraint.Ratio(st.current, all),
-					ui.Constraint.Ratio(st.preview, all),
-				})
-				:split(self._area)
-		end
+	if act then
+		st.new, st.old = N, O
+	else
+		N, st.new, st.old = O, nil, nil
 	end
 
-	if not act then
-		Tab.layout, st.old = st.old, nil
-		st.parent, st.current, st.preview = nil, nil, nil
-	end
+	set(N)
 	ya.emit("app:resize", {})
 end
 
