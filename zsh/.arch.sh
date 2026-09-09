@@ -47,6 +47,60 @@ macos() {
     if [ -f ~/.venv/base/bin/activate ]; then
         source ~/.venv/base/bin/activate
     fi
+
+    # fixaudio: 修复 macOS CoreAudio 卡死（蓝牙耳机切换/腾讯会议等触发 coreaudiod 挂起，
+    # 表现为 system_profiler SPAudioDataType 卡死、无声、声音卡顿），无需重启系统
+    # 用法:
+    #   fixaudio          重启 coreaudiod（解决绝大多数卡死）
+    #   fixaudio full     连同其他音频守护进程和占用音频的 App 一起重启（声音异常/杂音时用，
+    #                     会关闭浏览器、播放器等所有占用音频的进程）
+    #   fixaudio status   查看 coreaudiod 状态并测试音频系统是否响应
+    #🔽🔽🔽
+    fixaudio_status() {
+        local pid
+        pid=$(pgrep -x coreaudiod | head -1)
+        if [ -z "$pid" ]; then
+            echo "❌ coreaudiod not running"
+            return 1
+        fi
+        echo "coreaudiod: $(ps -p "$pid" -o state=,pcpu=,etime= | head -1)"
+        # 挂起时 system_profiler 会一直阻塞，必须带 -timeout
+        if system_profiler -timeout 5 SPAudioDataType >/dev/null 2>&1; then
+            echo "✅ audio OK"
+        else
+            echo "⚠️ audio query hanging, run: fixaudio"
+            return 1
+        fi
+    }
+    fixaudio() {
+        case "$1" in
+            status)
+                fixaudio_status
+                ;;
+            full)
+                echo ">>> restarting coreaudiod + all audio daemons ..."
+                sudo killall -9 coreaudiod 2>/dev/null
+                sudo killall -9 audiomxd audioclocksyncd audioanalyticsd audioaccessoryd AudioComponentRegistrar 2>/dev/null
+                echo ">>> killing CoreAudio client processes ..."
+                local protect='coreaudiod|audiomxd|audioclocksyncd|audioanalyticsd|audioaccessoryd|AudioComponentRegistrar|ParrotAudioPlugin|DriverHelper|SandboxHelper|WindowServer|loginwindow|Terminal|iTerm2|zsh|sshd'
+                lsof 2>/dev/null | awk '/CoreAudio/ {print $1, $2}' | sort -u | grep -viE "$protect" | while read name pid; do
+                    kill -9 "$pid" 2>/dev/null && echo "    killed $name ($pid)"
+                done
+                sleep 2
+                fixaudio_status
+                ;;
+            "" | restart)
+                echo ">>> restarting coreaudiod ..."
+                sudo killall -9 coreaudiod 2>/dev/null
+                sleep 2
+                fixaudio_status
+                ;;
+            *)
+                echo "Usage: fixaudio [restart|full|status]"
+                ;;
+        esac
+    }
+    #🔼🔼🔼
 }
 
 archlinux() {
