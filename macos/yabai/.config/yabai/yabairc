@@ -88,6 +88,12 @@ yabai -m signal --add event=window_destroyed \
     action='if [ -f "/tmp/.display_focus" ]; then yabai -m display --focus $(cat "/tmp/.display_focus"); fi'
 yabai -m signal --add event=application_terminated \
     action='if [ -f "/tmp/.display_focus" ]; then yabai -m display --focus $(cat "/tmp/.display_focus"); fi'
+# 关闭浮动窗口（manage=off，如 Notes/TextEdit）后焦点会悬空：
+# 应用驻留但已无窗口，系统不会自动聚焦同空间剩余窗口，这里手动找回
+yabai -m signal --add event=window_destroyed \
+    action='sh $HOME/.config/yabai/scripts/focus_last_window.sh'
+yabai -m signal --add event=application_terminated \
+    action='sh $HOME/.config/yabai/scripts/focus_last_window.sh'
 
 # yabai -m signal --add event=space_created action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
 # yabai -m signal --add event=space_destroyed action="python3 $HOME/.config/yabai/scripts/print_input.py >> $HOME/.config/yabai/log.log"
