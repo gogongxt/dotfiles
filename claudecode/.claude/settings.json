@@ -19,9 +19,12 @@
       "Bash(cat *)",
       "Bash(tail *)",
       "Bash(head *)",
-      "Bash(sed *)"
+      "Bash(sed *)",
+      "Bash(less *)",
+      "Bash(more *)",
+      "mcp__codegraph__*"
     ],
-    "ask": [
+    "__ask": [
       "Bash(rm *)",
       "Bash(rmdir *)",
       "Bash(sudo *)",
@@ -64,6 +67,27 @@
           {
             "type": "command",
             "command": "bash ~/.claude/notify.sh notification \"$CLAUDE_NOTIFICATION_TEXT\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codegraph prompt-hook"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rtk hook claude"
           }
         ]
       }
