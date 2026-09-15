@@ -217,6 +217,7 @@ return {
           ["D"] = "delete", -- keep 'delete' command, for no-trash dir like iCloud.
           ["u"] = "restore_trash", -- Select from 'trash-list' -> 'trash-restore'
           ["m"] = false,
+          ["<C-s>"] = false,
         },
       }
       -- Smart open: if directory, toggle it; if file and only one window, open directly; if multiple windows, use window picker
