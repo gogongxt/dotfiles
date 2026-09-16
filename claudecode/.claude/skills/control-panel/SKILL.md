@@ -8,15 +8,31 @@ user-invocable: true
 
 通过 ControlPanel 的 HTTP API 管理远程 GPU 服务器：执行命令、创建容器、初始化环境、启动推理服务等。完整 API 文档用户应该提供，如果没有提供可以看看路径 `/tmp-data/ControlPanel/docs/API.md` 或者 `~/Projects/ControlPanel/docs/API.md`，本 skill 仅仅是实战经验提炼，始终应该查看API原文去获取最新且更精准的操作手册。
 
+## 认证（第一步先做这个）
+
+认证是 **API key**（`Authorization: Bearer cpk-...`），key 由用户提供，没有向用户询问，：
+
+```bash
+BASE=http://<ip>:<port>
+AUTH="Authorization: Bearer cpk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+curl -s $BASE/api/about                      # 免认证，确认连对服务
+curl -s -H "$AUTH" $BASE/api/auth/status     # 验证 key：应为 {"loggedIn":true,"role":"admin","via":"key",...}
+```
+
+- 除 `GET /api/about` 外**所有请求都要带 `-H "$AUTH"`**——包括 GET、runs 轮询、指标读取，漏带就是 401。
+- `401` = key 缺失/无效/过期 → 向用户索要新 key。没有自助取回，**不要尝试猜凭证**。
+- `403` = 权限不够（guest key 打了 admin 端点；exec/fs/一切写操作都要 admin）→ 找用户换 admin key。
+- 长任务跨天时 key 可能中途过期（再次 401），找用户续一把即可。
+
 ## 常用调用模式
 
 先确认服务在线、选机器：
 
 ```bash
-BASE=http://<ip>:<port>
-curl -s $BASE/api/about                                    # 确认连对服务
-curl -s $BASE/api/servers | jq -r '.[] | [.id, .gpu_summary] | @tsv'   # 机器清单，按 GPU 型号选
-curl -s $BASE/api/servers/<id>/metrics | jq '[.gpus[] | (.memory_used_mb*100/.memory_total_mb|floor)]'  # GPU 空闲度
+curl -s $BASE/api/about                                                            # 免认证探活
+curl -s -H "$AUTH" $BASE/api/servers | jq -r '.[] | [.id, .gpu_summary] | @tsv'    # 机器清单，按 GPU 型号选
+curl -s -H "$AUTH" $BASE/api/servers/<id>/metrics | jq '[.gpus[] | (.memory_used_mb*100/.memory_total_mb|floor)]'  # GPU 空闲度
 ```
 
 ### Exec：命令执行的引号阶梯（最重要经验）
@@ -50,11 +66,9 @@ curl -s -X POST $BASE/api/servers/<id>/exec -H "$AUTH" -H 'Content-Type: applica
 ```bash
 curl -s -X POST $BASE/api/runs -H "$AUTH" -H 'Content-Type: application/json' \
   --data "$(jq -n '{command: "sudo docker pull <img>", server_ids: ["<id>"], timeout_sec: 0}')"   # 0/缺省=不限时
-# 轮询（免认证），stdout 实时增长，status 到终态结束
-curl -s $BASE/api/runs/<run_id> | jq '{status, results: [.results[] | {exit_code, error}]}'
+# stdout 实时增长，status 到终态结束
+curl -s -H "$AUTH" $BASE/api/runs/<run_id> | jq '{status, results: [.results[] | {exit_code, error}]}'
 ```
-
-### 连接到物理（宿主）机器的特性
 
 ## 容器标准流程
 
@@ -104,7 +118,7 @@ sudo docker exec <name> bash /nfs/gogongxt/luban_scripts/docker_init_env.sh --pr
 ```bash
 sudo docker exec -i <name> bash -c 'cat > /root/launch.sh && chmod +x /root/launch.sh' <<'EOS'
 #!/bin/bash
-exec env CUDA_VISIBLE_DEVICES=0,1,2,3 /usr/bin/python3 /usr/local/bin/sglang serve ... 
+exec env CUDA_VISIBLE_DEVICES=0,1,2,3 /usr/bin/python3 /usr/local/bin/sglang serve ...
 EOS
 ```
 
@@ -147,6 +161,8 @@ timeout 50 find /data /data0 /data1 /data2 /data3 -maxdepth 4 -iname "*<ModelNam
 
 | 坑 | 症状 | 解法 |
 |---|---|---|
+| 忘带 key / key 过期 | 401 `{"error":...}` | 除 `/api/about` 外所有请求（含 GET、runs 轮询）都带 `-H "$AUTH"`；仍 401 就是 key 过期，找用户续 |
+| 权限不够 | 403 | exec / fs / 一切写操作都要 admin key，guest 只读 |
 | `script_b64` 超 2048 字节 | 响应为空 / exit=null / 413 | 改用 `fs/raw` 上传后 `bash /tmp/x.sh` |
 | 手拼 JSON body | 引号/$ 展开错乱 | 一律 `jq -n --arg` 构造 |
 | 引号嵌套（exec→docker bash -c→内层） | 语法错 / `\$` 转义报错 | script_b64 或 fs/raw 上传；容器内写文件用 `docker exec -i ... bash -c 'cat > f' <<'EOS'` |
