@@ -4,6 +4,14 @@ zsh | bash) ;;
 *) echo "Unsupported shell: $CURRENT_SHELL" >&2 ;;
 esac
 
+# Interactive-shell guard: cosmetic aliases that shadow standard binaries
+# (cat->bat, ls->eza, ...) should apply to human terminals only. Non-interactive
+# shells — AI coding agents, CI, cron, `ssh host cmd`, scripts that source rc —
+# need the real binaries' exact flags/output/performance. Append
+# `&& (( IS_INTERACTIVE )) &&` before any future alias of this kind.
+IS_INTERACTIVE=0
+case "$-" in *i*) IS_INTERACTIVE=1 ;; esac
+
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"
 export PATH="/usr/local/go/bin:$PATH"
@@ -131,8 +139,8 @@ unset _n _mycp_parallel
 # alias mycp_parallel="rclone copy --transfers 32 --create-empty-src-dirs --progress --copy-links --multi-thread-streams=4 --multi-thread-chunk-size 1024M --multi-thread-write-buffer-size 512M --local-no-check-updated"
 alias mywget="aria2c -x 16 -s 16"
 export BAT_THEME="Catppuccin Frappe"
-command -v bat &>/dev/null && alias cat="bat --style=plain"
-command -v eza &>/dev/null && {
+command -v bat &>/dev/null && (( IS_INTERACTIVE )) && alias cat="bat --style=plain"
+command -v eza &>/dev/null && (( IS_INTERACTIVE )) && {
   unset LS_COLORS
   export EZA_CONFIG_DIR="$HOME/.config/eza"
   EZA_PREFIX=(
