@@ -6,11 +6,13 @@ user-invocable: true
 
 # ControlPanel 远程机器操作
 
-通过 ControlPanel 的 HTTP API 管理远程 GPU 服务器：执行命令、创建容器、初始化环境、启动推理服务等。完整 API 文档用户应该提供，如果没有提供可以看看路径 `/tmp-data/ControlPanel/docs/API.md` 或者 `~/Projects/ControlPanel/docs/API.md`，本 skill 仅仅是实战经验提炼，始终应该查看API原文去获取最新且更精准的操作手册。
+通过 ControlPanel 的 HTTP API 管理远程 GPU 服务器：执行命令、创建容器、初始化环境、启动推理服务等。完整 API 文档**直接从面板服务本身获取**：`curl -s -H "$AUTH" $BASE/api/help` 返回 markdown 原文。
+
+本 skill 仅仅是实战经验提炼，动手前先取一份 API 文档原文，以它为最新且更精准的操作手册。
 
 ## 认证（第一步先做这个）
 
-认证是 **API key**（`Authorization: Bearer cpk-...`），key 由用户提供，没有向用户询问，：
+认证是 **API key**（`Authorization: Bearer cpk-...`），key 由用户提供，没有key几乎无法做任何操作，如果用户没有提供有效key，停止操作并向用户询问：
 
 ```bash
 BASE=http://<ip>:<port>
@@ -18,11 +20,12 @@ AUTH="Authorization: Bearer cpk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 curl -s $BASE/api/about                      # 免认证，确认连对服务
 curl -s -H "$AUTH" $BASE/api/auth/status     # 验证 key：应为 {"loggedIn":true,"role":"admin","via":"key",...}
+curl -s -H "$AUTH" $BASE/api/help            # 完整 API 文档（markdown 原文，任意有效 key 可读）
 ```
 
 - 除 `GET /api/about` 外**所有请求都要带 `-H "$AUTH"`**——包括 GET、runs 轮询、指标读取，漏带就是 401。
-- `401` = key 缺失/无效/过期 → 向用户索要新 key。没有自助取回，**不要尝试猜凭证**。
-- `403` = 权限不够（guest key 打了 admin 端点；exec/fs/一切写操作都要 admin）→ 找用户换 admin key。
+- `401` = key 缺失/无效/过期 → 向用户索要新 key。
+- `403` = 权限不够（guest key 打了 admin 端点；一切写操作都要 admin）→ 找用户换 admin key。
 - 长任务跨天时 key 可能中途过期（再次 401），找用户续一把即可。
 
 ## 常用调用模式
@@ -32,7 +35,6 @@ curl -s -H "$AUTH" $BASE/api/auth/status     # 验证 key：应为 {"loggedIn":t
 ```bash
 curl -s $BASE/api/about                                                            # 免认证探活
 curl -s -H "$AUTH" $BASE/api/servers | jq -r '.[] | [.id, .gpu_summary] | @tsv'    # 机器清单，按 GPU 型号选
-curl -s -H "$AUTH" $BASE/api/servers/<id>/metrics | jq '[.gpus[] | (.memory_used_mb*100/.memory_total_mb|floor)]'  # GPU 空闲度
 ```
 
 ### Exec：命令执行的引号阶梯（最重要经验）
