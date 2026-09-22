@@ -59,10 +59,10 @@ keymap = [
 
 	# Operation
 	# { on = "<Enter>",   run = "open",                        desc = "Open selected files" },
-	{ on = "<A-o>",   run = 'shell "open \"$@\""',                        desc = "Open selected files" },
-	{ on = "<C-o>",   run = 'shell "open \"$@\""',                        desc = "Open selected files" },
-	# { on = "<Enter>",   run = '''shell 'ripdrag "$@" -a -s 96 -x 2>/dev/null &\' --confirm''',                        desc = "Open selected files" },
-	{ on = "<Enter>",   run = 'shell "open -R \"$@\""',                        desc = "Open selected files" },
+	{ on = "<A-o>",   run = 'shell "open %s"',                        desc = "Open selected files" },
+	{ on = "<C-o>",   run = 'shell "open %s"',                        desc = "Open selected files" },
+	# { on = "<Enter>",   run = 'shell "ripdrag %s -a -s 96 -x 2>/dev/null &"',                        desc = "Drag and drop selected files" },
+	{ on = "<Enter>",   run = 'shell "open -R %s"',                        desc = "Reveal selected files in Finder" },
 	{ on = "<S-Enter>", run = "open --interactive",          desc = "Open selected files interactively" },
 	{ on = "y",         run = "yank",                        desc = "Yank selected files (copy)" },
 	{ on = "x",         run = "yank --cut",                  desc = "Yank selected files (cut)" },
