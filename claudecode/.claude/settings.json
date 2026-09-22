@@ -2,6 +2,7 @@
   "env": {
     "DISABLE_AUTOUPDATER": "1",
     "CLAUDE_CODE_NO_FLICKER": "1",
+    "CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY": "1",
     "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
     "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
     "CLAUDE_CODE_BLOCKING_LIMIT_OVERRIDE": "1048576",
@@ -24,6 +25,7 @@
       "Bash(more *)",
       "mcp__codegraph__*"
     ],
+    "defaultMode": "bypassPermissions",
     "__ask": [
       "Bash(rm *)",
       "Bash(rmdir *)",
@@ -46,8 +48,7 @@
       "Bash(docker rm *)",
       "Bash(docker rmi *)",
       "Bash(docker system prune *)"
-    ],
-    "defaultMode": "bypassPermissions"
+    ]
   },
   "hooks": {
     "Stop": [
@@ -97,17 +98,8 @@
     "type": "command",
     "command": "~/.claude/scripts/statusline.sh"
   },
-  "enabledPlugins": {
-    "sentry-skills@sentry-skills": true
-  },
-  "extraKnownMarketplaces": {
-    "sentry-skills": {
-      "source": {
-        "source": "github",
-        "repo": "getsentry/skills"
-      }
-    }
-  },
+  "enabledPlugins": {},
+  "extraKnownMarketplaces": {},
   "skipWebFetchPreflight": true,
   "syntaxHighlightingDisabled": false,
   "alwaysThinkingEnabled": false,
