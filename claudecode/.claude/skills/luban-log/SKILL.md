@@ -11,14 +11,13 @@ Fetches serving/job logs from the Luban platform (ES-backed, paginated).
 
 ## Credentials
 
+Real credentials live in `~/.claude/skills/luban-log/.env.local`.
+
 Every Bash call is a new shell, so ALWAYS inline the env prefix:
 
 ```bash
-PROJECT_UUID=<PROJECT_UUID> PROJECT_TOKEN=<PROJECT_TOKEN> USER_UUID=<USER_UUID> luban-log-downloader <args>
+source ~/.claude/skills/luban-log/.env.local && luban-log-downloader <args>
 ```
-
-> Real credentials must never be committed — this repo is public. Keep actual
-> values locally (untracked file / password manager) and fill them in at run time.
 
 ## What the user provides
 
@@ -32,7 +31,7 @@ Optional: time range (`-s`/`-e`), output dir (`-o`), keyword search (`--search`)
 ## Standard command
 
 ```bash
-PROJECT_UUID=... PROJECT_TOKEN=... USER_UUID=... luban-log-downloader \
+source ~/.claude/skills/luban-log/.env.local && luban-log-downloader \
   -a <appid> \
   --pod-name "<pod1>,<pod2>,<pod3>" \
   -s "YYYY-MM-DD HH:MM:SS" -e "YYYY-MM-DD HH:MM:SS" \
@@ -82,17 +81,17 @@ pods and discovery is unreliable, list pods with `kubectl`-style naming or ask.
 ## Examples
 
 # One decode pod, 3-hour window
-PROJECT_UUID=... luban-log-downloader -a k8s-sv1-xxx-decode \
+source ~/.claude/skills/luban-log/.env.local && luban-log-downloader -a k8s-sv1-xxx-decode \
   --pod-name "k8s-sv1-xxx-decode-cb5b02-master-0" \
   -s "2026-09-18 17:00:00" -e "2026-09-18 20:00:00"
 
 # All 3 prefill pods at once, separate output dir
-PROJECT_UUID=... luban-log-downloader -a k8s-sv1-xxx-prefill \
+source ~/.claude/skills/luban-log/.env.local && luban-log-downloader -a k8s-sv1-xxx-prefill \
   --pod-name "pod-a,pod-b,pod-c" -s "2026-09-18 17:00:00" -e "2026-09-18 20:00:00" \
   -o logs_prefill
 
 # Search mode: find keyword, then download ±2 h context around matches
-PROJECT_UUID=... luban-log-downloader -a k8s-sv1-xxx-decode --search "OOM" --context-hours 2
+source ~/.claude/skills/luban-log/.env.local && luban-log-downloader -a k8s-sv1-xxx-decode --search "OOM" --context-hours 2
 
 ## Reference
 
