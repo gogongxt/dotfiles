@@ -2,6 +2,7 @@
 name: transfer
 description: Transfer files between machines via SSH - supports direct transfer, jump host relay, and progress monitoring
 user-invocable: true
+disable-model-invocation: true
 ---
 
 # File Transfer via SSH

@@ -2,6 +2,7 @@
 name: dcl
 description: Didi internal code review (CR) tool on the kunpeng platform — the Didi equivalent of `gh` for PRs. Use `dcl` to create, update, list, inspect, land, and revert code reviews (CRs). Trigger on "dcl", "提交 cr", "创建 cr", "更新 cr", "kunpeng", "code review", "提交代码", or any CR/revision workflow on kunpeng.xiaojukeji.com.
 user-invocable: true
+disable-model-invocation: true
 ---
 
 # DCL — Didi Kunpeng Code Review Tool

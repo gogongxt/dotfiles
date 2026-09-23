@@ -1,6 +1,7 @@
 ---
 name: luban-log
 description: Download logs from the Luban platform via luban-log-downloader. Use when the user wants to fetch/pull/download or analyze logs for a Luban deployment (appid like k8s-sv1/sv0/sv2/k8s-job/k8s-vj/k8s-serverless), with optional pod names and time range.
+disable-model-invocation: true
 ---
 
 > ref: https://cooper.didichuxing.com/didocs/2209761958693

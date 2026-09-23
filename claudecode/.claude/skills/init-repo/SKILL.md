@@ -1,6 +1,7 @@
 ---
 name: init-repo
 description: Clone a GitHub repo into /nfs/gogongxt/Projects (skip if exists), generate CLAUDE.md, run codegraph init, and summarize what the repo does. Trigger on "init repo", "拉取仓库", "clone 并分析仓库", or when user gives a repo URL and wants it set up and explained.
+disable-model-invocation: true
 ---
 
 # init-repo

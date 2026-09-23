@@ -2,6 +2,7 @@
 name: control-panel
 description: Operate remote GPU machines via the ControlPanel HTTP API - exec commands, manage containers, init environments, launch long-running services. Trigger on "ControlPanel", "面板", "操作机器", or when working with machines registered in the panel.
 user-invocable: true
+disable-model-invocation: true
 ---
 
 # ControlPanel 远程机器操作

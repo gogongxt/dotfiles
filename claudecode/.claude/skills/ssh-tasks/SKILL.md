@@ -2,6 +2,7 @@
 name: ssh-tasks
 description: Execute code on remote GPU machines via SSH - connectivity check, GPU status, env validation, script/command execution
 user-invocable: true
+disable-model-invocation: true
 ---
 
 # SSH Remote Task Execution

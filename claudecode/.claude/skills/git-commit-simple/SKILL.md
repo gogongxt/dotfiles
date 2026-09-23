@@ -2,6 +2,7 @@
 name: git-commit-simple
 description: Commit changes with a simple, concise conventional-commit message — just a type prefix and a short one-line subject in English. Use when the user says "commit", "提交", "git commit", or wants to save changes with a brief message. Keeps messages short: no long body, no co-author trailers, no boilerplate.
 user-invocable: true
+disable-model-invocation: true
 ---
 
 # Simple Git Commit
