@@ -1,17 +1,12 @@
 ---
 name: git-commit-simple
-description: Commit changes with a simple, concise conventional-commit message — just a type prefix and a short one-line subject in English. OPT-IN ONLY — use when the user explicitly asks for this style by name ("git-commit-simple", "simple commit", "/git-commit-simple", "用简单提交") or has explicitly configured it as their default. Do NOT use for generic commit requests ("commit", "提交", "git commit") unless the user has opted in. Keeps messages short: no long body, no co-author trailers, no boilerplate.
+description: Commit changes with a simple, concise conventional-commit message — just a type prefix and a short one-line subject in English. Use when the user says "commit", "提交", "git commit", or wants to save changes with a brief message. Keeps messages short: no long body, no co-author trailers, no boilerplate.
 user-invocable: true
 ---
 
 # Simple Git Commit
 
 Commit staged (or all) changes with a **short** conventional-commit message.
-
-> **Opt-in only.** This style applies only when the user explicitly asks for it
-> (by skill name, "simple commit", or prior explicit configuration). A plain
-> "commit" / "提交" request does NOT trigger this skill — use the normal commit
-> flow instead.
 
 ## Message format
 
