@@ -4,12 +4,6 @@
   "base": "dark",
   "overrides": {
     "userMessageBackground": "#494d64",
-    "userMessageBackgroundHover": "#494d64",
-    "diffAdded": "#496F4A",
-    "diffRemoved": "#4A2E32",
-    "diffAddedDimmed": "#243528",
-    "diffRemovedDimmed": "#352428",
-    "diffAddedWord": "#6fbf5a",
-    "diffRemovedWord": "#ff6b6b"
+    "userMessageBackgroundHover": "#494d64"
   }
 }
