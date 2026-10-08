@@ -314,9 +314,9 @@ if [ -n "$used_pct" ] && [ "$used_pct" != "null" ]; then
     # ░▒▓█
     for ((i = 0; i < filled; i++)); do bar+="${ctx_color}█${RST}"; done
     for ((i = 0; i < empty; i++)); do bar+="${C_BAR_EMPTY}░${RST}"; done
-    # Format token counts (e.g. 30.3k/200k)
+    # Token counts after the bar (30.3k/200k); 0 is a valid reading, not missing data
     ctx_label=""
-    if [ -n "$used_tokens" ] && [ "$used_tokens" != "null" ] && [ "$total_tokens" ] && [ "$total_tokens" != "null" ] && [ "$used_tokens" -gt 0 ]; then
+    if [ -n "$used_tokens" ] && [ "$used_tokens" != "null" ] && [ "$total_tokens" ] && [ "$total_tokens" != "null" ] && [ "$used_tokens" -ge 0 ] 2>/dev/null; then
         if [ "$used_tokens" -ge 1000 ]; then
             used_k=$(awk -v v="$used_tokens" 'BEGIN { printf "%.1fk", v/1000 }')
         else
@@ -328,8 +328,6 @@ if [ -n "$used_pct" ] && [ "$used_pct" != "null" ]; then
             total_k="${total_tokens}"
         fi
         ctx_label=" ${ctx_color}${used_k}/${total_k}${RST}"
-    else
-        ctx_label=" ${ctx_color}${used_pct}%${RST}"
     fi
     bar+="${ctx_color}]${RST}${ctx_label}"
 fi
