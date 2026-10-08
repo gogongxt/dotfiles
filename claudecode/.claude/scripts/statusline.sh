@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Reference:
 #   https://code.claude.com/docs/en/statusline
