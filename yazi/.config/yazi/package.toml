@@ -38,21 +38,6 @@ use = "yazi-rs/plugins:diff"
 rev = "4dc7f1b"
 hash = "14558d2829c0aa05e99c57de8f74d199"
 
-[[plugin.deps]]
-use = "gogongxt/smart-tab"
-rev = "b549375"
-hash = "268eecfdcb159461834c5d27072990b"
-
-[[plugin.deps]]
-use = "gogongxt/copy-path"
-rev = "b0d9e9c"
-hash = "58e26acdd02eccc127a5fa1f434716e4"
-
-[[plugin.deps]]
-use = "gogongxt/initial-cwd"
-rev = "3716bc6"
-hash = "e0313ff82434070c7c15d51c326ac28f"
-
 [[flavor.deps]]
 use = "yazi-rs/flavors:catppuccin-macchiato"
 rev = "20b47bf"
