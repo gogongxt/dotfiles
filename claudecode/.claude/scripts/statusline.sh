@@ -29,7 +29,6 @@
 #                                           SpecStory transcript (header comment
 #                                           reads "<!-- Claude Code Session <uuid> -->")
 #   effort.level                            low|medium|high|xhigh|max
-#   thinking.enabled                        extended thinking on/off
 #   fast_mode                               fast mode on/off
 #   vim.mode                                NORMAL|INSERT|VISUAL|VISUAL LINE
 #                                           (set hideVimModeIndicator:true to
@@ -41,6 +40,7 @@
 #   cost.total_lines_added/_removed         session diffstat
 #   cost.total_duration_ms                  wall clock, survives --resume
 #   cost.total_api_duration_ms              time waiting on the API
+#                                           (neither rendered)
 #   prompt_cache.warm / .hit_ratio          cache state; last_miss_cause.causes
 #                                           names the reason (tools_changed,
 #                                           idle, system_changed, ...)
@@ -52,8 +52,8 @@
 #                                           real window size — misleading on 1M
 #   workspace.repo.*                        origin remote host/owner/name
 #   workspace.added_dirs                    /add-dir list
-#   prompt_id, thinking.* (beyond .enabled), prompt_cache.* (beyond the three
-#   above), pr.url, cost.total_api_duration_ms in the bar
+#   prompt_id, thinking.*, prompt_cache.* (beyond the three
+#   above), pr.url
 #
 # ────────────────────────────────────────────────────────────────────
 
@@ -88,14 +88,12 @@ readonly C_SEP='\033[38;2;98;114;164m'
 readonly C_RATE='\033[38;2;189;147;249m'
 readonly C_RATE_WARN='\033[38;2;241;250;140m'
 readonly C_RATE_LOW='\033[38;2;255;85;85m'
-readonly C_THINK='\033[38;2;189;147;249m'
 readonly C_FAST='\033[38;2;255;184;108m'
 readonly C_PR='\033[38;2;80;250;123m'
 readonly C_PR_WARN='\033[38;2;241;250;140m'
 readonly C_PR_LOW='\033[38;2;255;85;85m'
 readonly C_CACHE_OK='\033[38;2;80;250;123m'
 readonly C_CACHE_WARN='\033[38;2;241;250;140m'
-readonly C_TIME='\033[2;38;2;98;114;164m'
 
 readonly SEP=" | "
 
@@ -122,9 +120,7 @@ done < <(printf '%s' "$input" | jq -r '
   emit("session_id";     .session_id // "default"),
   emit("lines_added";    .cost.total_lines_added // 0),
   emit("lines_removed";  .cost.total_lines_removed // 0),
-  emit("duration_ms";    .cost.total_duration_ms // 0),
-  emit("thinking";       .thinking.enabled),
-  emit("fast_mode";      .fast_mode),
+    emit("fast_mode";      .fast_mode),
   emit("effort";         .effort.level // ""),
   emit("output_style";   .output_style.name // ""),
   emit("current_dir";    .workspace.current_dir // ""),
@@ -153,8 +149,6 @@ total_tokens=${READ[total_tokens]:-}
 session_id=${READ[session_id]:-default}
 lines_added=${READ[lines_added]:-0}
 lines_removed=${READ[lines_removed]:-0}
-duration_ms=${READ[duration_ms]:-0}
-thinking=${READ[thinking]:-}
 fast_mode=${READ[fast_mode]:-}
 effort=${READ[effort]:-}
 output_style=${READ[output_style]:-}
@@ -277,23 +271,6 @@ fmt_until() {
     fi
 }
 
-# Format elapsed milliseconds as 47m / 3h12m / 3h. Under a minute prints
-# nothing, so a session that just started doesn't claim "0m", and a whole
-# number of hours drops the trailing "0m".
-fmt_elapsed() {
-    local ms="$1" s h m
-    [ -z "$ms" ] || [ "$ms" = "null" ] && return
-    [ "$ms" -ge 60000 ] 2>/dev/null || return
-    s=$((ms / 1000))
-    h=$((s / 3600))
-    m=$(((s % 3600) / 60))
-    if [ "$h" -ge 1 ]; then
-        [ "$m" -eq 0 ] && printf '%dh' "$h" || printf '%dh%dm' "$h" "$m"
-    else
-        printf '%dm' "$m"
-    fi
-}
-
 # Progress bar (color scales with context usage)
 bar=""
 readonly BAR_WIDTH=15
@@ -402,7 +379,7 @@ if [ -n "$bar" ]; then
     parts1+=("${ctx_color}${RST} ${bar}")
 fi
 
-# Assemble — Line 2: session, effort, thinking, style, PR, worktree, git
+# Assemble — Line 2: session, effort, style, PR, worktree, git
 parts2=()
 
 # Session id, truncated to 8 chars. Deliberately not session_name: the short id
@@ -424,10 +401,8 @@ if [ -n "$effort" ]; then
     parts2+=("${effort_color} ${effort}${RST}")
 fi
 
-# Extended thinking and fast mode. Only the "on" state is worth the columns.
-if [ "$thinking" = "true" ]; then
-    parts2+=("${C_THINK}✻ think${RST}")
-fi
+# Fast mode. Only the "on" state is worth the columns. Extended thinking is
+# not shown: the gateway models behind this setup don't expose thinking budgets.
 if [ "$fast_mode" = "true" ]; then
     parts2+=("${C_FAST}⚡ fast${RST}")
 fi
@@ -501,9 +476,6 @@ elif [ -n "$cache_hit" ] && [ "$cache_hit" != "null" ]; then
     fi
 fi
 
-# Session wall-clock time (accumulates across --resume)
-_dur=$(fmt_elapsed "$duration_ms")
-[ -n "$_dur" ] && parts2+=("${C_TIME} ${_dur}${RST}")
 
 # Claude Code version (dim, last on the line)
 if [ -n "$cc_version" ] && [ "$cc_version" != "null" ]; then
