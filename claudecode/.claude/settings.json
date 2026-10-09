@@ -98,6 +98,10 @@
     "type": "command",
     "command": "~/.claude/scripts/statusline.sh"
   },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "enabledPlugins": {},
   "extraKnownMarketplaces": {},
   "skipWebFetchPreflight": true,
