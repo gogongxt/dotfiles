@@ -8,6 +8,12 @@ group = "git"
 url = "*/"
 run = "git"
 
+# Count file lines in background for the `lines` linemode (never blocks the UI)
+[[plugin.prepend_fetchers]]
+group = "lines"
+url = "*"
+run = "lines-linemode"
+
 [preview]
 # Change them to your desired values
 max_width = 2000
