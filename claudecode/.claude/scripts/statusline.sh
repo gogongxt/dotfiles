@@ -41,9 +41,7 @@
 #   cost.total_duration_ms                  wall clock, survives --resume
 #   cost.total_api_duration_ms              time waiting on the API
 #                                           (neither rendered)
-#   prompt_cache.warm / .hit_ratio          cache state; last_miss_cause.causes
-#                                           names the reason (tools_changed,
-#                                           idle, system_changed, ...)
+#   prompt_cache.hit_ratio                  cache hit ratio, rendered as ◐ NN%
 #   version                                 Claude Code version
 #
 # Deliberately not rendered (parsed nowhere, kept for reference):
@@ -52,8 +50,13 @@
 #                                           real window size — misleading on 1M
 #   workspace.repo.*                        origin remote host/owner/name
 #   workspace.added_dirs                    /add-dir list
-#   prompt_id, thinking.*, prompt_cache.* (beyond the three
-#   above), pr.url
+#   prompt_cache.warm / .last_miss_cause    "cache cold" was rendered here, but
+#                                           behind external gateways or
+#                                           self-hosted sglang/vllm it does not
+#                                           track the server's real cache — hit
+#                                           ratio only now
+#   prompt_id, thinking.*, prompt_cache.* (beyond hit_ratio),
+#                                           pr.url
 #
 # ────────────────────────────────────────────────────────────────────
 
@@ -131,9 +134,7 @@ done < <(printf '%s' "$input" | jq -r '
   emit("pr_number";      .pr.number // ""),
   emit("pr_state";       .pr.review_state // ""),
   emit("cc_version";     .version // ""),
-  emit("cache_warm";     .prompt_cache.warm),
   emit("cache_hit";      .prompt_cache.hit_ratio // ""),
-  emit("cache_miss";     (.prompt_cache.last_miss_cause.causes // []) | join(",")),
   emit("rl5_pct";        .rate_limits.five_hour.used_percentage // ""),
   emit("rl5_reset";      .rate_limits.five_hour.resets_at // ""),
   emit("rl7_pct";        .rate_limits.seven_day.used_percentage // ""),
@@ -160,9 +161,7 @@ vim_mode=${READ[vim_mode]:-}
 pr_number=${READ[pr_number]:-}
 pr_state=${READ[pr_state]:-}
 cc_version=${READ[cc_version]:-}
-cache_warm=${READ[cache_warm]:-}
 cache_hit=${READ[cache_hit]:-}
-cache_miss=${READ[cache_miss]:-}
 rl5_pct=${READ[rl5_pct]:-}
 rl5_reset=${READ[rl5_reset]:-}
 rl7_pct=${READ[rl7_pct]:-}
@@ -460,14 +459,10 @@ if [ "$_lines_add_ok" -eq 1 ] || [ "$_lines_del_ok" -eq 1 ]; then
     parts2+=("$_lines")
 fi
 
-# Prompt cache. A cold cache is the actionable state — every tool definition or
-# system-prompt change, or an idle gap past the TTL, forces a full re-write.
-# Show the reason there; otherwise just the hit ratio.
-if [ "$cache_warm" = "false" ]; then
-    _cache="${C_CACHE_WARN}◐ cache cold"
-    [ -n "$cache_miss" ] && [ "$cache_miss" != "null" ] && _cache+=" (${cache_miss})"
-    parts2+=("${_cache}${RST}")
-elif [ -n "$cache_hit" ] && [ "$cache_hit" != "null" ]; then
+# Prompt cache, hit ratio only. `warm`/`last_miss_cause` are deliberately
+# ignored: behind external gateways or self-hosted sglang/vllm endpoints the
+# "cache cold" flag does not track the server's actual cache state.
+if [ -n "$cache_hit" ] && [ "$cache_hit" != "null" ]; then
     _hit=$(awk -v v="$cache_hit" 'BEGIN { printf "%.0f", v * 100 }')
     if [ "$_hit" -ge 80 ] 2>/dev/null; then
         parts2+=("${C_CACHE_OK}◐ ${_hit}%${RST}")
