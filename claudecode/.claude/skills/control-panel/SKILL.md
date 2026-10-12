@@ -96,7 +96,7 @@ sudo docker run -itd --network=host --privileged --ulimit memlock=-1 --ipc=host 
 ### 3. 挂个人 NFS（每个新容器都要重挂，per-container fuse 挂载）
 
 ```bash
-sudo docker exec <name> bash -c 'cd /tmp && curl -sL https://s3-nmgpu-inter.didistatic.com/gogongxt-dev/ofs_v1_0_42.tar -o ofs.tar \
+sudo docker exec <name> bash -c 'cd /tmp && curl -sL https://s3-nmgpu-inter.didistatic.com/gogongxt-dev/ofs_v1_0_42_crossplat.tar -o ofs.tar \
   && tar -xf ofs.tar && cd v1.0.42 && bash ./script/ofs_mount.sh gogongxt /nfs/gogongxt d261a28ee50545e29bd7ff2c5ccb2759 hbbpussd'
 # 成功标志：===== Volume[gogongxt] mounted to Path[/nfs/gogongxt] success =====（中间的 stat 报错是正常噪音）
 # 验证：ls /nfs/gogongxt/
