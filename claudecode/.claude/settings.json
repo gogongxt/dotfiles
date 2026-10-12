@@ -27,7 +27,9 @@
       "Bash(sed *)",
       "Bash(less *)",
       "Bash(more *)",
-      "mcp__codegraph__*"
+      "Skill(update-config)",
+      "mcp__codegraph__*",
+      "mcp__exa__web_search_exa"
     ],
     "defaultMode": "bypassPermissions",
     "__ask": [
