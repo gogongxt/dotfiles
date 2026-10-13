@@ -199,6 +199,72 @@ fi
 # bash arithmetic and the -gt/-lt comparisons below.
 [ -n "$used_pct" ] && [ "$used_pct" != "null" ] && used_pct=$(printf '%.0f' "$used_pct" 2>/dev/null)
 
+# ── Hold-last-known context on false zeros (#101314) ────────────────
+#
+# After an API error (e.g. "Can't reach the API server … ENOTFOUND") or a
+# "No response requested." turn, Claude Code appends a synthetic assistant
+# message whose usage is all-zero, and the statusLine payload then takes
+# used_percentage / current_usage from that *last* message. A healthy session
+# suddenly reports 0% / 0 tokens and keeps doing so until the next real reply
+# (tracked in anthropics/claude-code#101314). We can't tell that false 0 from
+# a genuine empty-context 0 on a single tick, so we keep the last non-zero
+# reading per session and restore it when a 0 tick arrives.
+#
+# Storage: one tiny file per session under $XDG_CACHE_HOME. It is updated only
+# on *non-zero* ticks and replaced atomically (temp + mv), so the concurrent
+# statusline processes (one per redraw) can never tear it. With no retained
+# value to restore — brand-new session or right after /clear — a real 0 still
+# shows as 0.
+if [ -n "$session_id" ] && [ "$session_id" != "null" ]; then
+    ctx_base="${XDG_CACHE_HOME:-$HOME/.cache}/claude-code/statusctx"
+    # Real ids are UUIDs; make any junk path/collision-safe anyway.
+    _s=$(printf '%s' "$session_id" | tr -c '[:alnum:]_' '_')
+    ctx_file="$ctx_base/ctx.$_s"
+    # Decisive "is this a zero tick" test: input tokens == 0. A false zero
+    # (#101314) and a real empty session both hit 0 here.
+    _is_zero=0
+    [ "$used_tokens" = "0" ] && _is_zero=1
+    # Read whatever the session last reported as genuinely non-zero.
+    rec_us=""; rec_pct=""; rec_tot=""
+    if [ -f "$ctx_file" ]; then
+        while IFS= read -r _l; do
+            case "$_l" in
+                used_tokens=*) rec_us=${_l#used_tokens=} ;;
+                used_pct=*)    rec_pct=${_l#used_pct=} ;;
+                total_tokens=*) rec_tot=${_l#total_tokens=} ;;
+            esac
+        done <"$ctx_file"
+    fi
+    if [ "$_is_zero" = "1" ]; then
+        # Zero tick: bring back the last real reading if we have one.
+        # Keyed on used_tokens (the authoritative non-zero signal). used_pct
+        # may legitimately round to 0 (compact → 1200 tokens = 0.1%), so don't
+        # gate the restore on pct > 0 — only on a real retained token count.
+        if [ -n "$rec_us" ] && [ -n "$rec_pct" ] &&
+            [ "$rec_us" -gt 0 ] 2>/dev/null; then
+            used_tokens=$rec_us
+            used_pct=$rec_pct
+            [ -n "$rec_tot" ] && [ "$rec_tot" -gt 0 ] 2>/dev/null && total_tokens=$rec_tot
+        fi
+    elif [ -n "$used_tokens" ] && [ "$used_tokens" -gt 0 ] 2>/dev/null; then
+        # Real non-zero reading → retain it for later restore. mkdir must come
+        # BEFORE the tmp redirect, or the redirect into a missing dir fails.
+        if ! mkdir -p "$ctx_base" 2>/dev/null; then
+            : # cache dir unwritable — skip persisting, keep current reading
+        else
+            _tmp="$ctx_file.$$"
+            if {
+                printf 'used_tokens=%s\n' "$used_tokens"
+                printf 'used_pct=%s\n' "$used_pct"
+                printf 'total_tokens=%s\n' "$total_tokens"
+            } >"$_tmp" 2>/dev/null; then
+                mv -f "$_tmp" "$ctx_file" 2>/dev/null
+                rm -f "$_tmp" # in case mv failed
+            fi
+        fi
+    fi
+fi
+
 # ── Git ──────────────────────────────────────────────────────────────
 # Everything here comes from TWO git invocations when a repo is present,
 # none otherwise. The previous version forked seven, three of which were the

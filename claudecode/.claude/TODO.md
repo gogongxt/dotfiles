@@ -12,7 +12,8 @@
 1. 🔴 **`Ctrl+O` → `v` 打开对话历史，换行被终端宽度焊死** — 官方硬换行 long-standing，无开关，跟踪多为 open
 2. 🟡 **`/copy`在 SSH+tmux+OSC52 下乱码 / 复制坏** — 有 META 跟踪，涉及 20+ open issue
 3. 🔴 **`/init` 只写 CLAUDE.md，不能默认生成 AGENTS.md** — 无配置项，#97004 诉求中
-4. 🔴 **显式提及 skill（如 `123 ... /proxy`）必须被读取** — 官方行为是"模型判断"，无强制读
+4. 🔴 **显式提及 skill（如 `123 ... /proxy`）必须被读取** — 官方行为是"模型"，无强制读
+5. 🔴 **statusline 上下文经 API 错误后假 0（synthetic 消息）** — #101314 未修；已有本地 workaround（见 §5）
 
 ---
 
@@ -120,6 +121,32 @@ grep -n -i "CLAUDE_CODE_NEW_INIT\|AGENTS\.md" ~/.claude/cache/changelog.md | hea
 ```bash
 grep -n -i "skill.*invoc\|model.*skill\|disable-model-invoc" ~/.claude/cache/changelog.md | head -20
 gh api "search/issues?q=repo:anthropics/claude-code skill explicit invoke" --jq '.items[] | select(.state=="open") | "#\(.number) \(.title)"'
+```
+
+---
+
+## 5. 🔴 statusline 上下文经 API 错误后假 0（synthetic 消息）
+
+**需求**：statusline 的上下文（`30.3k/1000k`）在运行过程中**有时突然变成 `0/1000k`**，且一直持续到下一次真正成功的回复。希望显示的是"最近一次真实读数"，而不是假 0。
+
+**根因（官方 bug，非脚本问题）**：某轮请求以 API 错误结束（如 `Can't reach the API server … ENOTFOUND`）或出现 `No response requested.` 时，Claude Code 会给 transcript 追加一条 **synthetic assistant 消息**（`"model": "<synthetic>"`），其 `usage`（input/cache_read/cache_creation）**全部为 0**。statusLine payload 的 `context_window.used_percentage` / `total_input_tokens` 取自「最后一条带 usage 的 assistant 消息」，于是变 0，且直到成功回复前不恢复。`/context` 不受影响。
+
+**本地 workaround（已落地 2026-10-13）**：`~/.claude/scripts/statusline.sh` 增加 per-session 缓存兜底：
+- 每个 session 一个文件 `$XDG_CACHE_HOME/claude-code/statusctx/ctx.<session>`，**只在非零 tick** 时原子更新（tmp+mv）。
+- tick 判定为 0（`total_input_tokens == 0`）时，从缓存恢复**最近非零读数**（tokens/pct/total）。
+- 全新会话首 tick（无缓存）或 `/clear` 后 → 真实 0 仍显示 0，不误报。compact 后低值（如 0.1%）非零 → 正确覆盖缓存。
+
+**相关 issue**：
+| # | 状态 | 主题 |
+|---|---|---|
+| **#101314** 🔴 open | statusLine `used_percentage` 在 API 错误后掉到 0（synthetic assistant 全零 usage）—— 官方修复点 |
+| #62768/#58268 | closed(dup) | /compact 后 statusline 一次归零（如果 #101314 用「跳过 synthetic」修，这个也会被覆盖） |
+| #18241 | open | statusline / /context / 内置警告百分比不一致（相关，非同一 bug） |
+
+**复查命令**：看 #101314 是否被 assign/fix，或 CHANGELOG 是否加了「跳过一次 0 的 synthetic 条目」。
+```bash
+gh issue view 101314 -R anthropics/claude-code 2>&1 | head -20
+grep -n -i "synthetic\|used_percentage" ~/.claude/cache/changelog.md
 ```
 
 ---
