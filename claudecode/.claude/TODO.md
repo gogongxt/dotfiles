@@ -1,6 +1,6 @@
 # Claude Code TODO / 追踪清单
 
-> 更新于：2026-10-13
+> 更新于：2026-10-16
 > **当前 Claude Code 版本：2.1.294**（记录时）
 > 目的：把正在跟进、尚未落地的 Claude Code 需求集中记录，每个问题一个章节，包含「我的需求 / 当前机制 / 最新进展 / 相关 issue / 怎么复查」。
 > 状态图：🔴 未解决 ｜ 🟡 有结论待落地 ｜ 🟢 已解决。
@@ -14,6 +14,7 @@
 3. 🔴 **`/init` 只写 CLAUDE.md，不能默认生成 AGENTS.md** — 无配置项，#97004 诉求中
 4. 🔴 **显式提及 skill（如 `123 ... /proxy`）必须被读取** — 官方行为是"模型"，无强制读
 5. 🔴 **statusline 上下文经 API 错误后假 0（synthetic 消息）** — #101314 未修；已有本地 workaround（见 §5）
+6. 🔴 **statusline 上下文某一刻翻倍/多倍后回弹（usage 按 iterations 求和）** — #84738 未修；无可靠本地 workaround（见 §6）
 
 ---
 
@@ -147,6 +148,55 @@ gh api "search/issues?q=repo:anthropics/claude-code skill explicit invoke" --jq 
 ```bash
 gh issue view 101314 -R anthropics/claude-code 2>&1 | head -20
 grep -n -i "synthetic\|used_percentage" ~/.claude/cache/changelog.md
+```
+
+---
+
+## 6. 🔴 statusline 上下文某一刻翻倍/多倍后回弹（usage 按 iterations 求和）
+
+**需求**：statusline 的上下文（如 `135k/1000k`）在运行中**某一刻突然变成约 2 倍**（`270k/1000k`），**下一拍又掉回原值**。希望显示的始终是「最近一次真实上下文占用」。
+
+**根因（官方 bug，非脚本问题）**：单个 assistant turn 可能包含**多次 API iteration**（工具调用后继续、重试、`advisor()` 调用等）。CC 把该 turn 的 **top-level `usage` 记为所有 `usage.iterations` 的求和**，而 statusLine 的 `context_window.used_percentage` / `total_input_tokens` 正是取自这条 top-level usage。于是：
+
+> **一个 turn 有 N 次迭代 ⇒ 同一份上下文被计数 N 次 ⇒ 显示值放大 N 倍。**
+
+**放大倍率 = 该 turn 里 `type:"message"` 迭代的条数**（不是固定 ×2）。下一拍是单迭代 turn，值立刻回落到真实值。**纯显示假象**：prompt cache 与执行器真实上下文完全没动。
+
+与 §5 假 0 的关键区别：
+- §5 有**明确判定信号**（`total_input_tokens == 0`）→ 能可靠做本地兜底。
+- §6 **没有可靠信号**：一拍 270k 无法判断「是真涨了」还是「135k 被翻倍」。唯一 heuristic 是「限制单拍涨幅不超过 ~1.8×」，但会误杀真实的大跳变（如读入大文件），**不值得做**。→ 只能等官方修。
+
+**混淆点：这不是 `advisor()` 专属**。我（网关自建，无 advisor）同样会触发。`advisor()` 只是最显眼的复现路径；**任意多迭代 turn**（普通工具续跑、缓存 miss 重试）都会翻倍。修 `advisor` 一个点并不能覆盖此路径。
+
+**最新进展（截至 2026-10-16）**：
+- 仍在 2.1.227（desktop bundled）/ 2.1.228（CLI）复现，**未修**。
+- 同一份被放大的 usage 也喂给 **auto-compact 触发阈值** → 会在真实上下文远未满时提前压缩、丢弃大量有效上下文（A/B 实测：真实 411K 时以报告的 823K 触发压缩，411K 被压到 7,161 tokens）。
+- **非近期回归**：6,210 个 session 文件里**没有任何一个正确上报的多迭代 turn**，最早的（2.1.181）已是 1.979×。
+
+**相关 issue（均为 anthropics/claude-code）**：
+| # | 状态 | 主题 |
+|---|---|---|
+| **#84738** | 🔴 open | Advisor turns roll up usage summed across iterations… —— **当前活跃跟踪点**，transcript 级证据最全 |
+| **#53065** | 🔴 open c=18 | `advisor()` inflates reported input tokens…触发过早 auto-compact（早前主要复现路径） |
+| #61511 | ⚫ closed（auto，未修） | Context meter ~doubles during in-flight advisor call, reverts on cancel |
+| #81620 / #81029 | ⚫ closed | advisor 翻倍 / 触发 spurious compaction（dup） |
+| #49927 / #18781 | ⚫ closed | statusline 闪烁/归零相关，**机制不同**（非本节） |
+
+**关键数据（#84738，最新最全）**：
+- 1,731 个多迭代 turn：×2（1,218 个）、×3（219）、×4（191）、×5（74）、×6（29）；**最差 5.14×**（真实 25,004 报成 128,519）。
+- **96 个被放大的 turn 完全不含 `advisor_message`** —— 普通工具续跑即触发。
+
+**复查命令**：看 #84738 是否被 assign/fix，或 CHANGELOG 是否出现「usage 不再对 iterations 求和 / 取最终迭代」之类表述。
+```bash
+gh issue view 84738 -R anthropics/claude-code 2>&1 | head -30
+gh issue view 53065 -R anthropics/claude-code 2>&1 | head -20
+grep -n -i "iterations\|used_percentage\|summed\|roll-up\|rollup" ~/.claude/cache/changelog.md
+```
+
+**如何自查是否命中**（读 transcript JSONL，比较某 turn 的 top-level usage 与最后一次 `message` iteration）：
+```bash
+# sum(iterations[].cache_read) 若 == top-level cache_read 且迭代数>1 → 该 turn 被放大
+grep -h '"iterations"' ~/.claude/projects/<proj>/<session>.jsonl | tail -5
 ```
 
 ---
