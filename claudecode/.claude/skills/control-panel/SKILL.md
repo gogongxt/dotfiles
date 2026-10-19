@@ -102,7 +102,26 @@ sudo docker exec <name> bash -c 'cd /tmp && curl -sL https://s3-nmgpu-inter.didi
 # 验证：ls /nfs/gogongxt/
 ```
 
-### 4. 基础初始化（挂好 NFS 之后）（可选）
+### 4. SSH 免密直连容器（挂好 NFS 后做，强烈推荐）
+
+容器日常操作不要走 ControlPanel→堡垒机→物理机→`docker exec` 的长链路——命令转义、输出序列化、多轮交互都非常麻烦。**挂载盘完成后用绝对路径跑一次脚本，之后直接 ssh 进容器**，交互 shell、scp/rsync 全部可用：
+
+```bash
+# 脚本内嵌公钥白名单，一条龙配好 sshd（端口/公钥/权限/启动；默认端口 8066，冲突自动换 8066-8099）
+sudo docker exec <name> bash /nfs/gogongxt/luban_scripts/ssh_hack.sh
+# 之后从任何持有对应私钥的机器直连（host 网络模式，容器端口=宿主机端口）：
+ssh -p 8066 root@<宿主机名>
+```
+
+- **先查端口再跑**：`ss -ltn | grep 8066`，被占就 `--port <空闲端口>` 指定；否则脚本自动换 8066-8099 空闲口（交互式询问，非交互自动切换），**注意以脚本最后打印的实际端口为准**
+- 验证免密：`ssh -o BatchMode=yes -p <port> root@<host> echo ok`（BatchMode 保证测的是纯免密，不是密码兜底）
+- 脚本兜底会设 root 密码 `didi`（PasswordAuthentication yes）
+- 因为集群管理机器本身都是测试机器，并且还是容器内的，所以安全性上不用担心，免密，弱密码都没关系
+- 如果因为机器或者环境问题，免密或者密码配置不成功，可以阅读脚本后自己去**容器里**操作弄好ssh通路，**注意不要随意操作物理机**
+- **known_hosts 残留**：host 网络下容器端口=宿主机端口，同机同端口先后跑不同容器（或删旧建新）时客户端会报 `REMOTE HOST IDENTIFICATION HAS CHANGED!`——容器重建换 host key 是必然，不是攻击；`ssh-keygen -R "[<ip>]:<port>"` 清旧条目后重连，删容器时也可顺手清
+- 公钥白名单配对关系：ssh_hack.sh 内嵌公钥与 luban pod 的 `~/.ssh/id_rsa` 及用户 Mac 私钥配对；不确定发起方资格时先 `ssh-keygen -y -f ~/.ssh/id_rsa` 比对 authorized_keys 再测
+
+### 5. 基础初始化（挂好 NFS 之后）（可选）
 
 初始化只是为了安装一些tmux，zsh，gh，yq等方便用户登录机器开发的包，不影响核心的任务执行
 
@@ -174,6 +193,8 @@ timeout 50 find /data /data0 /data1 /data2 /data3 -maxdepth 4 -iname "*<ModelNam
 | 启动脚本日志重定向失败 | nohup 报 No such file，进程秒退 | 先确认日志目录存在再启动 |
 | myssh 机器 stderr 丢失 | 错误信息看不到 | `cmd 2>/tmp/e; cat /tmp/e` |
 | 一次性容器命令 exit 126 | svensudo 改写容器命令 | 把命令放进 `--entrypoint`，或建容器后 `docker exec` |
+| ssh_hack.sh 自测报免密失败 | 从容器内发起自测、无私钥，必失败并误报"查网络防火墙" | 视角问题非配置问题；从持有私钥的客户端 `ssh -o BatchMode=yes` 验证 |
+| 容器重建后 ssh 报 host key changed | known_hosts 残留同机同端口旧容器条目 | `ssh-keygen -R "[<ip>]:<port>"` 清条目重连；删容器时顺手清 |
 
 ## 用完按需清理
 
