@@ -6,7 +6,7 @@
 # @raycast.mode compact
 
 # Optional parameters:
-# @raycast.icon /Applications/Google Chrome.app/Contents/Resources/app.icns
+# @raycast.icon images/chrome.png
 
 
 open -na Google\ Chrome

@@ -6,7 +6,7 @@
 # @raycast.mode compact
 
 # Optional parameters:
-# @raycast.icon /Applications/kitty.app/Contents/Resources/kitty.icns
+# @raycast.icon images/kitty.png
 
 
 open -na Kitty --args --single-instance -d ~ --title "kitty"
