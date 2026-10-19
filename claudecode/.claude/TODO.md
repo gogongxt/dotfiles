@@ -1,7 +1,7 @@
 # Claude Code TODO / 追踪清单
 
-> 更新于：2026-10-16
-> **当前 Claude Code 版本：2.1.294**（记录时）
+> 更新于：2026-10-16（本次对 §1–§6 逐条复查 issue 状态 + 刷新官方 CHANGELOG 至 2.1.301）
+> **当前 Claude Code 版本：2.1.294**（本地记录时；官方最新为 **2.1.301 / 2026-10-15**）
 > 目的：把正在跟进、尚未落地的 Claude Code 需求集中记录，每个问题一个章节，包含「我的需求 / 当前机制 / 最新进展 / 相关 issue / 怎么复查」。
 > 状态图：🔴 未解决 ｜ 🟡 有结论待落地 ｜ 🟢 已解决。
 >
@@ -9,12 +9,12 @@
 
 ## 概览
 
-1. 🔴 **`Ctrl+O` → `v` 打开对话历史，换行被终端宽度焊死** — 官方硬换行 long-standing，无开关，跟踪多为 open
-2. 🟡 **`/copy`在 SSH+tmux+OSC52 下乱码 / 复制坏** — 有 META 跟踪，涉及 20+ open issue
-3. 🔴 **`/init` 只写 CLAUDE.md，不能默认生成 AGENTS.md** — 无配置项，#97004 诉求中
-4. 🔴 **显式提及 skill（如 `123 ... /proxy`）必须被读取** — 官方行为是"模型"，无强制读
+1. 🔴 **`Ctrl+O` → `v` 打开对话历史，换行被终端宽度焊死** — 官方硬换行 long-standing，无开关；#43113 已标 `duplicate`，仍无 soft-wrap 实现
+2. 🟡 **`/copy`在 SSH+tmux+OSC52 下乱码 / 复制坏** — META #81472 跟踪，42+ open issue，2026-10-15 仍活跃
+3. 🔴 **`/init` 只写 CLAUDE.md，不能默认生成 AGENTS.md** — 无配置项，#97004 仍 open
+4. 🟡 **显式提及 skill（如 `123 ... /proxy`）必须被读取** — **2.1.287 已改进**（中段 skill 名会告知模型），非强制（见 §4）
 5. 🔴 **statusline 上下文经 API 错误后假 0（synthetic 消息）** — #101314 未修；已有本地 workaround（见 §5）
-6. 🔴 **statusline 上下文某一刻翻倍/多倍后回弹（usage 按 iterations 求和）** — #84738 未修；无可靠本地 workaround（见 §6）
+6. 🟡 **statusline 上下文某一刻翻倍/多倍后回弹（usage 按 iterations 求和）** — **2.1.273 已修 advisor 路径**；非 advisor 多迭代路径是否覆盖未证实（见 §6）
 
 ---
 
@@ -24,16 +24,19 @@
 
 **现状（为什么不行）**：Claude Code 的 TUI 按终端宽度把长行**硬插入 `\n`**（word-wrap at boundaries），而不是发长逻辑行、让终端 soft-wrap。`v` 只负责把对话写入 `$VISUAL`/`$EDITOR`，本身不重排；所以编辑器里看到的就是渲染时已焊死的换行。
 
-**最新进展（截至 2026-10）**：
-- 官方**尚未实现** no-wrap / soft-wrap / `outputWrapping:"soft"` 配置项；CHANGELOG 里无相关词条。
+**最新进展（截至 2026-10-16）**：
+- 官方**仍未实现** no-wrap / soft-wrap / `outputWrapping:"soft"` 配置项；已刷新到 2.1.301 的 CHANGELOG 里仍无相关词条（只搜到一处不相关的 AskUserQuestion preview word-wrap 修复）。
 - 目前可靠替代：非交互 `claude -p` 输出**不会**硬换行（已验证），可用它导出干净逻辑行。
 - 社区 workaround（CLAUDE.md 加 "Do not use hard line breaks..." 指令）**不可靠**——常见长会话模型会忘记。
+- **#43113 已被官方打上 `duplicate` 标签**（另有 `enhancement`/`area:tui`），且有多条 cross-reference（#44741、#47652、#64995、#13378 等），但**未见指定哪个是主 issue** —— 复查时优先看这些 cross-ref 里哪个转「开放跟踪」。
 
 **相关 issue（均为 anthropics/claude-code）**：
 | # | 状态 | 主题 |
 |---|---|---|
-| **#43113** | 🔴 open | 请求 `--no-word-wrap` / `CLAUDE_NO_WRAP=1` / `outputWrapping:"soft"` — **最新活跃跟踪点** |
-| #13378 | 🔴 open | 2-space indent and hard wrap at 80 breaks copy-paste |
+| **#43113** | 🔴 open（已标 `duplicate`） | 请求 `--no-word-wrap` / `CLAUDE_NO_WRAP=1` / `outputWrapping:"soft"` — 仍是最贴近诉求的跟踪点 |
+| #13378 | 🔴 open（2026-10-10 有更新） | 2-space indent and hard wrap at 80 breaks copy-paste |
+| #22073 | 🔴 open | Copy/paste from terminal has new lines instead of wrapping properly（**2026-10-16 仍活跃**） |
+| #48037 | 🔴 open | Copying text from terminal output includes hard line breaks at every wrapped line |
 | #42296 | ⚫ closed（自动关，未修） | hard newlines for word wrap, breaking tmux copy mode（母 issue） |
 | #35905 | ⚫ closed | Text output uses hard newlines instead of terminal soft-wrap |
 | #8276 | ⚫ closed | Text doesn't reflow when terminal is resized |
@@ -54,12 +57,12 @@ grep -n -i "outputWrapping\|no-wrap\|soft-wrap\|CLAUDE_NO_WRAP" ~/.claude/cache/
 **现状**：根因是多层：
 - Claude Code TUI 的复制管道在 OS/SSH/tmux 间的选择不可靠，常见问题是 **OSC52 直写不可靠、错误回退到 raw OSC52**，或 TMUX 环境变量不继承造成回退到 `native`/`osc52`。
 - 硬换行（见 §1）也污染复制文本。
-- 这是 **META #81472 已跟踪的系统性缺陷**（当前已列 42 个 open issue，覆盖 TUI/VS Code/Desktop）。
+- 这是 **META #81472 已跟踪的系统性缺陷**（当前已列 42 个 open issue，覆盖 TUI/VS Code/Desktop）。**2026-10-15 仍有更新，仍 open**。
 
 **相关 issue**：
 | # | 状态 | 主题 |
 |---|---|---|
-| **#81472** | 🔴 open | [META] Copy/paste broken across all surfaces — **跟踪所有 copy/paste 问题** |
+| **#81472** | 🔴 open（2026-10-15 更新） | [META] Copy/paste broken across all surfaces — **跟踪所有 copy/paste 问题** |
 | **#88772** | 🔴 open | SSH+tmux 下 OSC52 回退不可靠；detail view 里 TMUX 环境变量丢失 → raw OSC52 |
 | **#86290** | 🔴 open | 后台 agent 会话复制坏了：daemon 起 bg-pty-host 时 `TMUX` 被剥离 |
 | #48037 | 🔴 open | Copying text includes hard line breaks at every wrapped line（linked to §1） |
@@ -79,6 +82,7 @@ gh api "search/issues?q=repo:anthropics/claude-code copy paste OSC52" --jq '.ite
 **现状**：
 - `/init` **始终写 `CLAUDE.md`**，无设置项 / env / flag 可让其输出 `AGENTS.md`（官方 memory 文档 + CLI 参考均只提 CLAUDE.md）。
 - v2.1.277 起 Claude Code **能读** `AGENTS.md`，但仅在**无 `CLAUDE.md` 时**才读；两者都有则只读 `CLAUDE.md`（除非 Project instructions 设为 `claude-md-and-agents-md`）。
+- **（2026-10-16 复查）** 仍无 `/init` 生成 AGENTS.md 的开关；相关 bug 有新增但都是旁支：**#96117**（`CLAUDE.local.md` 会关掉 AGENTS.md 回退，一处个人笔记静默丢弃全部共享项目指令）、**#99275**（EnterWorktree 不加载 worktree 根的 CLAUDE.md/@imports）。
 - **正是因为你想要 AGENTS，若 `/init` 生成了 CLAUDE.md，反而会让 AGENTS.md 失效** —— 这是一处已知缺陷。
 
 **相关 issue**：
@@ -96,7 +100,7 @@ grep -n -i "CLAUDE_CODE_NEW_INIT\|AGENTS\.md" ~/.claude/cache/changelog.md | hea
 
 ---
 
-## 4. 🔴 skill 显式提及（`123 ... /proxy`）必须被读取
+## 4. 🟡 skill 显式提及（`123 ... /proxy`）必须被读取
 
 **需求**：在新版 Claude Code 中，skill 是否加载**由模型自主判断**；但用户希望：**只要消息里显式写了 skill 名（即使不是行首、如 `123 ... /proxy`），Claude 就**必须**读取/调用该 skill**。
 
@@ -106,6 +110,11 @@ grep -n -i "CLAUDE_CODE_NEW_INIT\|AGENTS\.md" ~/.claude/cache/changelog.md | hea
 
 所以「显式提到但没读」正是新机制（模型自行判断）的结果，并非 bug；要“必须读”还缺一个强制手段。
 
+**最新进展（截至 2026-10-16）**：
+- **v2.1.287（2026-10-01）已改进中段 skill 名识别**：CHANGELOG 原文「Improved `/skill` names typed mid-message: Claude is now told they are skills, including `disable-model-invocation` ones」——即中段打出的 skill 名现在**会被明确标注为 skill 并告知模型**（含 `disable-model-invocation` 的）。这比之前「纯靠措辞猜」前进了一步，但**仍是告知模型、由模型判断，不是强制调用**。
+- 早前相关：v2.1.199 支持 `skill-a /skill-b do XYZ` 堆叠时加载前 5 个前导 skill；v2.1.110 修过中段 `/<skill>` 的 `disable-model-invocation` 报错；v2.1.222 改进 `disable-model-invocation` 的拒答措辞（改为请用户自己跑）。
+- 结论：**诉求（强制读）仍无官方开关**，但中段提及已被官方承认并半修复；若你要“必读”，行首芯片 / `@skillname` 仍是最稳路径。
+
 **workaround（对你要强读的语气）**：
 - 把 `/proxy`（或 skill 名）放在**行首**、并让其在 picker 里成为蓝色“芯片”→ CLI 直接执行，绕开模型判断。
 - 或用 `@skillname`（@-mention 形式）→ 在某些渲染器下可稳定 attach。
@@ -113,10 +122,12 @@ grep -n -i "CLAUDE_CODE_NEW_INIT\|AGENTS\.md" ~/.claude/cache/changelog.md | hea
 **相关 issue**：
 | # | 状态 | 主题 |
 |---|---|---|
-| **#94564** | 🔴 open | Invoked skill not re-attached after /compact（技能上下文会丢） |
+| **#94564** | 🔴 open（2026-10-16 仍活跃） | Invoked skill not re-attached after /compact（技能上下文会丢） |
 | #94309 | 🔴 open | Cowork：中段手打斜杠只有被 picker 解析成蓝色芯片才执行，否则变纯文本 |
 | #89398 | 🔴 open | Slash picker 只在 `/` 是首字符时打开 |
 | #91094 | 🔴 open | Desktop：中段 /skill 自动补全失效 |
+
+> 注：#94564 已从「compact 后丢技能」收窄为**根因**——被调用 skill 的注册表存在**进程内存**里，`--resume` 时只从 `invoked_skills` attachment 重建，不读调用记录，所以**跨进程恢复**就会丢（2.1.301 仍复现，2026-10-16 有最小复现 + 源码定位）。与「中段提及」是不同子问题。
 
 **复查命令**：
 ```bash
@@ -137,6 +148,8 @@ gh api "search/issues?q=repo:anthropics/claude-code skill explicit invoke" --jq 
 - tick 判定为 0（`total_input_tokens == 0`）时，从缓存恢复**最近非零读数**（tokens/pct/total）。
 - 全新会话首 tick（无缓存）或 `/clear` 后 → 真实 0 仍显示 0，不误报。compact 后低值（如 0.1%）非零 → 正确覆盖缓存。
 
+**（2026-10-16 复查）**：#101314 仍 **open、无 assign、无评论**，标签 `bug`/`has repro`/`area:statusline`，最后更新 2026-10-11。已刷新到 2.1.301 的 CHANGELOG 里**无 synthetic/statusline 相关修复**（只搜到一处 print/SDK 模式的 synthetic tool denial，无关）。→ **本地 workaround 仍需保留。**
+
 **相关 issue**：
 | # | 状态 | 主题 |
 |---|---|---|
@@ -152,7 +165,7 @@ grep -n -i "synthetic\|used_percentage" ~/.claude/cache/changelog.md
 
 ---
 
-## 6. 🔴 statusline 上下文某一刻翻倍/多倍后回弹（usage 按 iterations 求和）
+## 6. 🟡 statusline 上下文某一刻翻倍/多倍后回弹（usage 按 iterations 求和）
 
 **需求**：statusline 的上下文（如 `135k/1000k`）在运行中**某一刻突然变成约 2 倍**（`270k/1000k`），**下一拍又掉回原值**。希望显示的始终是「最近一次真实上下文占用」。
 
@@ -169,43 +182,67 @@ grep -n -i "synthetic\|used_percentage" ~/.claude/cache/changelog.md
 **混淆点：这不是 `advisor()` 专属**。我（网关自建，无 advisor）同样会触发。`advisor()` 只是最显眼的复现路径；**任意多迭代 turn**（普通工具续跑、缓存 miss 重试）都会翻倍。修 `advisor` 一个点并不能覆盖此路径。
 
 **最新进展（截至 2026-10-16）**：
-- 仍在 2.1.227（desktop bundled）/ 2.1.228（CLI）复现，**未修**。
-- 同一份被放大的 usage 也喂给 **auto-compact 触发阈值** → 会在真实上下文远未满时提前压缩、丢弃大量有效上下文（A/B 实测：真实 411K 时以报告的 823K 触发压缩，411K 被压到 7,161 tokens）。
+- ✅ **v2.1.273（2026-09-15）已发官方修复**，CHANGELOG 原文：「Fixed the context meter and auto-compact counting advisor-tool turns at roughly twice their real context size, which made auto-compact fire at about half the real window」。→ **§6 的 advisor 路径（#53065 类）在 2.1.273 起应已修复**。
+- ⚠️ **但修复面较窄**：#84738（2.1.227/2.1.228 复现）指出**非 advisor 的多迭代 turn**（普通工具续跑、缓存 miss 重试）同样放大 —— 官方词条只提「advisor-tool turns」。**这些普通路径是否被同一修复覆盖，尚未证实**；这也正是我（网关自建、无 advisor）命中 §6 的关键。下次复发时需读 transcript 确认是否 advisor。
+- 修复用的「取最终 iteration」helper 其实早在 2.1.260 的 bundle 里就存在（用于 compaction 记账），但**直到 2.1.273 才接到 context meter / auto-compact 触发上**。参见 #84738 的源码级分析（`mFe` 读 top-level 求和 vs `Cta` 取 `iterations.at(-1)`）。
 - **非近期回归**：6,210 个 session 文件里**没有任何一个正确上报的多迭代 turn**，最早的（2.1.181）已是 1.979×。
+- **附带影响**：同一份被放大的 usage 也喂给 auto-compact 阈值（同时喂 token 上限与百分比/auto 两种触发，换触发方式无济于事）→ 真实上下文远未满即提前压缩。#84738 侧记：「saved N tokens」提示也会继承放大值（报 904.2k，实际约一半）。
+- **前情（修复前状态）**：2.1.227（desktop bundled）/ 2.1.228（CLI）仍复现；A/B 实测真实 411K 时以报告的 823K 触发压缩，411K 被压到 7,161 tokens。
 
 **相关 issue（均为 anthropics/claude-code）**：
 | # | 状态 | 主题 |
 |---|---|---|
-| **#84738** | 🔴 open | Advisor turns roll up usage summed across iterations… —— **当前活跃跟踪点**，transcript 级证据最全 |
-| **#53065** | 🔴 open c=18 | `advisor()` inflates reported input tokens…触发过早 auto-compact（早前主要复现路径） |
+| **#84738** | 🔴 open | Advisor turns roll up usage summed across iterations… —— **当前活跃跟踪点**，transcript 级证据最全（最新 comment 2026-09-08，早于 2.1.273，**未确认是否已关**） |
+| **#53065** | 🔴 open c=18 | `advisor()` inflates reported input tokens…触发过早 auto-compact（**2.1.273 应已修此路径**，但 issue 本身至 2026-09-24 仍 open） |
 | #61511 | ⚫ closed（auto，未修） | Context meter ~doubles during in-flight advisor call, reverts on cancel |
 | #81620 / #81029 | ⚫ closed | advisor 翻倍 / 触发 spurious compaction（dup） |
+| #18241 | 🔴 open | statusline / /context / 内置警告百分比不一致（相关，非同一 bug） |
 | #49927 / #18781 | ⚫ closed | statusline 闪烁/归零相关，**机制不同**（非本节） |
 
 **关键数据（#84738，最新最全）**：
 - 1,731 个多迭代 turn：×2（1,218 个）、×3（219）、×4（191）、×5（74）、×6（29）；**最差 5.14×**（真实 25,004 报成 128,519）。
 - **96 个被放大的 turn 完全不含 `advisor_message`** —— 普通工具续跑即触发。
 
-**复查命令**：看 #84738 是否被 assign/fix，或 CHANGELOG 是否出现「usage 不再对 iterations 求和 / 取最终迭代」之类表述。
+**复查命令**：advisor 路径已于 2.1.273 修。现在要复查的是**非 advisor 多迭代路径**是否也修了 —— 在你自己会话里抓一次放大 turn，读 transcript 确认它**不含 advisor** 却仍被放大，即可判定修复不全、issue 仍需跟。
 ```bash
-gh issue view 84738 -R anthropics/claude-code 2>&1 | head -30
+gh issue view 84738 -R anthropics/claude-code 2>&1 | tail -40   # 看是否有 2.1.273 之后的确认/关闭
 gh issue view 53065 -R anthropics/claude-code 2>&1 | head -20
-grep -n -i "iterations\|used_percentage\|summed\|roll-up\|rollup" ~/.claude/cache/changelog.md
+# changelog 缓存可能过期，直接从官方刷新再 grep：
+curl -sL https://code.claude.com/docs/en/changelog.md -o /tmp/cc-cl.md && \
+  grep -n -i "context meter\|iteration\|roll.up\|summed\|auto-compact counting" /tmp/cc-cl.md
 ```
 
 **如何自查是否命中**（读 transcript JSONL，比较某 turn 的 top-level usage 与最后一次 `message` iteration）：
 ```bash
 # sum(iterations[].cache_read) 若 == top-level cache_read 且迭代数>1 → 该 turn 被放大
+# 再看该 turn 是否含 advisor_message：
+#   有 → advisor 路径（2.1.273 应已修）
+#   无 → 非 advisor 多迭代路径（官方词条未覆盖，仍可能复发）
 grep -h '"iterations"' ~/.claude/projects/<proj>/<session>.jsonl | tail -5
 ```
+> ⚠️ 会话内自查更省事的办法：statusline 拍到一次 ×2 后，立刻 `grep -c advisor_message <该 session>.jsonl`，一眼分辨是哪种路径。
 
 ---
 
 ## 复查速查（一个月后用）
 
 对所有章节，最省力方式：
-1. 先跑 `grep -n -i "<关键词>" ~/.claude/cache/changelog.md` —— 本地 changelog 缓存，离线最快。
-2. 再用 `gh api search/issues` 查对应 issue 是否被 assign / comment 数变化 / 状态翻转。
-3. 若某章 issue 已被 fix，则可用以下 `agent` 帮助从 `claude --version` + `claude update` 确认当前版本是否包含。
+1. **先刷新 changelog 缓存**（本地 `~/.claude/cache/changelog.md` 会过期，2026-10-16 复查时它停在 10-08 / 2.1.294，而官方已到 2.1.301）：
+   ```bash
+   source ~/.zshrc && proxy on && curl -sL https://code.claude.com/docs/en/changelog.md -o /tmp/cc-cl.md
+   grep -n -i "<关键词>" /tmp/cc-cl.md
+   ```
+2. 再用 `gh api search/issues` 或 `gh api repos/anthropics/claude-code/issues/<n>` 查对应 issue 是否被 assign / comment 数变化 / 状态翻转。
+3. 若某章 issue 已被 fix，用 `claude --version` + `claude update` 确认当前版本是否包含。
+
+**本次复查结论速览（2026-10-16，对照官方 2.1.301）**：
+| 章 | 变化 |
+|---|---|
+| §1 换行 | 无变化，仍未实现 soft-wrap；#43113 转 `duplicate` 标签 |
+| §2 copy | 无变化，META #81472 仍活跃 |
+| §3 /init→AGENTS | 无变化，无开关；旁支 bug 新增 #96117 / #99275 |
+| §4 skill 强读 | **有进展**：**2.1.287** 起中段 skill 名会被明确告知模型（仍非强制） |
+| §5 假 0 | 无变化，#101314 仍 open 无 assign；workaround 保留 |
+| §6 翻倍 | **有进展**：**2.1.273** 修了 **advisor 路径**的 context meter / auto-compact 翻倍；**非 advisor 多迭代路径未证实是否覆盖** |
 
 > 相关 issue 都是在 `anthropics/claude-code` 上公开的；状态会随时间变化，复查时以当时搜到的为准。
