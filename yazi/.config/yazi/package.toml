@@ -1,22 +1,22 @@
 [[plugin.deps]]
 use = "yazi-rs/plugins:smart-enter"
-rev = "4dc7f1b"
+rev = "9166202"
 hash = "187cc58ba7ac3befd49c342129e6f1b6"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:toggle-pane"
-rev = "4dc7f1b"
+rev = "9166202"
 hash = "5b2fbef7d1513ce38ff72623a071a5e"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:full-border"
-rev = "4dc7f1b"
+rev = "9166202"
 hash = "f281261ff04ad7ec867c3f802a50835f"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:git"
-rev = "4dc7f1b"
-hash = "5bb0bfab901d3601c370eafdd66edd31"
+rev = "9166202"
+hash = "347cc6b190eb0c2fd60513cc7ae37412"
 
 [[plugin.deps]]
 use = "Rolv-Apneseth/starship"
@@ -25,20 +25,20 @@ hash = "9776f378459072b6c2875eae5addc49d"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:piper"
-rev = "4dc7f1b"
-hash = "45a533508a9840cc5a10cf6129f63e6a"
+rev = "9166202"
+hash = "d1e0499cae5f3aeb628c267616d4b682"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:jump-to-char"
-rev = "4dc7f1b"
+rev = "9166202"
 hash = "7a4b4237223aaa94e589d1c01a23542a"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:diff"
-rev = "4dc7f1b"
+rev = "9166202"
 hash = "14558d2829c0aa05e99c57de8f74d199"
 
 [[flavor.deps]]
 use = "yazi-rs/flavors:catppuccin-macchiato"
-rev = "20b47bf"
+rev = "1183892"
 hash = "5b1bf96d1cba26376087c37de993c517"

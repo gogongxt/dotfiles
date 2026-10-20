@@ -22,8 +22,9 @@ end
 -- Collect selected files; fall back to the hovered file. Runs in a sync context.
 local get_targets = ya.sync(function()
 	local urls = {}
-	for _, u in pairs(cx.active.selected) do
-		urls[#urls + 1] = tostring(u)
+	-- 遍历值是 File 对象（yazi 26.x 起不再是 Url），需取 .url
+	for _, f in pairs(cx.active.selected) do
+		urls[#urls + 1] = tostring(f.url)
 	end
 	if #urls == 0 then
 		local h = cx.active.current.hovered

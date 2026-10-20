@@ -1,4 +1,4 @@
---- @since 25.5.0
+--- @since 26.8.15
 
 -- 存储启动路径（在插件加载时初始化）
 local startup_path = nil
@@ -40,8 +40,9 @@ end)
 -- 与 shell-extract.yazi / diff.yazi 的约定一致。
 local get_targets = ya.sync(function(state)
 	local out = {}
-	for _, u in pairs(cx.active.selected) do
-		out[#out + 1] = tostring(u)
+	-- 遍历值是 File 对象（yazi 26.x 起不再是 Url），需取 .url
+	for _, f in pairs(cx.active.selected) do
+		out[#out + 1] = tostring(f.url)
 	end
 	if #out == 0 then
 		local hovered = cx.active.current.hovered
