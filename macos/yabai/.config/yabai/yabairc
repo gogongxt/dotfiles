@@ -116,6 +116,7 @@ yabai -m rule --add app="^QQ$" manage=off
 yabai -m rule --add app="^Preview$" manage=off
 yabai -m rule --add app="^Microsoft Outlook$" opacity=1.0
 yabai -m rule --add app="^Google Chrome$" opacity=1.0
+yabai -m rule --add app="^Notion$" opacity=1.0
 
 # specific space settings
 # yabai -m config --space mail  layout stack
