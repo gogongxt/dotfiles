@@ -1,5 +1,5 @@
 ---
-name: benchmark
+name: benchmark-deprecated
 description: Run LLM serving benchmarks (sglang/vllm) on remote GPU machines - environment check, service launch, benchmark execution, and result collection
 user-invocable: true
 disable-model-invocation: true
