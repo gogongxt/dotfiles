@@ -1,6 +1,6 @@
 ---
 name: benchmark-allinone
-description: online benchmark eval usage, LLM Benchmark Platform
+description: Run online LLM benchmark evaluations on the internal LLM Benchmark Platform
 user-invocable: true
 disable-model-invocation: true
 ---
