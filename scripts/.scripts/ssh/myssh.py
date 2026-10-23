@@ -508,7 +508,9 @@ def connect_to_server(
             ("(Last login:[^\r\n]*|" + PROMPT_RE + ")", handle_successful_login),
             ("Ubuntu comes with ABSOLUTELY NO WARRANTY.*", handle_successful_login),
             ("Permission denied", handle_permission_denied),
+            ("Verification code:", handle_dynamic_code),
             ("Dkey shield code:", handle_dynamic_code),
+            ("Password:", handle_dynamic_code),
             (pexpect.TIMEOUT, handle_timeout),
             (pexpect.EOF, handle_eof),
         ]
