@@ -28,7 +28,7 @@ def get_display_grouping_factor() -> int:
         display_count = len(displays)
         return 10 if display_count == 1 else 5
     except (subprocess.CalledProcessError, json.JSONDecodeError):
-        return 5  # fallback to 5 if query fails
+        return 10  # fallback to single display if query fails
 
 
 def remove_outdated_windows(space_id: int, current_window_ids: List[str]) -> None:

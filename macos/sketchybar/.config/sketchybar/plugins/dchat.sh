@@ -1,7 +1,23 @@
 #!/bin/bash
 
 # Check if D-Chat is installed
-if ! mdfind "kMDItemKind == 'Application'" | grep -qi "D-Chat\.app"; then
+# NOTE: check the filesystem directly first — mdfind relies on the Spotlight
+# index, which is not ready right after boot/login, so on the first launch
+# it returns nothing and falsely reports D-Chat as missing.
+DCHAT_PATH=""
+for _dir in "/Applications" "$HOME/Applications" "/Applications/Utilities"; do
+    if [ -d "$_dir/D-Chat.app" ]; then
+        DCHAT_PATH="$_dir/D-Chat.app"
+        break
+    fi
+done
+
+# Fallback to Spotlight (targeted query) for non-standard install locations
+if [ -z "$DCHAT_PATH" ]; then
+    DCHAT_PATH=$(mdfind "kMDItemFSName == 'D-Chat.app'" 2>/dev/null | head -n1)
+fi
+
+if [ -z "$DCHAT_PATH" ]; then
     # D-Chat not found, skip creating items
     return 0 2>/dev/null || exit 0
 fi
