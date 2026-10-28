@@ -2,3 +2,5 @@
 servers.py
 local_key.txt
 *.bin
+ssh_listen_token
+ssh_listen_audit.log

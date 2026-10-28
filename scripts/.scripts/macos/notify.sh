@@ -22,6 +22,10 @@
 #   -list ID            列出指定分组的通知 (使用 "ALL" 列出所有)
 #   -port PORT          SSH 环境下的转发端口 (默认: 7770)
 #
+# SSH 模式认证:
+#   将本机 ssh_listen.py 的 token 复制到远程 ~/.ssh_listen_token
+#   (或通过 RCE_TOKEN 环境变量指定), 缺失时报错退出
+#
 # 示例:
 #   # 基本通知
 #   notify.sh -title "Build" -message "编译完成" -sound default
@@ -40,7 +44,7 @@
 #
 
 # 默认值
-NOTIFY_PORT="${NOTIFY_PORT:-7770}"
+RCE_PORT="${RCE_PORT:-7770}"
 
 # 解析参数
 while [[ $# -gt 0 ]]; do
@@ -59,7 +63,7 @@ while [[ $# -gt 0 ]]; do
         -ignoreDnD)   NOTIFY_IGNOREDND=1; shift ;;
         -remove)      NOTIFY_REMOVE="$2"; shift 2 ;;
         -list)        NOTIFY_LIST="$2"; shift 2 ;;
-        -port)        NOTIFY_PORT="$2"; shift 2 ;;
+        -port)        RCE_PORT="$2"; shift 2 ;;
         *)            shift ;;
     esac
 done
@@ -99,21 +103,39 @@ send_notification() {
         [[ -n "$NOTIFY_CONTENTIMAGE" ]] && cmd+=(-contentImage "$NOTIFY_CONTENTIMAGE")
         [[ -n "$NOTIFY_IGNOREDND" ]] && cmd+=(-ignoreDnD)
 
-        # 发送命令（正确转义带空格的参数）
-        local escaped_cmd=""
-        for arg in "${cmd[@]}"; do
-            escaped_cmd+=" $(printf '%q' "$arg")"
-        done
-        python3 -c "
-import socket
+        # 读取 token: 优先 RCE_TOKEN 环境变量, 其次 ~/.ssh_listen_token 文件
+        local token="${RCE_TOKEN:-}"
+        if [[ -z "$token" && -f "$HOME/.ssh_listen_token" ]]; then
+            token="$(<"$HOME/.ssh_listen_token")"
+        fi
+        if [[ -z "$token" ]]; then
+            echo "notify.sh: 缺少 token (RCE_TOKEN 或 ~/.ssh_listen_token), 无法发送" >&2
+            return 1
+        fi
+
+        # 走本机 ssh_listen.py 的 HTTP /exec 接口, 参数经 argv 传入,
+        # 由 shlex.join 负责转义 (需 python3 >= 3.8)
+        python3 -c '
+import json, shlex, sys, urllib.request
+
+token = sys.argv[1].strip()
+port = sys.argv[2]
+args = sys.argv[3:]
+req = urllib.request.Request(
+    "http://localhost:%s/exec" % port,
+    data=json.dumps({"cmd": shlex.join(args)}).encode(),
+    headers={"Authorization": "Bearer " + token},
+)
 try:
-    s = socket.socket()
-    s.connect(('localhost', ${NOTIFY_PORT}))
-    s.send(('CMD:${escaped_cmd}').encode())
-    s.close()
-except:
-    pass
-" &
+    resp = urllib.request.urlopen(req, timeout=15)
+    result = json.loads(resp.read().decode())
+    if result.get("rc", 1) != 0:
+        print("notify.sh: 远端执行失败: %s" % result, file=sys.stderr)
+        sys.exit(1)
+except Exception as e:
+    print("notify.sh: 发送失败: %s" % e, file=sys.stderr)
+    sys.exit(1)
+' "$token" "${RCE_PORT:-7770}" "${cmd[@]}"
     else
         # 本地环境：直接使用 terminal-notifier
         local cmd=(terminal-notifier)

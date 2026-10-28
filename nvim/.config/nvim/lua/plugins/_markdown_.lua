@@ -33,34 +33,66 @@ SSH连接示例：
 
 🌍 环境变量设置：
   NVIM_MKDP_PORT=7771        # Markdown 预览服务器端口
-  NVIM_MKDP_URL_PORT=7770    # 预览URL传输端口（同时用于 gx 打开链接）
+  RCE_PORT=7770              # 命令通道端口 (与 notify.sh 共用同一变量)
 
 🔗 功能说明：
-  - Markdown 预览：由 markdown-preview.nvim 启动，URL 通过本地 socket 发送
-  - gx 映射：光标处 URL 会被发送到本地监听的浏览器脚本 (同上端口)
+  - Markdown 预览：由 markdown-preview.nvim 启动，命令经本地
+    ssh_listen.py 的 HTTP /exec 接口发送 (token 与 notify.sh 同源)
+  - gx 映射：光标处 URL 同样经该接口发送到本地浏览器打开
 ======================================================
 --]]
 local mkdp_port = "0" -- default: auto port
-local mkdp_url_port = "0"
+local mkdp_url_port = os.getenv "RCE_PORT" or "7770" -- 与 notify.sh 共用
 if os.getenv "SSH_CONNECTION" ~= nil then
   mkdp_port = os.getenv "NVIM_MKDP_PORT" or "7771"
-  mkdp_url_port = os.getenv "NVIM_MKDP_URL_PORT" or "7770"
+end
 
-  -- 定义通用函数：发送 shell 命令到本地端口执行
-  vim.api.nvim_exec(
-    [[
-    function! SendCmdToLocalhost(cmd, port)
-      " 使用环境变量传递命令，避免 shell 转义问题
-      let $SSH_CMD = a:cmd
-      call system("python3 -c \"import socket,os; s=socket.socket(); s.connect(('localhost'," . a:port . ")); s.send(('CMD:' + os.environ['SSH_CMD']).encode()); s.close()\" &")
-    endfunction
-    function! SendUrlToLocalhost(url, port)
-      let l:url = substitute(a:url, '0\.0\.0\.0', 'localhost', 'g')
-      call SendCmdToLocalhost('open ' . shellescape(l:url), a:port)
-    endfunction
-  ]],
-    false
-  )
+-- SSH 环境：发送 shell 命令到本地 ssh_listen.py 的 HTTP /exec 接口执行
+-- token 与 notify.sh 同源: RCE_TOKEN 环境变量, 其次 ~/.ssh_listen_token
+local ssh_send_cmd = nil
+if os.getenv "SSH_CONNECTION" ~= nil then
+  local py = [==[
+import json, sys, urllib.request
+
+token, port, cmd = sys.argv[1].strip(), sys.argv[2], sys.argv[3]
+req = urllib.request.Request(
+    "http://localhost:%s/exec" % port,
+    data=json.dumps({"cmd": cmd}).encode(),
+    headers={"Authorization": "Bearer " + token},
+)
+try:
+    resp = urllib.request.urlopen(req, timeout=15)
+    result = json.loads(resp.read().decode())
+    if result.get("rc", 1) != 0:
+        print("ssh_listen: 远端执行失败: %s" % result, file=sys.stderr)
+        sys.exit(1)
+except Exception as e:
+    print("ssh_listen: 发送失败: %s" % e, file=sys.stderr)
+    sys.exit(1)
+]==]
+  ssh_send_cmd = function(cmd)
+    local token = os.getenv "RCE_TOKEN"
+    if not token or token == "" then
+      local f = io.open((os.getenv "HOME" or "") .. "/.ssh_listen_token", "r")
+      if f then
+        token = f:read "*l"
+        f:close()
+      end
+    end
+    if not token or token == "" then
+      vim.notify("ssh_listen: 缺少 token (RCE_TOKEN 或 ~/.ssh_listen_token)", vim.log.levels.ERROR)
+      return
+    end
+    -- jobstart 异步执行, 不阻塞 UI; 失败信息经 on_stderr 弹出
+    vim.fn.jobstart({ "python3", "-c", py, token, mkdp_url_port, cmd }, {
+      on_stderr = function(_, data, _)
+        local msg = table.concat(data or {}, "")
+        if msg:find "%S" then
+          vim.notify(msg, vim.log.levels.WARN)
+        end
+      end,
+    })
+  end
 end
 
 -- gx 映射：从当前行提取 URL 并打开（SSH 时转发到本地，否则直接 open）
@@ -82,7 +114,8 @@ vim.keymap.set("n", "gx", function()
     return
   end
   if os.getenv "SSH_CONNECTION" ~= nil then
-    vim.fn.SendUrlToLocalhost(url, mkdp_url_port)
+    local target = url:gsub("0%.0%.0%.0", "localhost")
+    ssh_send_cmd("open " .. vim.fn.shellescape(target))
     vim.notify("🔗 Sent to local browser: " .. url, vim.log.levels.INFO)
   else
     vim.ui.open(url)
@@ -118,8 +151,8 @@ return {
             )
             -- 判断是否为 SSH 环境
             if os.getenv "SSH_CONNECTION" ~= nil then
-              -- 调用顶层通过 vim.api.nvim_exec 预定义的 vimscript 接口发送命令
-              vim.fn.SendCmdToLocalhost(cmd, mkdp_url_port)
+              -- 经 HTTP /exec 接口发送到本地执行
+              ssh_send_cmd(cmd)
             else
               -- 本地 macOS 环境直接在后台执行该 AppleScript
               os.execute(cmd .. " &")
