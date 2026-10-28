@@ -60,8 +60,10 @@ req = urllib.request.Request(
     data=json.dumps({"cmd": cmd}).encode(),
     headers={"Authorization": "Bearer " + token},
 )
+# 强制直连: 绕过 http_proxy 等代理环境变量 (localhost 不能被代理接管)
+opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 try:
-    resp = urllib.request.urlopen(req, timeout=15)
+    resp = opener.open(req, timeout=15)
     result = json.loads(resp.read().decode())
     if result.get("rc", 1) != 0:
         print("ssh_listen: 远端执行失败: %s" % result, file=sys.stderr)

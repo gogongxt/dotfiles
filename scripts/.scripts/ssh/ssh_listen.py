@@ -18,8 +18,8 @@ HTTP API (请求体 JSON, 认证头 Authorization: Bearer <token>):
           400 参数错误 / 401 认证失败 / 404 未知路径
           413 请求体超长 / 504 命令超时 / 503 并发忙
 
-curl 示例:
-    curl -s -H "Authorization: Bearer $(cat ssh_listen_token)" \
+curl 示例 (--noproxy 防止本机代理环境变量拦截 localhost):
+    curl -s --noproxy "*" -H "Authorization: Bearer $(cat ssh_listen_token)" \
          -d '{"cmd":"open https://github.com"}' \
          http://localhost:7770/exec
 
