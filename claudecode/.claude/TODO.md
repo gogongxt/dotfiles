@@ -1,7 +1,7 @@
 # Claude Code TODO / 追踪清单
 
-> 更新于：2026-10-16（本次对 §1–§6 逐条复查 issue 状态 + 刷新官方 CHANGELOG 至 2.1.301）
-> **当前 Claude Code 版本：2.1.294**（本地记录时；官方最新为 **2.1.301 / 2026-10-15**）
+> 更新于：2026-10-30（§6 专项复查：#84738/#53065 状态 + 官方 CHANGELOG 刷至 2.1.314；§1–§5 仍为 2026-10-16 结论）
+> **当前 Claude Code 版本：2.1.314**（2026-10-30 已升级到官方最新；此前本机长期停在 2.1.294）
 > 目的：把正在跟进、尚未落地的 Claude Code 需求集中记录，每个问题一个章节，包含「我的需求 / 当前机制 / 最新进展 / 相关 issue / 怎么复查」。
 > 状态图：🔴 未解决 ｜ 🟡 有结论待落地 ｜ 🟢 已解决。
 >
@@ -14,7 +14,7 @@
 3. 🔴 **`/init` 只写 CLAUDE.md，不能默认生成 AGENTS.md** — 无配置项，#97004 仍 open
 4. 🟡 **显式提及 skill（如 `123 ... /proxy`）必须被读取** — **2.1.287 已改进**（中段 skill 名会告知模型），非强制（见 §4）
 5. 🔴 **statusline 上下文经 API 错误后假 0（synthetic 消息）** — #101314 未修；已有本地 workaround（见 §5）
-6. 🟡 **statusline 上下文某一刻翻倍/多倍后回弹（usage 按 iterations 求和）** — **2.1.273 已修 advisor 路径**；非 advisor 多迭代路径是否覆盖未证实（见 §6）
+6. 🟡 **statusline 上下文某一刻翻倍/多倍后回弹（usage 按 iterations 求和）** — **2.1.273 已修 advisor 路径**；非 advisor 多迭代路径未证实修复；**2026-10-30 复查：官方到 2.1.314 仍未修复**（#84738 零活动，CHANGELOG 无相关词条）；**本机同日已升级到 2.1.314**；auto-compact 阈值语义已从 2.1.294 二进制解出（见 §6）
 
 ---
 
@@ -189,10 +189,23 @@ grep -n -i "synthetic\|used_percentage" ~/.claude/cache/changelog.md
 - **附带影响**：同一份被放大的 usage 也喂给 auto-compact 阈值（同时喂 token 上限与百分比/auto 两种触发，换触发方式无济于事）→ 真实上下文远未满即提前压缩。#84738 侧记：「saved N tokens」提示也会继承放大值（报 904.2k，实际约一半）。
 - **前情（修复前状态）**：2.1.227（desktop bundled）/ 2.1.228（CLI）仍复现；A/B 实测真实 411K 时以报告的 823K 触发压缩，411K 被压到 7,161 tokens。
 
+**2026-10-26 专项复查（当时官方 2.1.310、本机 2.1.294；下文阈值/取证结论均基于 2.1.294 基线）**：
+- **#84738 仍 open**（`area:core`，2 条评论），**2026-09-08 后零活动** —— 2.1.273 之后官方没再动过这个 issue。
+- 官方 CHANGELOG 刷至 **2.1.310**：2.1.273 之后**没有任何新的 rollup / context-meter 修复词条**。只有旁支：**2.1.304** 修 `CLAUDE_CODE_AUTO_COMPACT_WINDOW=200k` 被静默当 100K（现在支持 `k`/`M` 后缀、越界会告警）；**2.1.300** 修选小窗口时 `/autocompact` 的高占用误告警；**2.1.288** 修「最后一拍 usage 为 0 时不压缩直接报 Prompt is too long」+ 首个请求改用服务端上报的窗口/输出上限；**2.1.285** 自定义 `ANTHROPIC_BASE_URL` 的会话改用模型真实窗口（网关只有 200K 时需 `/autocompact 200k`）。→ **非 advisor 多迭代路径仍未证实修复**。
+- **取证方法变更（重要）**：2.1.294 起 transcript 的 `usage.iterations` **已不再落盘**（本机某会话 3,758 条 assistant 行全为空数组），旧的「sum(iterations) vs 最后一条」检测法失效。新方法：扫 top-level usage 的 **V 型反转**（见下方自查脚本）。
+- **本机 2.1.294 期间未复发**：近 21 天 V 型扫描 0 命中；期间 4 次 auto-compact 全部是 usage 平滑爬升到 ~303k 诚实触发（当时 env 窗口还是 1M，模型窗口 ~400k → 0.8×(400k−20k)=304k，精确吻合）。**（该「0 命中」记录属 2.1.294 基线；本机 2026-10-30 已升到 2.1.314。）**
+- **auto-compact 阈值语义（从 2.1.294 二进制解出）**：env `CLAUDE_CODE_AUTO_COMPACT_WINDOW` 优先级最高，**实际窗口 = min(模型上下文窗口（网关上报）, env 值)**；可用窗口 = 窗口 − min(maxOutputTokens, 20k)；**触发阈值 ≈ 0.8 × 可用窗口**（比例来自服务端 statsig 按窗口大小下发，非固定常量）；`CLAUDE_CODE_BLOCKING_LIMIT_OVERRIDE` 是更外层的 blocked 线（本机设 1048576）。⚠️ 所以 `358400` 的实际效果是**约 270.7k 就压缩，不是 350k**。
+- **注意调大窗口治标不治本**：触发线随窗口缩放，真实占用 ≥ 触发线一半时，一次 ×2 仍会越线 —— 根治只能等 #84738。
+
+**2026-10-30 复查（官方已到 2.1.314；本机同日已升级到 2.1.314）**：
+- **仍未修复**。#84738 仍 open（`area:core`，2 条评论，无 assignee），**updated_at 停在 2026-09-08**，2.1.273 后官方零活动；#53065 仍 open（18 评论，停在 2026-09-24）。
+- CHANGELOG 自 2.1.310 后新增 **2.1.311 / 2.1.312 / 2.1.314**（无 313）：无任何 context meter / iteration rollup / usage 翻倍修复词条。旁支相关：2.1.312 改子代理 `autoCompactWindow` 只降不升 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` 的窗口；2.1.311 修 200K+ 会话报 "Usage credits required for 1M context" 时改为压缩后继续、修 `/usage` 不显示大额 prompt-cache miss。均与 §6 无关。
+- **升级侧的间接影响（待观察）**：2.1.304 起 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` **支持 `k`/`M` 后缀**、越界会告警（本机用的是纯数字 `358400`，两版都可用）；2.1.301 修了「LLM 网关返回模型名与请求不一致时会话被反复压缩」——这条仍属**压缩触发**旁支，可能有助缓解「真实未满却提前压缩」的观感，但**不是** §6 的 usage 翻倍修复。2.1.300 起 `/advisor` 也上了 Claude Platform on AWS，注意别误开 advisor 路径（2.1.273 只修了 advisor 路径，非 advisor 多迭代路径仍无修复）。
+- **本机已完成升级，故 V 型扫描的基线版本变了**：此前 21 天「0 命中」是 2.1.294 上的记录；下次复发取证要在 **2.1.314** 上重跑（`usage.iterations` 自 2.1.294 起已不落盘，仍用 V 型反转扫描）。
 **相关 issue（均为 anthropics/claude-code）**：
 | # | 状态 | 主题 |
 |---|---|---|
-| **#84738** | 🔴 open | Advisor turns roll up usage summed across iterations… —— **当前活跃跟踪点**，transcript 级证据最全（最新 comment 2026-09-08，早于 2.1.273，**未确认是否已关**） |
+| **#84738** | 🔴 open（2026-10-26 复查：09-08 后零活动） | Advisor turns roll up usage summed across iterations… —— **当前活跃跟踪点**，transcript 级证据最全 |
 | **#53065** | 🔴 open c=18 | `advisor()` inflates reported input tokens…触发过早 auto-compact（**2.1.273 应已修此路径**，但 issue 本身至 2026-09-24 仍 open） |
 | #61511 | ⚫ closed（auto，未修） | Context meter ~doubles during in-flight advisor call, reverts on cancel |
 | #81620 / #81029 | ⚫ closed | advisor 翻倍 / 触发 spurious compaction（dup） |
@@ -212,15 +225,25 @@ curl -sL https://code.claude.com/docs/en/changelog.md -o /tmp/cc-cl.md && \
   grep -n -i "context meter\|iteration\|roll.up\|summed\|auto-compact counting" /tmp/cc-cl.md
 ```
 
-**如何自查是否命中**（读 transcript JSONL，比较某 turn 的 top-level usage 与最后一次 `message` iteration）：
+**如何自查是否命中**（**2026-10-26 更新**：2.1.294 起 `usage.iterations` 已不落盘，旧 grep 法失效，改用 V 型反转扫描）：
 ```bash
-# sum(iterations[].cache_read) 若 == top-level cache_read 且迭代数>1 → 该 turn 被放大
-# 再看该 turn 是否含 advisor_message：
-#   有 → advisor 路径（2.1.273 应已修）
-#   无 → 非 advisor 多迭代路径（官方词条未覆盖，仍可能复发）
-grep -h '"iterations"' ~/.claude/projects/<proj>/<session>.jsonl | tail -5
+# 扫 top-level usage 的 V 型反转：本拍 ≥1.7× 前拍、下一拍 ≤0.65× 本拍、中间无 compact 边界
+python3 - ~/.claude/projects/<proj>/<session>.jsonl <<'EOF'
+import json, sys
+U = lambda o: (o.get("message") or {}).get("usage") or {}
+T = lambda u: u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0) + u.get("cache_creation_input_tokens", 0)
+L = [json.loads(l) for l in open(sys.argv[1]) if l.strip()]
+A = [i for i, o in enumerate(L) if o.get("type") == "assistant" and T(U(o)) > 0]
+for k in range(1, len(A) - 1):
+    p, c, n = (T(U(L[j])) for j in (A[k-1], A[k], A[k+1]))
+    if p > 20000 and c >= 1.7 * p and n <= 0.65 * c and n >= 0.5 * p \
+       and not any(L[j].get("isCompactSummary") for j in range(A[k], A[k+1])):
+        print("SPIKE", L[A[k]].get("timestamp", "?")[:19], f"{p//1024}k -> {c//1024}k -> {n//1024}k")
+EOF
+# 命中后分辨路径：grep -c advisor_message <session>.jsonl（>0 → advisor 路径，2.1.273 应已修；=0 → 非 advisor 路径，未证实修复）
 ```
-> ⚠️ 会话内自查更省事的办法：statusline 拍到一次 ×2 后，立刻 `grep -c advisor_message <该 session>.jsonl`，一眼分辨是哪种路径。
+> ⚠️ 盲区：若 spike 后**紧跟 compact**（无回落拍可检），V 扫不命中——此时看 compact 边界前最后一拍是否 ≥1.6× 再前一拍（本机 10-14~16 的 4 次压缩全是平滑爬升，非此类）。
+> ⚠️ 会话内更省事：statusline 拍到一次 ×2 后立刻跑上面脚本；命中 SPIKE 且 advisor_message=0 即可给 #84738 添证据。
 
 ---
 
@@ -243,6 +266,6 @@ grep -h '"iterations"' ~/.claude/projects/<proj>/<session>.jsonl | tail -5
 | §3 /init→AGENTS | 无变化，无开关；旁支 bug 新增 #96117 / #99275 |
 | §4 skill 强读 | **有进展**：**2.1.287** 起中段 skill 名会被明确告知模型（仍非强制） |
 | §5 假 0 | 无变化，#101314 仍 open 无 assign；workaround 保留 |
-| §6 翻倍 | **有进展**：**2.1.273** 修了 **advisor 路径**的 context meter / auto-compact 翻倍；**非 advisor 多迭代路径未证实是否覆盖** |
+| §6 翻倍 | **2026-10-30**：#84738 仍 open（09-08 后零活动），CHANGELOG 到 2.1.314 无新修复（2.1.311/312/314 均无关）；本机 2.1.314（10-30 已升级；0 命中记录属旧 2.1.294 基线），阈值语义已解码：**min(模型窗口, env) − 20k 后 × ~0.8**，`358400` 实际 ~270.7k 触发 |
 
 > 相关 issue 都是在 `anthropics/claude-code` 上公开的；状态会随时间变化，复查时以当时搜到的为准。
