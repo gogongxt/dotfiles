@@ -133,7 +133,7 @@ alias mycp="rsync -avz --progress"
 _mycp_parallel="rclone copy --transfers 32 --create-empty-src-dirs --progress --copy-links"
 alias mycp_parallel="$_mycp_parallel"
 for _n in 4 8 16; do
-  alias mycp_parallel_$_n="$_mycp_parallel --multi-thread-streams=$_n --local-no-check-updated"
+  alias mycp_parallel_$_n="$_mycp_parallel --multi-thread-streams=$_n --local-no-check-updated --ignore-checksum"
 done
 unset _n _mycp_parallel
 # alias mycp_parallel="rclone copy --transfers 32 --create-empty-src-dirs --progress --copy-links --multi-thread-streams=4 --multi-thread-chunk-size 1024M --multi-thread-write-buffer-size 512M --local-no-check-updated"
