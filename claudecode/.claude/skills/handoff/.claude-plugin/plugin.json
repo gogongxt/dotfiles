@@ -1,0 +1,9 @@
+{
+  "name": "handoff",
+  "version": "0.1.0",
+  "description": "Type /handoff to save the work to a markdown file, compact the conversation, and resume from that file.",
+  "author": {
+    "name": "luban"
+  },
+  "license": "MIT"
+}
