@@ -94,12 +94,13 @@ do
             padding_left=0.5 \
             padding_right=0.5
 done
-# Single global event handler
-sketchybar --add item space_handler $SPACE_POS
-sketchybar --set space_handler \
-    drawing=off \
-    script="SPACE_POS=$SPACE_POS python3 $HOME/.config/sketchybar/plugins/space_handler.py"
-sketchybar --subscribe space_handler space_change space_windows_change display_change
+# Space/窗口图标：常驻守护进程（直连 yabai socket，轮询兜底 + 事件即时唤醒）
+pkill -f '[Pp]ython[^ ]* [^ ]*space_daemon\.py$' 2>/dev/null
+SPACE_POS=$SPACE_POS python3 $HOME/.config/sketchybar/plugins/space_daemon.py >>/tmp/space_daemon.log 2>&1 &
+# sketchybar 事件只做轻量唤醒（~4ms shell），真实状态由 daemon 自行查询渲染
+sketchybar --add item space_nudge $SPACE_POS
+sketchybar --set space_nudge drawing=off script="$PLUGIN_DIR/space_nudge.sh"
+sketchybar --subscribe space_nudge space_change space_windows_change display_change
 
 ##### Adding Left Items #####
 # We add some regular items to the left side of the bar, where
