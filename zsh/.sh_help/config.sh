@@ -130,7 +130,7 @@ command -v yazi &>/dev/null && alias r="yazi" || alias r="ranger"
 command -v fastfetch &>/dev/null && alias neofetch="fastfetch"
 command -v lolcat &>/dev/null && alias fastfetch="fastfetch | lolcat"
 alias mycp="rsync -avz --progress"
-_mycp_parallel="rclone copy --transfers 32 --create-empty-src-dirs --progress --copy-links"
+_mycp_parallel="rclone copy --transfers 32 --create-empty-src-dirs --progress --links --metadata"
 alias mycp_parallel="$_mycp_parallel"
 for _n in 4 8 16; do
   alias mycp_parallel_$_n="$_mycp_parallel --multi-thread-streams=$_n --local-no-check-updated --ignore-checksum"
