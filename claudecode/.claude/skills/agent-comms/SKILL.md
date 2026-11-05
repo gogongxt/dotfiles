@@ -1,10 +1,10 @@
 ---
-name: session-comms
+name: agent-comms
 description: Claude Code 跨会话通信与任务编排指南 — 查看其他会话状态、等 A 会话完成后让 B 自动接力（ListAgents / SendMessage / notify_when_idle）、跨会话发消息、按 UUID 查会话、handoff 哨兵模式、串行链。当用户想让多个 session 协作、接力、等待某会话完成，或问会话间如何通信/互相感知时使用
 user-invocable: true
 ---
 
-# 跨会话通信与编排（session-comms）
+# 跨会话通信与编排（agent-comms）
 
 同机的 Claude Code 会话互相可见、可通信。按**需求**组织：先对号入座，照做即可。
 
@@ -29,6 +29,8 @@ user-invocable: true
 - 名字是自动生成的，hex 无语义；同项目多会话从外部对账用 cwd + started + busy/idle + tmux 位置；发消息带 `[ref]` 消歧。人类侧可用 tmux 窗口名（`tmux rename-window`）做语义标记
 
 ## §2 等 A 干完，B 自动接力（核心场景）
+
+因为有时候我会有多个agent并行干不同的活，为了避免互相干扰修改文件啥的，就需要A干活后告诉B可以继续了
 
 1. A 正常跑（如挂 tmux）
 2. 另开终端启动 B（同机即可，无需同仓库）
