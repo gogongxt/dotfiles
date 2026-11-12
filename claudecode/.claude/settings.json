@@ -110,6 +110,7 @@
   "syntaxHighlightingDisabled": false,
   "alwaysThinkingEnabled": false,
   "effortLevel": "high",
+  "autoMemoryEnabled": true,
   "skipDangerousModePermissionPrompt": true,
   "theme": "custom:custom-theme"
 }

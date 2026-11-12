@@ -10,33 +10,32 @@ tool's `model` parameter only accepts `sonnet`, `opus`, `haiku`, `fable`, so
 there is no way to point a review at a gateway model such as `glm-5.3` or
 `dsv4.1-local`.
 
-This skill fixes that by spawning a *named agent type* instead. The
-`subagent_type` passed to the Agent tool resolves to a file in
-`~/.claude/agents/`, and that file's `model:` frontmatter is what actually
-selects the model.
+This skill fixes that by offering a *named agent type*: the `subagent_type`
+passed to the Agent tool resolves to a file in `~/.claude/agents/`, and that
+file's `model:` frontmatter is what actually selects the model. Naming one is
+opt-in — with no `--model`, the skill spawns unnamed reviewers and behaves
+exactly like the built-in (the session's own model).
 
 ## Usage
 
 ```
-/code-review                                  # medium, default reviewer (model `dsv4.1-ts`)
+/code-review                                  # medium, on the session's own model
 /code-review high                             # more recall
-/code-review max --model dsv41-local          # deepest, on a specific model
-/code-review high --finder-model glm53-flash --verify-model glm53
+/code-review max --model dsv41-local          # deepest, pinned to dsv4.1-local
+/code-review high --finder-model glm53-flash --verify-model glm53  # mixed
 /code-review --fix 1234                       # review PR #1234 and apply fixes
 /code-review high --max-findings all          # no cap
 ```
 
-### Changing the default reviewer model
+### Choosing the reviewer model
 
-Edit one line in `SKILL.md`:
+By default nothing is pinned: the finders and verifiers run on whatever model
+the session uses, so `/model` and `CLAUDE_CODE_SUBAGENT_MODEL` govern them
+exactly as they govern any other subagent.
 
-```
-**Default reviewer agent: `dsv41-ts`**
-```
-
-Replace `dsv41-ts` with any `name:` from `~/.claude/agents/*.md`. The actual model
-comes from that agent file's `model:` field, so to review on a model that has
-no agent file yet, create one:
+To review on a different model, name an agent type. The model comes from that
+agent file's `model:` field, so to review on a model that has no agent file
+yet, create one:
 
 ```markdown
 ---
@@ -60,7 +59,8 @@ when the Agent tool is unavailable.
 Changed:
 
 - **Reviewer model is selectable** (`--model`, `--finder-model`,
-  `--verify-model`, and a configurable default). This is the reason the skill
+  `--verify-model`). Default is unchanged from the built-in — the session's own
+  model; nothing is pinned unless you ask for it. This is the reason the skill
   exists.
 - **Angle text is factored out** instead of duplicated per effort level, so the
   whole recipe fits one SKILL.md. The built-in only injects the chosen level's

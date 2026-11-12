@@ -1,13 +1,13 @@
 ---
 name: code-review
-description: Review the current diff, or a PR number/branch/path target, for correctness bugs (plus reuse/simplification/efficiency cleanups where the recipe covers them) at the effort level given first, before any target (low|medium|high|xhigh|max: from few high-confidence findings to many, some uncertain); with no level given, it reuses the level you typed last. Pass --comment to post findings as inline PR comments, or --fix to apply them to the working tree after the review. Pass --max-findings <n> to report up to n findings, or --max-findings all for every finding. Pass --model <agent> to choose which reviewer agent type runs the finder and verifier subagents.
-argument-hint: [low|medium|high|xhigh|max] [--fix] [--comment] [--model <agent>] [<pr#>|<branch>|<path>] [--max-findings <n>|all]
+description: Review the current diff, or a PR number/branch/path target, for correctness bugs (plus reuse/simplification/efficiency cleanups where the recipe covers them) at the effort level given first, before any target (low|medium|high|xhigh|max: from few high-confidence findings to many, some uncertain); with no level given, it reuses the level you typed last. Pass --comment to post findings as inline PR comments, or --fix to apply them to the working tree after the review. Pass --max-findings <n> to report up to n findings, or --max-findings all for every finding. Reviewers run on the session's model unless --model <agent> names a reviewer agent type.
+argument-hint: [low|medium|high|xhigh|max] [--fix] [--comment] [--model <agent>] [<pr#>|<branch>|<path>] [--max-findings <n>|all|default]
 user-invocable: true
 ---
 
 # Code review
 
-A migration of Claude Code's built-in `/code-review`, with one addition: **the reviewer subagents' model is selectable**. The built-in spawns generic agents and cannot pin a model; this version spawns a named agent type from `~/.claude/agents/`, whose `model:` frontmatter decides the actual model.
+A migration of Claude Code's built-in `/code-review`, with one addition: **the reviewer subagents' model is selectable**. By default the review runs on the session's own model, exactly like the built-in. When you want a different one, name an agent type from `~/.claude/agents/` — that file's `model:` frontmatter carries the model, which is the only lever that reaches models the Agent tool's own `model:` parameter cannot name.
 
 ## Resolve the run settings
 
@@ -22,19 +22,16 @@ If an unrecognized effort-like token was typed, say so in one line and use the r
 
 ## Reviewer model
 
-Resolve the reviewer agent type in this order:
+**By default, pin nothing.** Spawn every finder and verifier with no `subagent_type`, so the review runs on the session's own model — whatever `/model` (or `CLAUDE_CODE_SUBAGENT_MODEL`) governs the session also governs the review. Do not hard-code a reviewer here.
 
-1. `--finder-model` / `--verify-model` from the arguments, if given — they may differ;
-2. `--model` / `--reviewer` from the arguments, if given — applies to both;
-3. the default in the config block below — applies to both.
+Only when the arguments name one:
 
-If the resolved name is not listed by `ls ~/.claude/agents/` and is not `general-purpose`, say so in one line, list the available names, and fall back to `general-purpose`.
+1. `--finder-model <agent>` / `--verify-model <agent>` — one side each, and they may differ;
+2. `--model <agent>` (alias `--reviewer <agent>`) — both sides.
 
-**Default reviewer agent: `dsv41-ts`**
+A named reviewer is any `name:` from `~/.claude/agents/*.md`; that file's `model:` frontmatter is what selects the model, which is how a caller pins a model the Agent tool itself cannot name. Run `ls ~/.claude/agents/` to list them. If a requested name is not listed, say so in one line, list the available names, and fall back to the default (no `subagent_type`).
 
-That agent runs on model `dsv4.1-ts`. To change it, replace the name with any `name:` from `~/.claude/agents/*.md`; each file's `model:` frontmatter is what actually selects the model. `inherit` means `general-purpose` — the session's own model, matching the built-in.
-
-**How to spawn:** every finder and every verifier is spawned with the Agent tool using `subagent_type: "<resolved agent name>"`. Never pass the Agent tool's own `model:` parameter — it only accepts the standard Claude models and would silently override the agent type's model. The agent type carries the model; the prompt carries the instructions.
+**How to spawn:** without a named reviewer, call the Agent tool without `subagent_type`. With one, pass `subagent_type: "<name>"`. Never pass the Agent tool's own `model:` parameter — it only accepts the standard Claude models and would override the agent type's model. The agent type carries the model; the prompt carries the instructions.
 
 If the Agent tool is not available in this context, run the whole review inline, in this conversation, working through each angle yourself in sequence. State clearly in the summary that it was a single-pass review without fan-out, so the reader is not misled about what ran.
 
@@ -78,7 +75,7 @@ Cleanup, altitude, and conventions candidates use the same `file`/`line`/`summar
 
 ## Phase 1 — Find candidates
 
-Spawn one finder per angle, in parallel, with `subagent_type` set to the resolved finder agent. Each finder's prompt must carry:
+Spawn one finder per angle, in parallel — with `subagent_type` set only when a finder agent was named in the arguments. Each finder's prompt must carry:
 
 - the angle text above, verbatim
 - the review target and the git commands that produce the diff
@@ -102,7 +99,7 @@ Pass every candidate with a nameable failure scenario through — finders that s
 
 `low` skips this phase entirely.
 
-Dedup candidates that point at the same line/mechanism, keeping the one with the most concrete failure scenario. For each remaining candidate, run **one verifier** via the resolved verifier agent: give it the diff, the relevant file(s), and the candidate, and have it return exactly one of:
+Dedup candidates that point at the same line/mechanism, keeping the one with the most concrete failure scenario. For each remaining candidate, run **one verifier** (same model rules as the finders): give it the diff, the relevant file(s), and the candidate, and have it return exactly one of:
 
 - **CONFIRMED** — can name the inputs/state that trigger it and the wrong output or crash. Quote the line.
 - **PLAUSIBLE** — mechanism is real, trigger is uncertain (timing, env, config). State what would confirm it.
