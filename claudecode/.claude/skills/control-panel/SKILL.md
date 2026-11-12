@@ -135,6 +135,32 @@ sudo docker exec <name> bash /nfs/gogongxt/luban_scripts/docker_init_env.sh --pr
 
 ## 启动推理服务（sglang/vllm 等）的模式
 
+### 编译缓存复用到 NFS（启动 sglang 时必做）
+
+sglang 首次启动会 JIT 编译 deep_gemm / triton / tilelang / sglang-kernel / flashinfer-autotune，这些缓存**默认落在容器层 `~/.cache/sglang`，容器一删全丢**，下次重建必然重编。把缓存指到 NFS 可跨容器、跨机器复用（一份缓存约 100MB，重编要十几分钟）。
+
+**固定用下面这两个路径**：
+
+```bash
+# 启动脚本里，env 最前面加这两个
+SGLANG_CACHE_DIR=/nfs/gogongxt/.cache/sglang
+SGLANG_JIT_CACHE_DIR=/nfs/gogongxt/.cache/sglang/jit
+```
+
+- 架构不需要、也不应该由调用方指定。所有子缓存**各自把 arch 编进了 key**，不同架构天然落在不同条目里，混在同一个目录不会串。sglang 版本升级同理（各 key 都含包版本），不需要分目录。
+- **`SGLANG_JIT_CACHE_DIR` 必须单独设**：它的默认值写死成 `~/.cache/sglang/jit`，**不跟随** `SGLANG_CACHE_DIR`。只设前者会导致 sglang-kernel 那部分缓存仍然落容器层。
+- 跟随 `SGLANG_CACHE_DIR` 的：Triton(`TRITON_CACHE_DIR`)、Inductor、CUDA driver(`CUDA_CACHE_PATH`)、FlashInfer、DeepGEMM(`SGLANG_DG_CACHE_DIR`)、TileLang、cute_aot。不跟随的：JIT、以及 `ccache`（要另设 `CCACHE_DIR` 并挂载）。
+- **NFS 上 flock 不跨客户端**（实测宿主机持锁、容器仍能拿到），所以多机**同时**冷启动共享同一目录时，sglang 的编译锁失效、可能互相
+- 也可以只读使用：`SGLANG_CRASH_ON_JIT_COMPILE=1` 让 cache miss 直接报错而不是偷偷编译，用它能确认缓存覆盖是否完整。
+
+NFS 缓存目录已预置一份，容器里要先挂 NFS 才有这个路径，见上文「挂个人 NFS」：
+
+```
+/nfs/gogongxt/.cache/sglang/{jit,deep_gemm,triton,tilelang,flashinfer,cute_aot,nv,.cache}
+```
+
+如果缓存不可用或者缓存疑似有问题的时候，可以忽略缓存也就是取消设置两个环境变量，用默认路径重新编译启动sglang
+
 ### 往容器里写文件：docker exec -i + heredoc（无引号嵌套）
 
 ```bash
@@ -195,6 +221,7 @@ timeout 50 find /data /data0 /data1 /data2 /data3 -maxdepth 4 -iname "*<ModelNam
 | 一次性容器命令 exit 126 | svensudo 改写容器命令 | 把命令放进 `--entrypoint`，或建容器后 `docker exec` |
 | ssh_hack.sh 自测报免密失败 | 从容器内发起自测、无私钥，必失败并误报"查网络防火墙" | 视角问题非配置问题；从持有私钥的客户端 `ssh -o BatchMode=yes` 验证 |
 | 容器重建后 ssh 报 host key changed | known_hosts 残留同机同端口旧容器条目 | `ssh-keygen -R "[<ip>]:<port>"` 清条目重连；删容器时顺手清 |
+| sglang 每次重建容器都要重编几分钟 | `~/.cache/sglang` 在容器层，删容器即丢 | 启动时设 `SGLANG_CACHE_DIR` + `SGLANG_JIT_CACHE_DIR` 指向 NFS（见上文「编译缓存复用到 NFS」，路径固定，不分架构） |
 
 ## 用完按需清理
 
