@@ -21,6 +21,132 @@ tmux_choose_window() {
         command tmux choose-window
     fi
 }
+# Help for this wrapper. tmux's own help is reached with `tmux -- -h`.
+_tmux_help() {
+    local BOLD=$'\033[1m' CYAN=$'\033[0;36m' YELLOW=$'\033[1;33m' DIM=$'\033[2m' NC=$'\033[0m'
+    # Leave plain text for pipes, redirects and NO_COLOR users.
+    if [[ ! -t 1 || -n "$NO_COLOR" || "$TERM" == "dumb" ]]; then
+        BOLD='' CYAN='' YELLOW='' DIM='' NC=''
+    fi
+    cat <<EOF
+${BOLD}Usage:${NC} tmux [subcommand] [args]
+
+  ${CYAN}(no args)${NC}             start a new session in the current directory
+  ${CYAN}<session> [dir]${NC}       attach to <session>, creating it if missing
+  ${CYAN}ls | l | ll${NC}           list sessions
+  ${CYAN}rm | kill <session>${NC}   kill a session
+  ${CYAN}sw${NC}                    pick a window across sessions
+  ${CYAN}cd [path]${NC}             show or set TMUX_WORKING_DIR used by new windows
+  ${CYAN}save [file]${NC}           save the current pane's content to a file
+  ${CYAN}reboot${NC}                restart the tmux server (discards every session)
+  ${CYAN}rescue [server-pid]${NC}   rebuild the socket after its directory was deleted
+  ${CYAN}-h | --help | help${NC}    show this help
+  ${CYAN}-- <args>${NC}             pass <args> to tmux itself, e.g. tmux -- -h
+
+${YELLOW}rescue:${NC}
+  A tmux socket is only a connection endpoint; sessions live in the server
+  process. If /tmp/tmux-UID is deleted, the server and its sessions keep
+  running but new clients cannot connect. ${BOLD}tmux rescue${NC} recreates the
+  directory and sends SIGUSR1 so the server binds its socket again, instead
+  of ${DIM}pkill tmux${NC}, which would discard every session.
+EOF
+}
+
+# Recreate a deleted tmux socket (directory + socket) without losing sessions.
+# SIGUSR1 makes the server unlink and re-bind its own socket_path.
+_tmux_rescue() {
+    local pid="${1:-}" sockpath="" sockdir=""
+    local -a pids=()
+
+    if [[ "$pid" == "-h" || "$pid" == "--help" ]]; then
+        local BOLD=$'\033[1m' CYAN=$'\033[0;36m' DIM=$'\033[2m' NC=$'\033[0m'
+        if [[ ! -t 1 || -n "$NO_COLOR" || "$TERM" == "dumb" ]]; then
+            BOLD='' CYAN='' DIM='' NC=''
+        fi
+        cat <<EOF
+${BOLD}Usage:${NC} tmux rescue [server-pid]
+
+Rebuild the tmux socket after /tmp/tmux-UID was deleted, without losing any
+session. The server process keeps running when only the socket file or its
+directory goes away; ${BOLD}SIGUSR1${NC} makes it unlink and re-bind the original path.
+
+  ${CYAN}tmux rescue${NC}            pick the oldest running server (ppid 1), or the
+                         server of the current pane when run inside tmux
+  ${CYAN}tmux rescue <pid>${NC}      target a specific server process
+
+Run it from a pane that still works, or from any shell. Afterwards clients
+can attach again with ${DIM}tmux ls${NC} / ${DIM}tmux attach${NC}.
+EOF
+        return 0
+    fi
+
+    # Inside tmux, $TMUX is <socket path>,<server pid>,<pane id>.
+    if [[ -z "$pid" && -n "$TMUX" ]]; then
+        sockpath="$(printf '%s' "$TMUX" | cut -d, -f1)"
+        pid="$(printf '%s' "$TMUX" | cut -d, -f2)"
+        kill -0 "$pid" 2>/dev/null || { pid=""; sockpath=""; }
+    fi
+
+    # Not inside tmux: pick the oldest long-lived server (ppid 1), since that
+    # is the one likely still holding the sessions.
+    if [[ -z "$pid" ]]; then
+        while IFS= read -r p; do
+            [[ -n "$p" ]] && pids+=("$p")
+        done < <(
+            ps -Ao pid=,ppid=,etime=,comm= 2>/dev/null | awk '
+                $2 == 1 && ($4 == "tmux" || $4 ~ /\/tmux$/) {
+                    e = $3; d = 0
+                    if (index(e, "-") > 0) { split(e, a, "-"); d = a[1]; e = a[2] }
+                    n = split(e, t, ":")
+                    s = d * 86400 + (n == 3 ? t[1] * 3600 + t[2] * 60 + t[3] : t[1] * 60 + t[2])
+                    print s, $1
+                }' | sort -rn | awk '{print $2}'
+        )
+        [[ ${#pids[@]} -gt 0 ]] && pid="${pids[1]}"
+    fi
+
+    if [[ -z "$pid" ]]; then
+        echo "tmux rescue: no running tmux server found" >&2
+        return 1
+    fi
+
+    # Read the socket path from the server's open fds: it still reports the
+    # original path even after the file itself was unlinked.
+    if [[ -z "$sockpath" ]] && command -v lsof >/dev/null 2>&1; then
+        sockpath="$(lsof -U -a -p "$pid" -Fn 2>/dev/null |
+            sed -n 's|^n\(/.*\)$|\1|p' | head -1)"
+    fi
+    [[ -z "$sockpath" ]] && sockpath="${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)/default"
+    sockdir="${sockpath%/*}"
+
+    # tmux only accepts a socket directory with mode 700.
+    if [[ ! -d "$sockdir" ]]; then
+        mkdir -m 700 -p "$sockdir" || return 1
+        echo "tmux rescue: recreated $sockdir"
+    fi
+    chmod 700 "$sockdir" 2>/dev/null
+
+    if ! kill -USR1 "$pid" 2>/dev/null; then
+        echo "tmux rescue: cannot signal server $pid" >&2
+        return 1
+    fi
+    sleep 0.3
+
+    if [[ -S "$sockpath" ]] && command tmux -S "$sockpath" ls 2>/dev/null; then
+        # A second server may still be running after a stray session was
+        # started while the socket was missing; it no longer owns the path.
+        local others
+        others="$(ps -Ao pid=,ppid=,comm= 2>/dev/null | awk -v self="$pid" '
+            $2 == 1 && ($3 == "tmux" || $3 ~ /\/tmux$/) && $1 != self { printf "%s ", $1 }')"
+        if [[ -n "${others// /}" ]]; then
+            echo "note: other tmux server(s) still running: ${others% }" >&2
+        fi
+        return 0
+    fi
+    echo "tmux rescue: server $pid did not recreate $sockpath" >&2
+    return 1
+}
+
 # Start a new detached tmux session, then send cd command separately so the
 # working directory path never appears in the tmux server process's argv
 # (which would cause `pkill -f <dirname>` to kill the tmux server).
@@ -42,6 +168,14 @@ _tmux_new_session() {
 
 tmux() {
     case "$1" in
+        -h | --help | help)
+            shift
+            _tmux_help
+            ;;
+        rescue)
+            shift
+            _tmux_rescue "$@"
+            ;;
         --)
             shift
             command tmux "$@"
@@ -146,7 +280,7 @@ _tmux_completion_bash() {
     local cur prev words cword
     _get_comp_words_by_ref -n : cur prev words cword
 
-    local subcommands="ls l ll rm kill sw reboot save cd --"
+    local subcommands="ls l ll rm kill sw reboot save cd rescue help --"
     local sessions=$(command tmux ls -F '#S' 2>/dev/null)
 
     if [ "$cword" -eq 1 ]; then
@@ -188,6 +322,8 @@ _tmux_completion_zsh() {
         'reboot:Kill and restart tmux server'
         'save:Save pane content to a file'
         'cd:Set TMUX_WORKING_DIR environment'
+        'rescue:Rebuild a deleted tmux socket without losing sessions'
+        'help:Show this wrapper help'
         '--:Pass through arguments to tmux command'
     )
     # 动态获取会话列表
@@ -209,6 +345,9 @@ _tmux_completion_zsh() {
             case "$words[2]" in
                 rm | kill)
                     _describe 'session to kill' sessions
+                    ;;
+                rescue)
+                    _message 'server pid (default: the running server)'
                     ;;
                 cd)
                     # cd 命令补全目录
