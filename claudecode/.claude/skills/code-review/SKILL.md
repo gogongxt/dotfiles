@@ -1,49 +1,47 @@
 ---
 name: code-review
-description: Review the current diff, or a PR number/branch/path target, for correctness bugs (plus reuse/simplification/efficiency cleanups where the recipe covers them) at the effort level given first, before any target (low|medium|high|xhigh|max: from few high-confidence findings to many, some uncertain); with no level given, it reuses the level you typed last. Pass --comment to post findings as inline PR comments, or --fix to apply them to the working tree after the review. Pass --max-findings <n> to report up to n findings, or --max-findings all for every finding. Reviewers run on the session's model unless --model <agent> names a reviewer agent type.
-argument-hint: [low|medium|high|xhigh|max] [--fix] [--comment] [--model <agent>] [<pr#>|<branch>|<path>] [--max-findings <n>|all|default]
+description: Review the current diff, or a PR number/branch/path target, for correctness bugs (plus reuse/simplification/efficiency cleanups where the recipe covers them) at the effort level given first, before any target (low|medium|high|xhigh|max: from few high-confidence findings to many, some uncertain); with no level given, it reuses the level you typed last. Pass --comment to post findings as inline PR comments, or --fix to apply them to the working tree after the review. Pass --max-findings <n> to report up to n findings, or --max-findings all for every finding.
+argument-hint: [low|medium|high|xhigh|max] [--fix] [--comment] [--max-findings <n>|all|default] [--model <agent>] [<pr#>|<branch>|<path>]
 user-invocable: true
+context: fork
 ---
 
 # Code review
 
-A migration of Claude Code's built-in `/code-review`, with one addition: **the reviewer subagents' model is selectable**. By default the review runs on the session's own model, exactly like the built-in. When you want a different one, name an agent type from `~/.claude/agents/` — that file's `model:` frontmatter carries the model, which is the only lever that reaches models the Agent tool's own `model:` parameter cannot name.
+A migration of Claude Code's built-in `/code-review`. It runs the same way: `context: fork` puts the whole review in one subagent, so the caller sees a single reviewer. Low through extra-high work the angles inline, in this context; only `max` fans out.
 
 ## Resolve the run settings
 
 Parse the arguments before doing anything else.
 
 - **Effort level** — the first token, if it is one of `low`, `medium`, `high`, `xhigh`, `max`. Case-insensitive. If absent, read the last-used level from `~/.claude/state/code-review-last-effort`; if that file is missing, use `medium`. When a level was typed explicitly, remember it: at the very end of the turn, write just that word to `~/.claude/state/code-review-last-effort`.
-- **Flags** — `--fix`, `--comment`, `--post`, `--no-post` (post is unsupported here; ignore it and say so in one line), and `--max-findings <n>|all|default`.
-- **Model flags** — `--model <agent>` (alias `--reviewer <agent>`) sets the agent type for both finders and verifiers. `--finder-model <agent>` and `--verify-model <agent>` override one side each.
+- **Flags** — `--fix`, `--comment`, `--max-findings <n>|all|default`. `--post` and `--no-post` belong to the cloud review this skill does not have: ignore them, and say so in one line if one was typed.
+- **Model flag** — `--model <agent>` (alias `--reviewer`) and `--finder-model` / `--verify-model` select agent types for the `max` finders and verifiers only. They cannot change this review's own model — see "Reviewer model".
 - **Target** — everything left after flags: a PR number, a branch, or a path. Empty means the current working diff.
 
 If an unrecognized effort-like token was typed, say so in one line and use the remembered level. Valid levels: `low, medium, high, xhigh, max`.
 
 ## Reviewer model
 
-**By default, pin nothing.** Spawn every finder and verifier with no `subagent_type`, so the review runs on the session's own model — whatever `/model` (or `CLAUDE_CODE_SUBAGENT_MODEL`) governs the session also governs the review. Do not hard-code a reviewer here.
+This skill runs as a forked subagent (frontmatter `context: fork`), and that fork is the reviewer. Its model is:
 
-Only when the arguments name one:
+1. the frontmatter `model:` below, if set — a full model ID works;
+2. otherwise the agent type in frontmatter `agent:`, if set;
+3. otherwise the session's model, exactly like the built-in.
 
-1. `--finder-model <agent>` / `--verify-model <agent>` — one side each, and they may differ;
-2. `--model <agent>` (alias `--reviewer <agent>`) — both sides.
+Nothing is pinned today, so the review runs on the session's own model. To pin it permanently, add one line to the frontmatter — `model: <full-model-id>`, or `agent: <name>` naming a file under `~/.claude/agents/` whose `model:` is what you want. A runtime argument cannot change the fork's model; `--model <agent>` only reaches the finders that `max` spawns.
 
-A named reviewer is any `name:` from `~/.claude/agents/*.md`; that file's `model:` frontmatter is what selects the model, which is how a caller pins a model the Agent tool itself cannot name. Run `ls ~/.claude/agents/` to list them. If a requested name is not listed, say so in one line, list the available names, and fall back to the default (no `subagent_type`).
+**How to spawn** (only `max` does): call the Agent tool with `subagent_type: "<resolved agent name>"` when a name was given, and with no `subagent_type` otherwise. Never pass the Agent tool's own `model:` parameter — it accepts only the standard Claude models and would override the agent type's model. The agent type carries the model; the prompt carries the instructions.
 
-**How to spawn:** without a named reviewer, call the Agent tool without `subagent_type`. With one, pass `subagent_type: "<name>"`. Never pass the Agent tool's own `model:` parameter — it only accepts the standard Claude models and would override the agent type's model. The agent type carries the model; the prompt carries the instructions.
-
-If the Agent tool is not available in this context, run the whole review inline, in this conversation, working through each angle yourself in sequence. State clearly in the summary that it was a single-pass review without fan-out, so the reader is not misled about what ran.
+If the Agent tool is not available in this context, run the fan-out part inline too, and say in the summary that it was a single-pass review without fan-out, so the reader is not misled about what ran.
 
 ## Phase 0 — Gather the diff
 
 Run `git diff @{upstream}...HEAD` (or `git diff main...HEAD` / `git diff HEAD~1` if there's no upstream) to get the unified diff under review. If there are uncommitted changes, or the range diff is empty, also run `git diff HEAD` and include the working-tree changes in scope — the review often runs before the commit. If a PR number, branch name, or file path was passed as an argument, review that target instead. Treat this diff as the review scope.
 
-Size the fleet from the diff: `min(angle_count, clamp(ceil(lines / 150), 2, 8))`. The angle count below is a ceiling, not a target — a 20-line diff should not start 8 agents. When the fleet is smaller than the angle list, give each finder consecutive angles rather than dropping the tail.
-
 ## Angles
 
-Every finder gets exactly one angle. Include the angle text verbatim in its prompt, along with the review target and the instruction to obtain the diff itself.
+Each angle below is one reviewer's whole job. Inline levels work through them in sequence; `max` gives each to its own finder.
 
 ### Correctness angles
 
@@ -73,65 +71,23 @@ Only flag a violation when you can quote the exact rule and the exact line that 
 
 Cleanup, altitude, and conventions candidates use the same `file`/`line`/`summary` shape; in `failure_scenario`, state the concrete cost (what is duplicated, wasted, harder to maintain, or which CLAUDE.md rule is broken) instead of a crash. Correctness bugs always outrank cleanup, altitude, and conventions findings when the output cap forces a cut.
 
-## Phase 1 — Find candidates
+## Effort ladder
 
-Spawn one finder per angle, in parallel — with `subagent_type` set only when a finder agent was named in the arguments. Each finder's prompt must carry:
+| Level | Shape | Angles | Candidates per angle | Report cap |
+|-------|-------|--------|---------------------|-----------|
+| `low` | 1 diff pass → no verify | none (hunk-only scan) | — | 4 |
+| `medium` | 8 inline angles → dedup, no verify | A, B, C + Reuse, Simplification, Efficiency, Altitude, Conventions | 6 | 10 |
+| `high` | 8 inline angles → dedup, no verify | same as medium | 6 | 10 |
+| `xhigh` | 10 inline angles → dedup → gap sweep | A, B, C, D, E + Reuse, Simplification, Efficiency, Altitude, Conventions | 8 | 15 |
+| `max` | 10 fan-out finders → 1-vote verify → gap sweep | A, B, C, D, E + the five cleanup angles | 8 | 15 |
 
-- the angle text above, verbatim
-- the review target and the git commands that produce the diff
-- the candidate cap for this level
-- this output contract: a JSON array of `{file, line, summary, failure_scenario}`, one candidate per finding, `summary` a single sentence, `failure_scenario` the concrete inputs/state → wrong output/crash
+This mirror's the built-in's default model-family cell: medium and high share one recipe, and only `max` fans out.
 
-Angle subsets by level:
+Do not let one angle's conclusions suppress another's — if two angles flag the same line for different reasons, record both. Pass every candidate with a nameable failure scenario through.
 
-| Level | Correctness angles | + Cleanup angles | Candidates per angle |
-|-------|--------------------|------------------|----------------------|
-| medium | A, B, C | Reuse, Simplification, Efficiency, Altitude, Conventions | 6 |
-| high | A, B, C | Reuse, Simplification, Efficiency, Altitude, Conventions | 6 |
-| xhigh | A, B, C, D, E | Reuse, Simplification, Efficiency, Altitude, Conventions | 8 |
-| max | A, B, C, D, E | Reuse, Simplification, Efficiency, Altitude, Conventions | 8 |
+Each candidate carries `file`, `line`, a one-line `summary`, and a concrete `failure_scenario` (the inputs/state → wrong output/crash; for cleanups, the concrete cost).
 
-Do not let one angle's conclusions suppress another's — if two angles flag the same line for different reasons, record both.
-
-Pass every candidate with a nameable failure scenario through — finders that silently drop half-believed candidates bypass the verify step and are the dominant cause of misses.
-
-## Phase 2 — Verify
-
-`low` skips this phase entirely.
-
-Dedup candidates that point at the same line/mechanism, keeping the one with the most concrete failure scenario. For each remaining candidate, run **one verifier** (same model rules as the finders): give it the diff, the relevant file(s), and the candidate, and have it return exactly one of:
-
-- **CONFIRMED** — can name the inputs/state that trigger it and the wrong output or crash. Quote the line.
-- **PLAUSIBLE** — mechanism is real, trigger is uncertain (timing, env, config). State what would confirm it.
-- **REFUTED** — factually wrong (code doesn't say that) or guarded elsewhere. Quote the line that proves it.
-
-Keep CONFIRMED and PLAUSIBLE; drop REFUTED.
-
-From `high` up, verify recall-biased:
-
-**PLAUSIBLE by default** — do not refute a candidate for being "speculative" or "depends on runtime state" when the state is realistic: concurrency races, nil/undefined on a rare-but-reachable path (error handler, cold cache, missing optional field), falsy-zero treated as missing, off-by-one on a boundary the code does not exclude, retry storms / partial failures, regex/allowlist that lost an anchor. These are PLAUSIBLE.
-
-**REFUTED** only when constructible from the code: factually wrong (quote the actual line); provably impossible (type/constant/invariant — show it); already handled in this diff (cite the guard); or pure style with no observable effect.
-
-## Phase 3 — Sweep for gaps
-
-`xhigh` and `max` only. Spawn **one more finder** as a fresh reviewer who has the verified list. Re-read the diff and enclosing functions looking ONLY for defects not already listed. Do not re-derive or re-confirm anything already there — the job is gaps. Focus on what the first pass tends to miss: moved/extracted code that dropped a guard or anchor; second-tier footguns (dataclass default evaluated once, `hash()` non-determinism, lock-scope shrink, predicate methods with side effects); setup/teardown asymmetry in tests; config defaults flipped.
-
-Surface **up to 8 additional candidates**, each naming a defect not already on the list. If nothing new, return an empty sweep — do not pad.
-
-## Effort recipes
-
-| Level | Shape | Framing passed to finders | Cap |
-|-------|-------|---------------------------|-----|
-| `low` | 1 diff pass → no verify | see below | 4 |
-| `medium` | 3+5 angles × 6 → 1-vote verify | precision: every finding should be one a maintainer would act on | 8 |
-| `high` | 3+5 angles × 6 → verify (recall-biased) | recall: catch every real bug a careful reviewer would catch in one sitting | 10 |
-| `xhigh` | 5+5 angles × 8 → verify → sweep | recall at extra-high effort: a missed bug ships, so err on the side of surfacing | 15 |
-| `max` | 5+5 angles × 8 → verify → sweep | recall at maximum effort: a missed bug ships, so err on the side of surfacing | 15 |
-
-For `xhigh` and `max`, a single non-REFUTED verifier vote carries the finding — do NOT drop on uncertainty.
-
-`--max-findings <n>` replaces the cap; `--max-findings all` removes it; `--max-findings default` restores the table above. A typed limit persists until `--max-findings default` is passed: remember it in `~/.claude/state/code-review-last-max-findings` the same way as the effort level.
+`--max-findings <n>` replaces the cap; `--max-findings all` removes it; `--max-findings default` restores the table. A typed limit persists until `--max-findings default` is passed: remember it in `~/.claude/state/code-review-last-max-findings` the same way as the effort level.
 
 ### low
 
@@ -143,9 +99,49 @@ Do **not** flag style, naming, perf, missing tests, or anything outside the hunk
 
 Report at most 4 findings, most-severe first, in one `ReportFindings` call with `{level, findings}`. Target at least `min(files_changed, 4)` — if you see fewer, widen to other hunks in the same diff before stopping. If fewer than 4 genuine findings exist, report what you have.
 
-### medium / high / xhigh / max
+### medium and high
 
-Run Phase 0, then Phase 1 (angle table above), then Phase 2 (recall-biased from `high` up), then Phase 3 for `xhigh` and `max`.
+You are reviewing for **recall**: catch every real bug a careful reviewer would catch in one sitting. At this level, catching real bugs matters more than avoiding false positives. Err on the side of surfacing.
+
+Work through **8 angles** yourself, in sequence, in this same context — do **not** spawn subagents: A, B, C, then Reuse, Simplification, Efficiency, Altitude, Conventions. Each surfaces **up to 6 candidate findings**.
+
+Then **dedup only** — near-duplicates (same defect, same location, same reason → keep one). Do **not** run verifiers, do **not** re-judge. Sort by severity.
+
+Target **at least 5 findings**. If fewer genuine findings exist, emit what you have — do not invent to hit the floor.
+
+### xhigh
+
+You are reviewing for **recall** at extra-high effort: catch every real bug. A missed bug ships, so err on the side of surfacing.
+
+Work through **10 angles** yourself, in sequence, in this same context — do **not** spawn subagents: A, B, C, D, E, then the five cleanup angles. Each surfaces **up to 8 candidate findings**. Do NOT let one angle's conclusions suppress another's.
+
+Then dedup near-duplicates (same defect, same location, same reason → keep one). Do **not** run verifiers.
+
+Then take **one more pass yourself** as a fresh reviewer who has the deduplicated list. Re-read the diff and enclosing functions looking ONLY for defects not already listed: moved/extracted code that dropped a guard or anchor; second-tier footguns (dataclass default evaluated once, `hash()` non-determinism, lock-scope shrink, predicate methods with side effects); setup/teardown asymmetry in tests; config defaults flipped. If nothing new, add nothing — do not pad.
+
+Target **at least 7 findings**. If fewer genuine findings exist, emit what you have.
+
+### max
+
+You are reviewing for **recall** at maximum effort: catch every real bug. A missed bug ships, so err on the side of surfacing.
+
+**Phase 1 — finders.** Spawn **10 finders**, one per angle (A, B, C, D, E, Reuse, Simplification, Efficiency, Altitude, Conventions), in parallel, with the `subagent_type` rules above. Each finder's prompt carries its angle text verbatim, the review target and the diff commands, the cap of 8 candidates, and the candidate output contract. Do NOT let one angle's conclusions suppress another's — if two angles flag the same line for different reasons, record both. Pass every candidate with a nameable failure scenario through; finders that silently drop half-believed candidates bypass the verify step and are the dominant cause of misses.
+
+**Phase 2 — verify.** Dedup candidates that point at the same line/mechanism, keeping the one with the most concrete failure scenario. For each remaining candidate, run **one verifier** (same spawning rules) with the diff, the relevant file(s), and the candidate; it returns exactly one of CONFIRMED / PLAUSIBLE / REFUTED below. This is recall mode — a single non-REFUTED vote carries the finding. Do NOT drop on uncertainty.
+
+**Phase 3 — sweep.** Spawn **one more finder** as a fresh reviewer who has the verified list. Re-read the diff and enclosing functions looking ONLY for defects not already listed — the job is gaps. Surface **up to 8 additional candidates**; if nothing new, return an empty sweep, do not pad.
+
+## Verify verdicts (max only)
+
+- **CONFIRMED** — can name the inputs/state that trigger it and the wrong output or crash. Quote the line.
+- **PLAUSIBLE** — mechanism is real, trigger is uncertain (timing, env, config). State what would confirm it.
+- **REFUTED** — factually wrong (code doesn't say that) or guarded elsewhere. Quote the line that proves it.
+
+Keep CONFIRMED and PLAUSIBLE; drop REFUTED.
+
+**PLAUSIBLE by default** — do not refute a candidate for being "speculative" or "depends on runtime state" when the state is realistic: concurrency races, nil/undefined on a rare-but-reachable path (error handler, cold cache, missing optional field), falsy-zero treated as missing, off-by-one on a boundary the code does not exclude, retry storms / partial failures, regex/allowlist that lost an anchor. These are PLAUSIBLE.
+
+**REFUTED** only when constructible from the code: factually wrong (quote the actual line); provably impossible (type/constant/invariant — show it); already handled in this diff (cite the guard); or pure style with no observable effect.
 
 ## Output
 
@@ -165,7 +161,7 @@ If `ReportFindings` is not available in this context, emit a JSON array of `{fil
 
 ## Posting to GitHub (--comment)
 
-The `--comment` flag was passed. After producing the findings list, if the review target is a GitHub PR, post each finding as an inline PR comment via `mcp__github_inline_comment__create_inline_comment` (one call per finding; include a suggestion block only when it fully fixes the issue). If that tool is not available in this session, fall back to `gh api` (`repos/{owner}/{repo}/pulls/{pr}/comments`) or print the findings instead. If the target is not a PR, print the findings to the terminal and note that `--comment` was ignored.
+The `--comment` flag was passed. After producing the findings list, if the review target is a GitHub PR, post each finding as an inline PR comment via `mcp__github_inline_comment__create_inline_comment` (one call per finding; include a suggestion block only when it fully fixes the issue). If that tool is not available, fall back to `gh api` (`repos/{owner}/{repo}/pulls/{pr}/comments`) or print the findings instead. If the target is not a PR, print the findings to the terminal and note that `--comment` was ignored.
 
 ## Applying fixes (--fix)
 
