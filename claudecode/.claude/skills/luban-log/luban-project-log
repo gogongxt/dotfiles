@@ -1,0 +1,267 @@
+#!/usr/bin/env bash
+# luban-project-log — wrapper around luban-log-downloader that removes the
+# need to know the project. You normally only have an appid; everything else
+# can be derived:
+#
+#   * project uuid   <- ES field kubernetes.namespace_name, which is
+#                       `jianshu-serving-ns-<project-uuid>`
+#   * region          <- suffix of ES field kubernetes.host (`ml-xxx.nmg03`)
+#   * pod names       <- terms agg on kubernetes.pod_name
+#
+# The ES path needs NO Luban credentials. Project credentials only buy the
+# faster live discovery API, and they must belong to the project that owns the
+# appid (a token from another project yields `code=3000`).
+#
+# Usage:
+#   luban-project-log <appid> [downloader flags...]
+#        ^ recommended: project + region auto-detected, falls back to ES
+#   luban-project-log <project> <appid> [downloader flags...]
+#        ^ legacy form, kept for compatibility
+#
+#   <project>  project name, full uuid, or uuid prefix (>=8 chars) from
+#              projects.tsv. Use "auto" / "-" to force detection.
+#
+# Env overrides: ES_URL, ES_AUTH, ES_INDEX_PREFIX, USER_UUID.
+set -euo pipefail
+
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TABLE="$SKILL_DIR/projects.tsv"
+
+# All secrets live in .env.local (chmod 600, git-ignored). Nothing in this
+# script or SKILL.md should ever contain a uuid, token, or password.
+ENVFILE="$SKILL_DIR/.env.local"
+[ -f "$ENVFILE" ] || {
+  echo "error: missing $ENVFILE" >&2
+  echo "Create it with:  USER_UUID=...  PROJECT_UUID=...  PROJECT_TOKEN=...  ES_AUTH=..." >&2
+  exit 1
+}
+# shellcheck disable=SC1090
+. "$ENVFILE"
+
+# USER_UUID identifies the caller, not the project: it is the same across every
+# project. Project uuid/token are the per-project pair.
+ES_URL="${ES_URL:-http://10.88.128.149:30963}"
+ES_AUTH="${ES_AUTH:-}"
+ES_INDEX_PREFIX="${ES_INDEX_PREFIX:-cn_ml_luban_log}"
+[ -n "$ES_AUTH" ] || { echo "error: ES_AUTH not set in $ENVFILE" >&2; exit 1; }
+
+die() { local code="${2:-1}"; echo "error: $1" >&2; exit "$code"; }
+
+# ─── argument parsing ────────────────────────────────────────────────────────
+# Accept both the modern appid-only form and the legacy `<project> <appid>`.
+PROJECT_KEY=""
+if [ $# -lt 1 ]; then
+  echo "usage: $0 <appid> [flags...]" >&2
+  echo "       $0 <project-name|uuid|uuid-prefix> <appid> [flags...]" >&2
+  exit 2
+fi
+case "$1" in
+  k8s-*) APPID="$1"; shift ;;
+  *)     PROJECT_KEY="$1"; APPID="${2:-}"; shift 2 || die "missing <appid>" 2 ;;
+esac
+[ -n "$APPID" ] || die "missing <appid>" 2
+case "$APPID" in
+  k8s-*) ;;
+  *) die "not a Luban appid: '$APPID' (expected k8s-...)" 2 ;;
+esac
+
+REGION=""; START=""; END=""; OUT=""; PASSTHRU=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -r|--region)      REGION="${2:-}"; shift 2 ;;
+    -s|--start-time)  START="${2:-}";  shift 2 ;;
+    -e|--end-time)    END="${2:-}";    shift 2 ;;
+    -o|--output)      OUT="${2:-}";    shift 2 ;;
+    *) PASSTHRU+=("$1"); shift ;;
+  esac
+done
+OUT="${OUT:-logs_${APPID}}"
+
+# ─── helpers ─────────────────────────────────────────────────────────────────
+# Downloader wants CST wall clock; the ES `time` field is UTC.
+to_utc_range() {
+  # Echo "start|end" as ES-ready UTC ISO, accepting epoch-ms or wall clock.
+  local s="$1" e="$2"
+  local us ue
+  if [[ "$s" =~ ^[0-9]{10,}$ ]]; then
+    us=$(date -u -d "@$((s/1000))" '+%Y-%m-%dT%H:%M:%S')
+  else
+    us=$(date -u -d "$s 8 hours ago" '+%Y-%m-%dT%H:%M:%S')
+  fi
+  if [[ "$e" =~ ^[0-9]{10,}$ ]]; then
+    ue=$(date -u -d "@$((e/1000))" '+%Y-%m-%dT%H:%M:%S')
+  else
+    ue=$(date -u -d "$e 8 hours ago" '+%Y-%m-%dT%H:%M:%S')
+  fi
+  printf '%s|%s' "$us" "$ue"
+}
+
+# Index list covering the window (each `_v<N>` suffix is matched by the glob).
+index_glob_for() {
+  local s="$1" e="$2" d
+  local days
+  if [[ "$s" =~ ^[0-9]{10,}$ ]]; then
+    days=$(date -u -d "@$((s/1000))" '+%F')" "$(date -u -d "@$((e/1000))" '+%F')
+  else
+    days=$(date -d "$s" '+%F')" "$(date -d "$e" '+%F')
+  fi
+  local out="" seen=" "
+  for d in $days; do
+    case "$seen" in *" $d "*) continue ;; esac
+    seen="$seen$d "
+    out="${out:+$out,}${ES_INDEX_PREFIX}_${d}*"
+  done
+  printf '%s' "$out"
+}
+
+es_search() { # $1 = index glob, $2 = body
+  curl -s -m 60 -u "$ES_AUTH" -H 'Content-Type: application/json' \
+    "$ES_URL/$1/_search" -d "$2"
+}
+
+# ─── derive project uuid + region from ES ────────────────────────────────────
+# Sets: DETECTED_UUID, DETECTED_REGION, PODS (newline separated)
+detect_from_es() {
+  local idx="$1" g="$2" l="$3"
+  local body resp
+  body=$(cat <<JSON
+{"size":0,
+ "query":{"bool":{
+   "filter":{"range":{"time":{"gt":"$g","lte":"$l"}}},
+   "must":[{"prefix":{"kubernetes.pod_name":"$APPID"}}],
+   "must_not":[{"match":{"log":"ML_AUTO_LOG"}}]}},
+ "aggs":{
+   "pods":{"terms":{"field":"kubernetes.pod_name","size":200}},
+   "ns":{"terms":{"field":"kubernetes.namespace_name","size":5}},
+   "host":{"terms":{"field":"kubernetes.host","size":5}}}}
+JSON
+)
+  resp=$(es_search "$idx" "$body")
+  if ! printf '%s' "$resp" | jq -e '.aggregations' >/dev/null 2>&1; then
+    echo "  ES query failed: $(printf '%s' "$resp" | head -c 300)" >&2
+    return 1
+  fi
+  PODS=$(printf '%s' "$resp" | jq -r '.aggregations.pods.buckets[]?.key' 2>/dev/null || true)
+  local ns host
+  ns=$(printf '%s' "$resp" | jq -r '.aggregations.ns.buckets[0]?.key // empty' 2>/dev/null || true)
+  host=$(printf '%s' "$resp" | jq -r '.aggregations.host.buckets[0]?.key // empty' 2>/dev/null || true)
+  DETECTED_UUID=""
+  case "$ns" in
+    jianshu-serving-ns-????????????????????????????????) DETECTED_UUID="${ns#jianshu-serving-ns-}" ;;
+    *-ns-*) DETECTED_UUID="${ns##*-ns-}" ;;
+  esac
+  DETECTED_REGION=""
+  [ -n "$host" ] && DETECTED_REGION="${host##*.}"
+  return 0
+}
+
+# ─── project credentials ─────────────────────────────────────────────────────
+UU=""; TOK=""; PROJ_NAME=""
+lookup_table() { # $1 = uuid or name or prefix
+  [ -f "$TABLE" ] || return 1
+  local key="$1" row name uuid tok
+  while IFS=$'\t' read -r name uuid tok _; do
+    case "$name" in '#'*|'') continue ;; esac
+    if [ "$key" = "$name" ] || [ "$key" = "$uuid" ] \
+       || { [ "${#key}" -ge 8 ] && [ "${uuid#"$key"}" != "$uuid" ]; }; then
+      UU="$uuid"; TOK="$tok"; PROJ_NAME="$name"; return 0
+    fi
+  done < "$TABLE"
+  return 1
+}
+
+# ─── time window (default: last 3 days, matching the downloader) ─────────────
+if [ -z "$START" ] || [ -z "$END" ]; then
+  NOW_MS=$(( $(date +%s) * 1000 ))
+  [ -n "$START" ] || START=$(( NOW_MS - 3*24*3600*1000 ))
+  [ -n "$END" ]   || END=$NOW_MS
+  echo "no -s/-e given; using the last 3 days"
+fi
+IFS='|' read -r UTC_G UTC_L <<<"$(to_utc_range "$START" "$END")"
+IDX=$(index_glob_for "$START" "$END")
+
+# ─── find pods + project identity ────────────────────────────────────────────
+echo "== resolving appid $APPID =="
+DETECTED_UUID=""; DETECTED_REGION=""; PODS=""
+detect_from_es "$IDX" "$UTC_G" "$UTC_L" || true
+if [ -n "$DETECTED_UUID" ]; then echo "  project uuid : $DETECTED_UUID (from ES namespace)"; fi
+if [ -n "$DETECTED_REGION" ]; then echo "  region       : $DETECTED_REGION (from ES host)"; fi
+if [ -n "$PODS" ]; then
+  echo "  pods in ES   : $(printf '%s\n' "$PODS" | wc -l | tr -d ' ')"
+fi
+
+if [ -z "$REGION" ] && [ -n "$DETECTED_REGION" ]; then REGION="$DETECTED_REGION"; fi
+
+# Resolve credentials. An explicit project on the command line wins; otherwise
+# use whatever project the ES namespace revealed.
+case "$PROJECT_KEY" in
+  ""|auto|-)
+    [ -n "$DETECTED_UUID" ] && lookup_table "$DETECTED_UUID" || true ;;
+  *)
+    if lookup_table "$PROJECT_KEY"; then
+      :
+    elif [ -n "$DETECTED_UUID" ] && lookup_table "$DETECTED_UUID"; then
+      echo "  note         : '$PROJECT_KEY' not in table; used the ES-derived project" >&2
+    else
+      die "project '$PROJECT_KEY' not found in $TABLE" 3
+    fi ;;
+esac
+if [ -n "$UU" ]; then
+  echo "  credentials  : ${PROJ_NAME:-$UU}"
+  if [ -n "$DETECTED_UUID" ] && [ "$UU" != "$DETECTED_UUID" ]; then
+    echo "  warning      : this project uuid differs from the ES namespace one"
+    echo "                 ($DETECTED_UUID); discovery may answer code=3000"
+  fi
+else
+  echo "  credentials  : none for this project (will use the ES pod-name path)"
+fi
+
+DL_BASE=(-a "$APPID")
+[ -n "$REGION" ] && DL_BASE+=(-r "$REGION")
+DL_BASE+=(-s "$START" -e "$END" -o "$OUT")
+
+with_creds() { # run the downloader with whatever creds we resolved
+  if [ -n "$UU" ]; then
+    PROJECT_UUID="$UU" PROJECT_TOKEN="$TOK" luban-log-downloader "$@"
+  else
+    luban-log-downloader "$@"
+  fi
+}
+
+# ─── 1st attempt: live discovery (needs project credentials) ─────────────────
+try_live() {
+  local out rc
+  out=$(with_creds "${DL_BASE[@]}" "${PASSTHRU[@]}" 2>&1) && rc=0 || rc=$?
+  # The downloader prints its whole help text on failure; keep only the
+  # diagnostic lines so the fallback section stays readable.
+  printf '%s\n' "$out" | grep -E '^(AppID|Time range|Discovering|Found|Downloading| )' \
+    | grep -vE '^\s+(-|--)' || true
+  if [ $rc -eq 0 ] && ! grep -qiE 'no pods found|API error|Error:' <<<"$out"; then
+    printf '%s\n' "$out"
+    return 0
+  fi
+  grep -qiE 'Error: (discover|no pods)' <<<"$out" || printf '%s\n' "$out" | grep -i 'Error:' >&2
+  return 1
+}
+
+# ES already named the pods: go straight there. It needs no credentials and
+# cannot disagree with the historical pod set.
+if [ -z "$PODS" ] && [ -n "$UU" ]; then
+  echo "== attempting live pod discovery =="
+  if try_live; then
+    echo "== done (live discovery) =="
+    exit 0
+  fi
+fi
+
+# ─── 2nd attempt: ES pod names (no credentials required) ─────────────────────
+echo "== falling back to ES pod names =="
+if [ -z "$PODS" ]; then
+  die "no pods for '$APPID' in ES between $UTC_G and $UTC_L
+ (widen -s/-e, or check the appid/time window — ES holds ~7 days)" 5
+fi
+printf '%s\n' "$PODS" | sed 's/^/  - /'
+POD_CSV=$(printf '%s' "$PODS" | paste -sd, -)
+
+with_creds "${DL_BASE[@]}" --pod-name "$POD_CSV" "${PASSTHRU[@]}"
+echo "== done (ES pod-name path) =="

@@ -1,0 +1,5 @@
+# Secrets — never commit or sync these.
+.env.local
+.env.local.*
+projects.tsv
+*.token
