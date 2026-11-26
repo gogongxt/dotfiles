@@ -1,9 +1,10 @@
 ---
 name: code-review
-description: Review the current diff, or a PR number/branch/path target, for correctness bugs (plus reuse/simplification/efficiency cleanups where the recipe covers them) at the effort level given first, before any target (low|medium|high|xhigh|max: from few high-confidence findings to many, some uncertain); with no level given, it reuses the level you typed last. Pass --comment to post findings as inline PR comments, or --fix to apply them to the working tree after the review. Pass --max-findings <n> to report up to n findings, or --max-findings all for every finding.
+description: Review the current diff, or a PR number/branch/path target, for correctness bugs (plus reuse/simplification/efficiency cleanups where the recipe covers them) at the effort level given first, before any target (low|medium|high|xhigh|max: from few high-confidence findings to many, some uncertain); with no level given, it uses medium. Pass --comment to post findings as inline PR comments, or --fix to apply them to the working tree after the review. Pass --max-findings <n> to report up to n findings, or --max-findings all for every finding.
 argument-hint: [low|medium|high|xhigh|max] [--fix] [--comment] [--max-findings <n>|all|default] [--model <agent>] [<pr#>|<branch>|<path>]
 user-invocable: true
 context: fork
+effort: medium
 ---
 
 # Code review
@@ -14,12 +15,12 @@ A migration of Claude Code's built-in `/code-review`. It runs the same way: `con
 
 Parse the arguments before doing anything else.
 
-- **Effort level** — the first token, if it is one of `low`, `medium`, `high`, `xhigh`, `max`. Case-insensitive. If absent, read the last-used level from `~/.claude/state/code-review-last-effort`; if that file is missing, use `medium`. When a level was typed explicitly, remember it: at the very end of the turn, write just that word to `~/.claude/state/code-review-last-effort`.
+- **Effort level** — the first token, if it is one of `low`, `medium`, `high`, `xhigh`, `max`. Case-insensitive. Absent means `medium`.
 - **Flags** — `--fix`, `--comment`, `--max-findings <n>|all|default`. `--post` and `--no-post` belong to the cloud review this skill does not have: ignore them, and say so in one line if one was typed.
 - **Model flag** — `--model <agent>` (alias `--reviewer`) and `--finder-model` / `--verify-model` select agent types for the `max` finders and verifiers only. They cannot change this review's own model — see "Reviewer model".
 - **Target** — everything left after flags: a PR number, a branch, or a path. Empty means the current working diff.
 
-If an unrecognized effort-like token was typed, say so in one line and use the remembered level. Valid levels: `low, medium, high, xhigh, max`.
+If an unrecognized effort-like token was typed, say so in one line and use `medium`. Valid levels: `low, medium, high, xhigh, max`.
 
 ## Reviewer model
 
@@ -38,6 +39,10 @@ If the Agent tool is not available in this context, run the fan-out part inline 
 ## Phase 0 — Gather the diff
 
 Run `git diff @{upstream}...HEAD` (or `git diff main...HEAD` / `git diff HEAD~1` if there's no upstream) to get the unified diff under review. If there are uncommitted changes, or the range diff is empty, also run `git diff HEAD` and include the working-tree changes in scope — the review often runs before the commit. If a PR number, branch name, or file path was passed as an argument, review that target instead. Treat this diff as the review scope.
+
+**Evidence budget.** Gather in as few calls as the diff allows: one for the diff, then combined Bash calls that print the changed files, grep for callers of the changed symbols, and list the CLAUDE.md files in scope. A small diff needs about three calls in all; a large one needs more, but still combined — do not Read files one at a time, and do not open files the diff does not touch unless a call site demands it. A `medium` or `high` review is normally finished in four or five model turns: diff, evidence, report.
+
+**Do not run builds, tests, linters or formatters to review.** Decide from the diff and the code it touches; CI runs those, and a build can cost minutes per call. This holds even when a finding is uncertain — read the code instead. The one exception is after `--fix` has edited files: running the project's check on the touched files is fine then.
 
 ## Angles
 
@@ -81,13 +86,13 @@ Cleanup, altitude, and conventions candidates use the same `file`/`line`/`summar
 | `xhigh` | 10 inline angles → dedup → gap sweep | A, B, C, D, E + Reuse, Simplification, Efficiency, Altitude, Conventions | 8 | 15 |
 | `max` | 10 fan-out finders → 1-vote verify → gap sweep | A, B, C, D, E + the five cleanup angles | 8 | 15 |
 
-This mirror's the built-in's default model-family cell: medium and high share one recipe, and only `max` fans out.
+This mirrors the built-in's default model-family cell: medium and high share one recipe, and only `max` fans out.
 
 Do not let one angle's conclusions suppress another's — if two angles flag the same line for different reasons, record both. Pass every candidate with a nameable failure scenario through.
 
 Each candidate carries `file`, `line`, a one-line `summary`, and a concrete `failure_scenario` (the inputs/state → wrong output/crash; for cleanups, the concrete cost).
 
-`--max-findings <n>` replaces the cap; `--max-findings all` removes it; `--max-findings default` restores the table. A typed limit persists until `--max-findings default` is passed: remember it in `~/.claude/state/code-review-last-max-findings` the same way as the effort level.
+`--max-findings <n>` replaces the cap for this review; `--max-findings all` removes it; `--max-findings default` restores the table.
 
 ### low
 
@@ -107,7 +112,7 @@ Work through **8 angles** yourself, in sequence, in this same context — do **n
 
 Then **dedup only** — near-duplicates (same defect, same location, same reason → keep one). Do **not** run verifiers, do **not** re-judge. Sort by severity.
 
-Target **at least 5 findings**. If fewer genuine findings exist, emit what you have — do not invent to hit the floor.
+Five findings is a normal result here, not a quota: report what the angles found within the evidence budget. If fewer genuine findings exist, emit what you have — do not invent to reach a number, and do not widen the search to reach one.
 
 ### xhigh
 
@@ -119,7 +124,7 @@ Then dedup near-duplicates (same defect, same location, same reason → keep one
 
 Then take **one more pass yourself** as a fresh reviewer who has the deduplicated list. Re-read the diff and enclosing functions looking ONLY for defects not already listed: moved/extracted code that dropped a guard or anchor; second-tier footguns (dataclass default evaluated once, `hash()` non-determinism, lock-scope shrink, predicate methods with side effects); setup/teardown asymmetry in tests; config defaults flipped. If nothing new, add nothing — do not pad.
 
-Target **at least 7 findings**. If fewer genuine findings exist, emit what you have.
+Seven findings is a normal result here, not a quota: report what the angles and the sweep found within the evidence budget. If fewer genuine findings exist, emit what you have — do not invent to reach a number, and do not widen the search to reach one.
 
 ### max
 
@@ -155,9 +160,11 @@ Call `ReportFindings` once with `{level, findings}`, ranked most-severe first. E
 - `category` — short kebab-case slug for the angle that produced it (`correctness`, `reuse`, `simplification`, `efficiency`, `altitude`, `conventions`, or a more specific slug like `test-coverage`)
 - `verdict` — `CONFIRMED` or `PLAUSIBLE` when a verify pass produced one
 
-If nothing survives, call it with an empty array. Do not also print the findings as text, and do not create or publish an artifact of the review — the tool call is the report.
+Every finding must carry `file`, `line`, `summary`, `short_summary`, `failure_scenario` and `category`: the tool rejects a call that omits any of them, and a rejected call costs a full extra turn.
 
-If `ReportFindings` is not available in this context, emit a JSON array of `{file, line, summary, failure_scenario}` instead, ranked most-severe first.
+If nothing survives, call it with an empty array. Do not also print the findings as text, and do not create or publish an artifact of the review — the tool call is the report. Then stop: no further tool calls, at most one closing line.
+
+If `ReportFindings` is not available in this context, emit a JSON array of `{file, line, summary, failure_scenario}` instead, ranked most-severe first, and stop there.
 
 ## Posting to GitHub (--comment)
 

@@ -23,11 +23,43 @@ Only `max` spawns subagents. Medium and high deliberately run **inline** —
 that is what the built-in does for a model it does not recognise, and it is
 why the built-in shows you one subagent on a gateway model like `glm-5.3`.
 
+### Speed: why the effort is pinned to medium
+
+The built-in ties the review subagent's thinking effort to the level you type
+(`medium` → medium, `high` → high). A user skill cannot do that: frontmatter
+`effort:` is one static value. Left unset, the fork inherits the session's
+effort — `high` on this machine — and at high effort the model investigates
+without bound. In the recorded runs before this change, the four completed
+reviews took 18–45 minutes in 21–65 model turns, six more were abandoned, and
+the time did not track diff size: a 40-line diff took 21 minutes. Each one had
+started running `cargo check` / `cargo test` / `node --test` a few minutes in.
+
+So the frontmatter pins `effort: medium`. Levels still differ in breadth
+(angles, sweep, fan-out) but no longer in thinking budget. Delete that line to
+inherit the session's effort again, or set it to `high` for more.
+
+Three rules in the body back the pin up:
+
+- **Evidence budget** — gather in a few combined calls; a small diff needs
+  about three, a large one more, but never one file per call.
+- **No builds, tests, linters or formatters while reviewing** — decide from the
+  code; CI runs those. After `--fix` has edited files, checking the touched
+  files is fine.
+- **Stop after the report** — no state files, no second summary.
+
+`medium` and `high` also drop the built-in's "target at least 5 findings"
+floor, which fought the budget by making the model hunt for a count.
+
+Measured on a 104-line diff with `glm-5.3`: 142–196 s before, at the inherited
+high effort; 80–91 s with the pin and the budget, with the same core findings
+as the built-in. Not yet measured on a real-size diff.
+
 ## Usage
 
 ```
 /code-review                                  # medium
-/code-review high                             # same recipe, different framing
+/code-review high                             # same recipe as medium
+/code-review low                              # one pass over the diff: the quick one
 /code-review max --model dsv41-local          # 10 finders on a pinned model
 /code-review max --finder-model glm53-flash --verify-model glm53
 /code-review --fix 1234                       # review PR #1234 and apply fixes
@@ -93,9 +125,15 @@ Changed or dropped:
 - **Dropped**: `ultra` (cloud review, needs claude.ai account access), the
   GitLab `glab` posting path, and the bundled-skill plumbing (`--post` /
   `--no-post` are accepted and ignored with a note).
-- **Last-used level and `--max-findings` live in `~/.claude/state/`**
-  (`code-review-last-effort`, `code-review-last-max-findings`) instead of
-  Claude Code's internal state store, which a user skill cannot reach.
+- **Thinking effort is pinned** to `effort: medium` instead of following the
+  level. See "Speed" above — this is the one deliberate departure from the
+  built-in's review behaviour.
+- **No "remember the last level" and no persistent `--max-findings`.** With no
+  level typed the review is `medium`, and a typed limit applies to that review
+  only. The built-in remembers both in its own state store; doing it from the
+  skill cost two extra model turns per run.
+- **Evidence budget, no build/test runs, and no findings floor** at
+  `medium` / `high` / `xhigh`. See "Speed" above.
 
 ## Shadowing note
 

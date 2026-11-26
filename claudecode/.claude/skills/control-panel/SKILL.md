@@ -64,7 +64,7 @@ curl -s -X POST $BASE/api/servers/<id>/exec -H "$AUTH" -H 'Content-Type: applica
 
 ### 长任务：runs 通道
 
-`exec` 的请求生命周期 = 命令生命周期（断连即杀）。镜像 pull、服务启动、长时间编译这类任务用 runs：
+`exec` 的请求生命周期 = 命令生命周期（断连即杀）。镜像 pull、服务启动、长时间编译这类作业用 runs：
 
 ```bash
 curl -s -X POST $BASE/api/runs -H "$AUTH" -H 'Content-Type: application/json' \
