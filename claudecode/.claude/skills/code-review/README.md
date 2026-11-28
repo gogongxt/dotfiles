@@ -17,11 +17,30 @@ cell (`o48-high-v1` / `o48-xhigh-v1` / `max`):
 | `low` | one diff pass, hunk-only, no verify |
 | `medium` / `high` | 8 angles worked inline, dedup only, no verify |
 | `xhigh` | 10 angles inline, dedup, then a self gap-sweep |
-| `max` | 10 parallel finders → 1-vote verify → gap sweep |
+| `max` | 2–8 parallel finders (scaled to diff size) → 1-vote verify → gap sweep |
 
 Only `max` spawns subagents. Medium and high deliberately run **inline** —
 that is what the built-in does for a model it does not recognise, and it is
 why the built-in shows you one subagent on a gateway model like `glm-5.3`.
+
+### Size
+
+`SKILL.md` is ~12k characters, where the built-in injects roughly 4–6k. The
+gap is structural: the built-in assembles a prompt for one level at a time, so
+the model only ever sees that level's recipe, while a static skill file has to
+carry every level at once. The body is written as one shared pass (settings,
+model, diff, angles) plus short per-level paragraphs, so the shared text is not
+repeated five times the way the built-in's per-cell strings do.
+
+Zero-cost trimming was applied where it changed nothing: the angles are one
+paragraph each rather than a section per angle, and the rules every level
+shares (no angle suppressing another, the candidate shape, `--max-findings`)
+appear once. Going further would mean splitting the level recipes into files
+the fork Reads on demand — which also keeps other levels out of context, but
+costs a read and a fallback path, so it is not worth it here.
+
+Verified by running both paths in a scratch repo: `low` and `medium` each
+reported the seeded off-by-one, and `medium` made zero Agent calls.
 
 ### Speed: why the effort is pinned to medium
 
@@ -38,7 +57,7 @@ So the frontmatter pins `effort: medium`. Levels still differ in breadth
 (angles, sweep, fan-out) but no longer in thinking budget. Delete that line to
 inherit the session's effort again, or set it to `high` for more.
 
-Three rules in the body back the pin up:
+Four rules in the body back the pin up:
 
 - **Evidence budget** — gather in a few combined calls; a small diff needs
   about three, a large one more, but never one file per call.
@@ -46,9 +65,13 @@ Three rules in the body back the pin up:
   code; CI runs those. After `--fix` has edited files, checking the touched
   files is fine.
 - **Stop after the report** — no state files, no second summary.
+- **Read-only without `--fix`** — no edits, no `git add`/`commit`/`stash`. The
+  built-in only says to apply findings under `--fix`; this says it out loud.
 
-`medium` and `high` also drop the built-in's "target at least 5 findings"
-floor, which fought the budget by making the model hunt for a count.
+The built-in's "target at least N findings" floor is dropped at every level,
+including `low`'s `min(files_changed, 4)` and xhigh's `max(1, cap/2)`; it
+fought the evidence budget by making the model hunt for a count. If fewer
+genuine findings exist, the review reports what it has.
 
 Measured on a 104-line diff with `glm-5.3`: 142–196 s before, at the inherited
 high effort; 80–91 s with the pin and the budget, with the same core findings
@@ -120,8 +143,9 @@ Changed or dropped:
   to different prompt cells and moves their medium/high off the fan-out
   recipes. This skill keeps the default cell for every model, so behaviour does
   not depend on which model answers.
-- **Angle text is written once** and referenced by each level, instead of the
-  built-in's per-level duplication, so the whole recipe fits one SKILL.md.
+- **Angle text is written once** in `SKILL.md` and shared by every level,
+  instead of the built-in's per-level duplication; each level adds only its
+  own pass structure.
 - **Dropped**: `ultra` (cloud review, needs claude.ai account access), the
   GitLab `glab` posting path, and the bundled-skill plumbing (`--post` /
   `--no-post` are accepted and ignored with a note).
@@ -131,9 +155,17 @@ Changed or dropped:
 - **No "remember the last level" and no persistent `--max-findings`.** With no
   level typed the review is `medium`, and a typed limit applies to that review
   only. The built-in remembers both in its own state store; doing it from the
-  skill cost two extra model turns per run.
-- **Evidence budget, no build/test runs, and no findings floor** at
-  `medium` / `high` / `xhigh`. See "Speed" above.
+  skill cost two extra model turns per run. The built-in also caps every review
+  at 32 findings (its own tool limit) whatever `--max-findings` says; this copy
+  states the same 32 ceiling where the hint is read.
+- **Evidence budget and no build/test runs** at every level, and no
+  findings floor. See "Speed" above.
+- **`max` scales its fleet to the diff** (2–8 finders via `git diff --numstat`)
+  where the built-in always spawns all ten on the default cell. The built-in
+  only does the size hint for Sonnet-5/Opus-5 cells.
+- **No automatic `/verify` hand-off** unless that skill is installed. The
+  built-in appends "run `/verify` now" when the bundled skill exists; this copy
+  checks first and says nothing if it does not.
 
 ## Shadowing note
 
